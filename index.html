@@ -329,6 +329,50 @@ tbody tr:hover{background:var(--accent-light)!important}
 .content{padding:20px 24px;max-width:1400px;margin:0 auto;width:100%}
 @media(max-width:768px){.content{padding:12px 14px}.g4{grid-template-columns:1fr 1fr}.kpi-val{font-size:18px}}
 
+/* ── MOBILE RESPONSIVE ── */
+@media(max-width:600px){
+  /* Header */
+  .hdr{padding:0 10px;height:50px;gap:4px;flex-wrap:nowrap}
+  .hdr-logo{width:30px;height:30px;flex-shrink:0}
+  .hdr-name{font-size:12px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hdr-actions{gap:4px;flex-shrink:0}
+  .hdr-btn{padding:4px 8px;font-size:11px}
+  .hdr-btn.save{display:none}
+  #save-label,#save-dot{display:none}
+  #hdr-user-badge .user-name{display:none}
+  #hdr-user-badge .role-pill{display:none}
+  /* Nav */
+  .nav{padding:0 4px;gap:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .nav::-webkit-scrollbar{display:none}
+  .nav-tab{padding:10px 12px;font-size:11px;white-space:nowrap;flex-shrink:0;height:40px}
+  /* Content */
+  .content{padding:8px 10px}
+  /* Grids */
+  .g2,.g3,.g4,.g5{grid-template-columns:1fr!important}
+  /* KPI */
+  .kpi-val{font-size:16px!important}
+  /* Filters */
+  .filters,.filter-row{flex-direction:column!important;align-items:stretch!important;gap:6px!important}
+  .filters input,.filters select,.filter-row input,.filter-row select{width:100%!important;min-width:0!important}
+  /* Tables */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
+  /* Kanban */
+  .kanban{flex-direction:column!important;overflow-x:unset!important;padding-bottom:0}
+  .kb-col{min-width:unset!important;max-width:unset!important;width:100%!important}
+  /* Modals */
+  .modal-overlay{align-items:flex-end!important}
+  .modal,.modal[style]{width:100%!important;max-width:100vw!important;border-radius:16px 16px 0 0!important;max-height:90vh!important;overflow-y:auto}
+  /* Sec headers */
+  .sec-hdr{flex-wrap:wrap;gap:8px}
+  .sec-actions{flex-wrap:wrap;gap:4px}
+  /* Buttons full width en forms */
+  .modal .btn{min-height:40px}
+  /* Login */
+  .login-box{padding:28px 18px;width:100%;border-radius:16px}
+  /* Rows in forms */
+  .row{flex-wrap:wrap}
+}
+
 /* ── LOGIN SCREEN ── */
 #login-screen{position:fixed;inset:0;background:var(--accent);z-index:9999;display:flex;align-items:center;justify-content:center}
 #login-screen.hidden{display:none}
@@ -361,14 +405,37 @@ tbody tr:hover{background:var(--accent-light)!important}
 <!-- ── LOGIN SCREEN ── -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-logo">🌿</div>
-    <div class="login-title">American Natural</div>
+    <div class="login-logo" id="login-logo-display">🌿</div>
+    <div class="login-title" id="login-company-name">American Natural</div>
     <div class="login-sub">Plataforma operacional · Acceso privado</div>
-    <div class="field"><label>Email</label><input id="login-email" type="email" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <div class="field"><label>Contraseña</label><input id="login-pw" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <button class="login-btn" onclick="doLogin()">Entrar</button>
-    <div class="login-err" id="login-err"></div>
-    <div class="login-note">⚠️ Acceso local simulado — Fase 2 conectará Supabase Auth</div>
+    <!-- Login form -->
+    <div id="login-form-area">
+      <div class="field"><label>Email</label><input id="login-email" type="email" placeholder="tu@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="field"><label>Contraseña</label><input id="login-pw" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
+      <div class="login-err" id="login-err"></div>
+      <div style="text-align:center;margin-top:12px">
+        <a href="#" style="font-size:12px;color:var(--accent);text-decoration:none" onclick="showForgotPassword(event)">Olvidé mi contraseña</a>
+      </div>
+    </div>
+    <!-- Forgot password form -->
+    <div id="forgot-form-area" style="display:none">
+      <div style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:16px">Ingresa tu email y te enviaremos un link para restablecer tu contraseña.</div>
+      <div class="field"><label>Email</label><input id="forgot-email" type="email" placeholder="tu@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')doForgotPassword()"></div>
+      <button class="login-btn" onclick="doForgotPassword()">Enviar link</button>
+      <div class="login-err" id="forgot-err"></div>
+      <div style="text-align:center;margin-top:12px">
+        <a href="#" style="font-size:12px;color:var(--text2);text-decoration:none" onclick="showLoginForm(event)">← Volver al login</a>
+      </div>
+    </div>
+    <!-- New password form (recovery link) -->
+    <div id="recovery-form-area" style="display:none">
+      <div style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:16px">Crea tu nueva contraseña.</div>
+      <div class="field"><label>Nueva contraseña</label><input id="recovery-pw" type="password" placeholder="Mínimo 6 caracteres" onkeydown="if(event.key==='Enter')doUpdatePassword()"></div>
+      <div class="field"><label>Confirmar contraseña</label><input id="recovery-pw2" type="password" placeholder="Repite la contraseña" onkeydown="if(event.key==='Enter')doUpdatePassword()"></div>
+      <button class="login-btn" onclick="doUpdatePassword()">Guardar contraseña</button>
+      <div class="login-err" id="recovery-err"></div>
+    </div>
   </div>
 </div>
 
@@ -1090,7 +1157,7 @@ tbody tr:hover{background:var(--accent-light)!important}
       <div class="sec-actions"><button class="btn sm primary" onclick="openUserModal()">+ Usuario</button></div>
     </div>
     <div id="users-list"></div>
-    <div class="warn-box" style="font-size:12px;margin-top:12px">⚠️ Las contraseñas se guardan en localStorage (Fase 1). En Fase 2 migraremos a Supabase Auth con contraseñas cifradas.</div>
+    <div id="users-warn-box" style="font-size:12px;margin-top:12px;padding:8px 12px;background:var(--surface2);border-radius:8px;color:var(--text2)">Los usuarios deben tener cuenta activa en Supabase Auth. Crea o invita usuarios desde el panel de Supabase → Authentication → Users.</div>
   </div>
 
   <div class="g2">
@@ -1110,6 +1177,18 @@ tbody tr:hover{background:var(--accent-light)!important}
           <input id="cfg-company" value="American Natural" oninput="updateCompanyName(this.value)">
           <label class="mt8">País / mercado</label>
           <input id="cfg-pais" value="Ecuador — COD eDrop">
+        </div>
+      </div>
+      <!-- Logo de pantalla de login -->
+      <div class="divider"></div>
+      <div class="sec-hdr" style="margin-bottom:10px"><span class="sec-title" style="font-size:13px">Logo pantalla de login</span></div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div id="login-logo-preview" style="width:72px;height:72px;border-radius:12px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;cursor:pointer;flex-shrink:0" onclick="document.getElementById('login-logo-upload').click()">🌿</div>
+        <input type="file" id="login-logo-upload" accept="image/*" style="display:none" onchange="uploadLoginLogo(this)">
+        <div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Este logo aparece en la pantalla de inicio de sesión.</div>
+          <button class="btn sm" onclick="document.getElementById('login-logo-upload').click()">Cambiar logo de login</button>
+          <button class="btn sm" style="margin-left:6px;color:var(--red)" onclick="removeLoginLogo()">Eliminar</button>
         </div>
       </div>
     </div>
@@ -1578,6 +1657,7 @@ async function syncFromCloud() {
       state = cloudData;
       localStorage.setItem(APP_KEY, JSON.stringify(state));
       init();
+      applyLoginScreenState();
       showToast('Datos sincronizados desde la nube ☁️');
     }
   } catch(e) { console.warn('Cloud sync error:', e); }
@@ -1602,40 +1682,14 @@ const ROLE_LABELS = { admin:'Admin', tester:'Tester', editor:'Editor' };
 
 let currentUser = null;
 
-function getSession() {
-  try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
-}
-function saveSession(u) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ id:u.id, name:u.name, email:u.email, role:u.role }));
-}
-function clearSession() { localStorage.removeItem(SESSION_KEY); }
-
-function doLogin() {
-  const email = (document.getElementById('login-email').value||'').trim().toLowerCase();
-  const pw    = (document.getElementById('login-pw').value||'').trim();
-  const errEl = document.getElementById('login-err');
-  const user  = (state.users||[]).find(u => u.email.toLowerCase()===email && u.pw===pw && u.active!==false);
-  if (!user) { errEl.textContent = 'Email o contraseña incorrectos.'; return; }
-  errEl.textContent = '';
-  saveSession(user);
-  currentUser = user;
-  applySession();
+function _getUserProfile(email) {
+  const u = (state.users||[]).find(u => u.email.toLowerCase() === (email||'').toLowerCase() && u.active !== false);
+  if (u) return { id: u.id, name: u.name, email: u.email, role: u.role };
+  return { id: email, name: (email||'').split('@')[0], email: email||'', role: 'editor' };
 }
 
-function doLogout() {
-  clearSession();
-  currentUser = null;
-  document.getElementById('login-screen').classList.remove('hidden');
-  document.getElementById('login-email').value = '';
-  document.getElementById('login-pw').value = '';
-  updateUserBadge();
-  applyRoleTabs();
-}
-
-function applySession() {
-  const s = getSession();
-  if (!s) { document.getElementById('login-screen').classList.remove('hidden'); return; }
-  currentUser = (state.users||[]).find(u=>u.id===s.id) || s;
+function _enterApp(profile) {
+  currentUser = profile;
   document.getElementById('login-screen').classList.add('hidden');
   updateUserBadge();
   applyRoleTabs();
@@ -1643,6 +1697,123 @@ function applySession() {
   const firstTab = allowed[0] || 'creativos';
   const active = localStorage.getItem('an_active_tab') || firstTab;
   showTab(allowed.includes(active) ? active : firstTab);
+}
+
+function _showLoginScreen() {
+  currentUser = null;
+  document.getElementById('login-screen').classList.remove('hidden');
+  showLoginForm();
+  updateUserBadge();
+  applyRoleTabs();
+}
+
+// ── LOGIN FORM HELPERS ──
+function showLoginForm(e) {
+  if (e) e.preventDefault();
+  document.getElementById('login-form-area').style.display = '';
+  document.getElementById('forgot-form-area').style.display = 'none';
+  document.getElementById('recovery-form-area').style.display = 'none';
+  document.getElementById('login-err').textContent = '';
+}
+function showForgotPassword(e) {
+  if (e) e.preventDefault();
+  document.getElementById('login-form-area').style.display = 'none';
+  document.getElementById('forgot-form-area').style.display = '';
+  document.getElementById('recovery-form-area').style.display = 'none';
+  document.getElementById('forgot-err').textContent = '';
+  const em = document.getElementById('login-email').value;
+  if (em) document.getElementById('forgot-email').value = em;
+}
+
+// ── SUPABASE AUTH ACTIONS ──
+async function doLogin() {
+  const email = (document.getElementById('login-email').value||'').trim();
+  const pw    = (document.getElementById('login-pw').value||'').trim();
+  const errEl = document.getElementById('login-err');
+  const btn   = document.getElementById('login-btn');
+  if (!email || !pw) { errEl.textContent = 'Ingresa email y contraseña.'; return; }
+  errEl.textContent = '';
+  btn.textContent = 'Entrando…';
+  btn.disabled = true;
+  try {
+    if (!sb) throw new Error('Sin conexión');
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+    if (error) throw error;
+    await syncFromCloud();
+    _enterApp(_getUserProfile(data.user.email));
+  } catch(err) {
+    errEl.textContent = err.message === 'Invalid login credentials'
+      ? 'Email o contraseña incorrectos.' : (err.message || 'Error al iniciar sesión.');
+  } finally {
+    btn.textContent = 'Entrar';
+    btn.disabled = false;
+  }
+}
+
+async function doLogout() {
+  if (sb) await sb.auth.signOut();
+  localStorage.removeItem(SESSION_KEY);
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-pw').value = '';
+  _showLoginScreen();
+}
+
+async function applySession() {
+  if (!sb) { _showLoginScreen(); return; }
+  const { data } = await sb.auth.getSession();
+  if (data?.session?.user) {
+    await syncFromCloud();
+    _enterApp(_getUserProfile(data.session.user.email));
+  } else {
+    _showLoginScreen();
+  }
+}
+
+async function doForgotPassword() {
+  const email = (document.getElementById('forgot-email').value||'').trim();
+  const errEl = document.getElementById('forgot-err');
+  if (!email) { errEl.textContent = 'Ingresa tu email.'; return; }
+  errEl.textContent = '';
+  errEl.style.color = '';
+  try {
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw error;
+    errEl.style.color = 'var(--green)';
+    errEl.textContent = 'Te enviamos un correo para recuperar tu contraseña.';
+  } catch(err) {
+    errEl.textContent = err.message || 'Error al enviar el correo.';
+  }
+}
+
+async function doUpdatePassword() {
+  const pw  = (document.getElementById('recovery-pw').value||'').trim();
+  const pw2 = (document.getElementById('recovery-pw2').value||'').trim();
+  const errEl = document.getElementById('recovery-err');
+  if (pw.length < 6) { errEl.textContent = 'La contraseña debe tener al menos 6 caracteres.'; return; }
+  if (pw !== pw2) { errEl.textContent = 'Las contraseñas no coinciden.'; return; }
+  errEl.textContent = '';
+  try {
+    const { error } = await sb.auth.updateUser({ password: pw });
+    if (error) throw error;
+    errEl.style.color = 'var(--green)';
+    errEl.textContent = 'Contraseña actualizada correctamente.';
+    setTimeout(() => { showLoginForm(); }, 2000);
+  } catch(err) {
+    errEl.textContent = err.message || 'Error al actualizar la contraseña.';
+  }
+}
+
+// ── AUTH STATE LISTENER ──
+if (sb) {
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      document.getElementById('login-screen').classList.remove('hidden');
+      document.getElementById('login-form-area').style.display = 'none';
+      document.getElementById('forgot-form-area').style.display = 'none';
+      document.getElementById('recovery-form-area').style.display = '';
+    }
+  });
 }
 
 function updateUserBadge() {
@@ -1885,7 +2056,47 @@ function applyLogo() {
 function updateCompanyName(v) {
   state.settings.companyName = v;
   document.getElementById('hdr-company-name').textContent = v;
+  document.getElementById('login-company-name').textContent = v;
   calcDirty();
+}
+
+function uploadLoginLogo(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    state.settings.loginLogo = e.target.result;
+    applyLoginLogo();
+    calcDirty(); persistState();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeLoginLogo() {
+  state.settings.loginLogo = null;
+  applyLoginLogo();
+  calcDirty(); persistState();
+}
+
+function applyLoginLogo() {
+  const url = state.settings.loginLogo;
+  const display = document.getElementById('login-logo-display');
+  const preview = document.getElementById('login-logo-preview');
+  if (url) {
+    if (display) display.innerHTML = `<img src="${url}" style="width:64px;height:64px;object-fit:cover;border-radius:12px">`;
+    if (preview) preview.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover">`;
+  } else {
+    if (display) display.textContent = '🌿';
+    if (preview) preview.textContent = '🌿';
+  }
+}
+
+function applyLoginScreenState() {
+  const name = state.settings?.companyName;
+  if (name) {
+    const el = document.getElementById('login-company-name');
+    if (el) el.textContent = name;
+  }
+  applyLoginLogo();
 }
 
 // ==================== GASTOS FIJOS ====================
@@ -4958,6 +5169,7 @@ function renderConfig() {
   renderSemaforoConfig();
   renderGlossary();
   renderAdAccounts();
+  applyLoginLogo();
   // Usuarios — solo admin
   const secU = document.getElementById('sec-usuarios');
   if (secU) {
@@ -5141,6 +5353,7 @@ function init() {
   document.getElementById('hdr-company-name').textContent = state.settings.companyName || 'American Natural';
   document.getElementById('cfg-company').value = state.settings.companyName || 'American Natural';
   applyLogo();
+  applyLoginScreenState();
 
   // Load params
   const p = state.settings.params || {};
@@ -5172,8 +5385,7 @@ function init() {
 
 document.addEventListener('DOMContentLoaded', () => {
   init();
-  applySession();
-  syncFromCloud();
+  applySession(); // async: checks Supabase session, syncs cloud, then enters app
 });
 // Auto-save every 30 seconds if dirty
 setInterval(() => { if (document.getElementById('save-dot').classList.contains('dirty')) { persistState(); showToast('Guardado automáticamente'); } }, 30000);
@@ -5276,7 +5488,6 @@ function deleteUser(id) {
   renderUsersList();
 }
 
-// Override renderConfig to include users section
 </script>
 </body>
 </html>
