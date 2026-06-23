@@ -1644,16 +1644,30 @@ const SUPABASE_URL = 'https://eqrzellupcxrzapgyucb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxcnplbGx1cGN4cnphcGd5dWNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MjgwMTgsImV4cCI6MjA5NzQwNDAxOH0.1P7vKsVbGx99V64Vpa-95RY453foNlaVroElO139BhY';
 const sb = (window.supabase) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
+function _mergeDefaultUsers(usersList) {
+  const def = defaultState();
+  const merged = [...(usersList || [])];
+  for (const du of def.users) {
+    if (!merged.find(u => u.email.toLowerCase() === du.email.toLowerCase())) {
+      merged.push(du);
+    } else {
+      // Update role of existing user if defined in defaults
+      const idx = merged.findIndex(u => u.email.toLowerCase() === du.email.toLowerCase());
+      merged[idx].role = du.role;
+    }
+  }
+  return merged;
+}
+
 async function syncFromCloud() {
   if (!sb) return;
   try {
     const { data, error } = await sb.from('app_state').select('data').eq('org','americannatural').single();
-    if (error || !data?.data || Object.keys(data.data).length === 0) return;
-    const cloudData = data.data;
-    // Always merge cloud users into local state (roles are authoritative in cloud)
-    if (cloudData.users && cloudData.users.length > 0) {
-      state.users = cloudData.users;
+    if (error || !data?.data || Object.keys(data.data).length === 0) {
+      state.users = _mergeDefaultUsers(state.users);
+      return;
     }
+    const cloudData = data.data;
     const localSavedAt = state._savedAt || 0;
     if ((cloudData._savedAt || 0) > localSavedAt) {
       const def = defaultState();
@@ -1664,6 +1678,8 @@ async function syncFromCloud() {
       applyLoginScreenState();
       showToast('Datos sincronizados desde la nube ☁️');
     }
+    // Always ensure default admin users are present
+    state.users = _mergeDefaultUsers(state.users);
   } catch(e) { console.warn('Cloud sync error:', e); }
 }
 
@@ -1874,7 +1890,7 @@ function defaultState() {
       params: { cancel: 22, devol: 10, comis: 3.00, mobj: 15, cpaMode: 'conservador' },
     },
     users: [
-      { id:'u1', name:'Admin', email:'admin@americannatural.com', pw:'admin123', role:'admin', active:true },
+      { id:'u1', name:'Admin', email:'admin@americannatural.com', role:'admin', active:true },
       { id:'u2', name:'Fabian', email:'fabianrivas5@hotmail.com', role:'admin', active:true },
       { id:'u3', name:'Fabian', email:'novedadestv1969@gmail.com', role:'admin', active:true },
     ],
