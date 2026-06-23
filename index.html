@@ -1798,20 +1798,32 @@ async function doUpdatePassword() {
     if (error) throw error;
     errEl.style.color = 'var(--green)';
     errEl.textContent = 'Contraseña actualizada correctamente.';
-    setTimeout(() => { showLoginForm(); }, 2000);
+    _inPasswordRecovery = false;
+    setTimeout(async () => {
+      const { data } = await sb.auth.getSession();
+      if (data?.session?.user) {
+        await syncFromCloud();
+        _enterApp(_getUserProfile(data.session.user.email));
+      } else { showLoginForm(); }
+    }, 1500);
   } catch(err) {
     errEl.textContent = err.message || 'Error al actualizar la contraseña.';
   }
 }
 
 // ── AUTH STATE LISTENER ──
+let _inPasswordRecovery = false;
 if (sb) {
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'PASSWORD_RECOVERY') {
+      _inPasswordRecovery = true;
       document.getElementById('login-screen').classList.remove('hidden');
       document.getElementById('login-form-area').style.display = 'none';
       document.getElementById('forgot-form-area').style.display = 'none';
       document.getElementById('recovery-form-area').style.display = '';
+    }
+    if (event === 'SIGNED_IN' && _inPasswordRecovery) {
+      // Don't enter app during recovery flow — wait for user to set password
     }
   });
 }
