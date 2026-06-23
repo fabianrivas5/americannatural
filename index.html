@@ -1650,6 +1650,10 @@ async function syncFromCloud() {
     const { data, error } = await sb.from('app_state').select('data').eq('org','americannatural').single();
     if (error || !data?.data || Object.keys(data.data).length === 0) return;
     const cloudData = data.data;
+    // Always merge cloud users into local state (roles are authoritative in cloud)
+    if (cloudData.users && cloudData.users.length > 0) {
+      state.users = cloudData.users;
+    }
     const localSavedAt = state._savedAt || 0;
     if ((cloudData._savedAt || 0) > localSavedAt) {
       const def = defaultState();
