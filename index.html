@@ -1682,10 +1682,15 @@ async function syncFromCloud() {
   } catch(e) { console.warn('Cloud sync error:', e); }
 }
 
-let _syncInterval = null;
+let _realtimeChannel = null;
 function startAutoSync() {
-  if (_syncInterval) clearInterval(_syncInterval);
-  _syncInterval = setInterval(syncFromCloud, 30000);
+  if (!sb) return;
+  if (_realtimeChannel) sb.removeChannel(_realtimeChannel);
+  _realtimeChannel = sb.channel('app_state_changes')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state', filter: 'org=eq.americannatural' },
+      () => syncFromCloud()
+    )
+    .subscribe();
 }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') syncFromCloud();
