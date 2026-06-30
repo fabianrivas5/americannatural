@@ -4184,7 +4184,7 @@ function openCreativoModal(id) {
     const infoEl = document.getElementById('cr-file-info'); if(infoEl) infoEl.textContent='';
     const revBadge = document.getElementById('cr-revenue-auto-badge'); if(revBadge) revBadge.style.display='none';
   }
-  document.getElementById('cr-thumb-file').value='';
+  const thumbFile = document.getElementById('cr-thumb-file'); if(thumbFile) thumbFile.value='';
   onStageChange();  // show/hide sections + update labels
   document.getElementById('modal-creativo').classList.add('open');
 }
