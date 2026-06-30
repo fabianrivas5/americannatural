@@ -1676,7 +1676,11 @@ async function syncFromCloud() {
       const def = defaultState();
       if (!cloudData.users) cloudData.users = def.users;
       state = cloudData;
-      localStorage.setItem(APP_KEY, JSON.stringify(state));
+      try {
+        const forLocal = JSON.parse(JSON.stringify(state));
+        if (forLocal.settings) delete forLocal.settings.loginLogo;
+        localStorage.setItem(APP_KEY, JSON.stringify(forLocal));
+      } catch(e) { console.warn('localStorage lleno en sync:', e.message); }
       init();
       applyLoginScreenState();
       showToast('Datos sincronizados desde la nube ☁️');
@@ -2036,11 +2040,14 @@ function showToast(msg, type='success') {
 function persistState() {
   state._savedAt = Date.now();
   try {
-    localStorage.setItem(APP_KEY, JSON.stringify(state));
+    // Exclude large base64 images from localStorage to avoid quota errors
+    const forLocal = JSON.parse(JSON.stringify(state));
+    if (forLocal.settings) delete forLocal.settings.loginLogo;
+    localStorage.setItem(APP_KEY, JSON.stringify(forLocal));
   } catch(e) {
     console.warn('localStorage lleno, guardando solo en nube:', e.message);
   }
-  saveToCloud();
+  saveToCloud(); // saves full state including loginLogo
   const dot = document.getElementById('save-dot');
   const lbl = document.getElementById('save-label');
   if (dot) dot.classList.remove('dirty');
