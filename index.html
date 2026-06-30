@@ -1367,9 +1367,7 @@ tbody tr:hover{background:var(--accent-light)!important}
         </div>
       </div>
       <div id="cr-refs-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
-      <input type="file" id="cr-ref-file-input" accept="image/*,video/mp4,video/mov,video/webm,video/quicktime" multiple style="display:none" onchange="loadCreativoRefs(this)">
-      <button class="btn sm" type="button" onclick="document.getElementById('cr-ref-file-input').click()">📎 Subir imagen/video de referencia</button>
-      <div style="font-size:10px;color:var(--text3);margin-top:4px">Hasta 5 referencias entre links y archivos</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px">Hasta 5 referencias en links</div>
     </div>
 
     <!-- ═══ s-creative: Producción, Listo, Testeo, Validado, Escalando ═══ -->
@@ -1384,18 +1382,10 @@ tbody tr:hover{background:var(--accent-light)!important}
         <label>Link secundario de referencia</label>
         <input id="cr-link-ref" placeholder="Drive, Dropbox, referencia visual...">
       </div>
-      <!-- Multi-file upload final (hasta 5 archivos) -->
-      <div class="field mb10">
-        <label id="cr-files-label">Subir creativo final (hasta 5 archivos)</label>
-        <div id="cr-files-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
-        <input type="file" id="cr-thumb-file" accept="image/*,video/mp4,video/mov,video/webm,video/quicktime" multiple style="display:none" onchange="loadCreativoFiles(this)">
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn sm" type="button" onclick="document.getElementById('cr-thumb-file').click()">📎 Subir creativo final</button>
-          <button class="btn sm" type="button" onclick="previewCreativoLink()">🔍 Preview link</button>
-        </div>
-        <div id="cr-file-info" style="font-size:10px;color:var(--text3);margin-top:4px"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+        <button class="btn sm" type="button" onclick="previewCreativoLink()">🔍 Preview link</button>
       </div>
-      <!-- Legacy single thumb (hidden, for compat) -->
+      <div id="cr-files-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
       <div id="cr-thumb-preview" style="display:none"></div>
     </div>
 
