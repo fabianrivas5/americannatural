@@ -1677,6 +1677,10 @@ async function syncFromCloud(force = false) {
       }
       const def = defaultState();
       if (!cloudData.users) cloudData.users = def.users;
+      // Always merge arrays (union) — never wholesale-replace to avoid losing local data
+      for (const key of _MERGE_LIST_KEYS) {
+        cloudData[key] = _mergeArraysById(state[key], cloudData[key]);
+      }
       state = cloudData;
       _pendingCloudData = null;
       try {
@@ -2145,16 +2149,29 @@ function showTab(name) {
   if (name === 'recursos') renderRecursos();
 }
 
+// ==================== STORAGE UPLOAD ====================
+const STORAGE_BUCKET = 'american-natural-media';
+async function _uploadToStorage(file, folder) {
+  if (!sb) { showToast('No hay conexión a la nube', 'error'); return null; }
+  try {
+    const ext = (file.name.split('.').pop()||'bin').toLowerCase();
+    const path = `${folder}/${Date.now()}_${uid()}.${ext}`;
+    const { data, error } = await sb.storage.from(STORAGE_BUCKET).upload(path, file, { upsert: false });
+    if (error) { console.error('Storage upload error:', error); showToast('Error al subir archivo: ' + error.message, 'error'); return null; }
+    const { data: pub } = sb.storage.from(STORAGE_BUCKET).getPublicUrl(data.path);
+    return pub.publicUrl;
+  } catch(e) { console.error('Storage upload error:', e); showToast('Error al subir archivo', 'error'); return null; }
+}
+
 // ==================== LOGO ====================
-function uploadLogo(input) {
+async function uploadLogo(input) {
   const file = input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    state.settings.logo = e.target.result;
-    applyLogo();
-    calcDirty(); persistState();
-  };
-  reader.readAsDataURL(file);
+  showToast('Subiendo logo...');
+  const url = await _uploadToStorage(file, 'logos');
+  if (!url) return;
+  state.settings.logo = url;
+  applyLogo();
+  calcDirty(); persistState();
 }
 function applyLogo() {
   const url = state.settings.logo;
@@ -2172,15 +2189,14 @@ function updateCompanyName(v) {
   calcDirty();
 }
 
-function uploadLoginLogo(input) {
+async function uploadLoginLogo(input) {
   const file = input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    state.settings.loginLogo = e.target.result;
-    applyLoginLogo();
-    calcDirty(); persistState();
-  };
-  reader.readAsDataURL(file);
+  showToast('Subiendo logo...');
+  const url = await _uploadToStorage(file, 'logos');
+  if (!url) return;
+  state.settings.loginLogo = url;
+  applyLoginLogo();
+  calcDirty(); persistState();
 }
 
 function removeLoginLogo() {
@@ -2286,14 +2302,13 @@ function renderProducts() {
     </tr>`).join('');
 }
 
-function uploadProductImg(id, input) {
+async function uploadProductImg(id, input) {
   const file = input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    updateProduct(id, 'img', e.target.result);
-    renderProducts(); recalc(); calcDirty();
-  };
-  reader.readAsDataURL(file);
+  showToast('Subiendo imagen...');
+  const url = await _uploadToStorage(file, 'productos');
+  if (!url) return;
+  updateProduct(id, 'img', url);
+  renderProducts(); recalc(); calcDirty(); persistState();
 }
 
 function duplicateProduct(id) {
