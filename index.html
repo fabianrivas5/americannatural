@@ -1661,8 +1661,9 @@ async function syncFromCloud() {
       return;
     }
     const cloudData = data.data;
+    const cloudSavedAt = cloudData._savedAt || 0;
     const localSavedAt = state._savedAt || 0;
-    if ((cloudData._savedAt || 0) > localSavedAt) {
+    if (cloudSavedAt > localSavedAt) {
       const def = defaultState();
       if (!cloudData.users) cloudData.users = def.users;
       state = cloudData;
@@ -1671,12 +1672,24 @@ async function syncFromCloud() {
       } catch(e) { console.warn('localStorage lleno en sync:', e.message); }
       init();
       applyLoginScreenState();
-      showToast('Datos sincronizados desde la nube ☁️');
+      if (localSavedAt > 0) showToast('Datos sincronizados desde la nube ☁️');
+    } else if (cloudSavedAt < localSavedAt) {
+      // Local is newer — push local state to cloud so other users get it
+      saveToCloud();
     }
     // Always ensure default admin users are present
     state.users = _mergeDefaultUsers(state.users);
   } catch(e) { console.warn('Cloud sync error:', e); }
 }
+
+let _syncInterval = null;
+function startAutoSync() {
+  if (_syncInterval) clearInterval(_syncInterval);
+  _syncInterval = setInterval(syncFromCloud, 30000);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') syncFromCloud();
+});
 
 async function saveToCloud() {
   if (!sb) return;
@@ -1715,6 +1728,7 @@ function _enterApp(profile) {
   const firstTab = allowed[0] || 'creativos';
   const active = localStorage.getItem('an_active_tab') || firstTab;
   showTab(allowed.includes(active) ? active : firstTab);
+  startAutoSync();
 }
 
 function _showLoginScreen() {
