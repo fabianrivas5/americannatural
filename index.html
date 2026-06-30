@@ -1689,8 +1689,10 @@ async function syncFromCloud() {
 async function saveToCloud() {
   if (!sb) return;
   try {
-    const { error } = await sb.from('app_state').upsert({ org:'americannatural', data: state, updated_at: new Date().toISOString() });
-    if (error) { console.error('Cloud save error:', error); showToast('Error al guardar en la nube: ' + error.message, 'error'); }
+    const payload = { org:'americannatural', data: state, updated_at: new Date().toISOString() };
+    const { error } = await sb.from('app_state').upsert(payload, { onConflict: 'org' });
+    if (error) { console.error('Cloud save error:', error); showToast('Error al guardar: ' + error.message, 'error'); }
+    else { console.log('Cloud saved ok. creativos:', (state.creativos||[]).length); }
   } catch(e) { console.error('Cloud save error:', e); showToast('Error al guardar en la nube', 'error'); }
 }
 
