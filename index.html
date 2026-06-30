@@ -1702,14 +1702,38 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+const _MERGE_LIST_KEYS = ['creativos','products','costCaps','versions','adAccounts','pixels','landings','recursos','enfoques','team','users'];
+
+function _mergeArraysById(localArr, cloudArr) {
+  localArr = Array.isArray(localArr) ? localArr : [];
+  cloudArr = Array.isArray(cloudArr) ? cloudArr : [];
+  const map = new Map();
+  for (const item of cloudArr) if (item && item.id != null) map.set(item.id, item);
+  for (const item of localArr) if (item && item.id != null) map.set(item.id, item); // local wins on conflict, union keeps all
+  return Array.from(map.values());
+}
+
+let _savingToCloud = false;
 async function saveToCloud() {
-  if (!sb) return;
+  if (!sb || _savingToCloud) return;
+  _savingToCloud = true;
   try {
+    // Fetch latest cloud data first to merge instead of overwrite
+    const { data: cur } = await sb.from('app_state').select('data').eq('org','americannatural').single();
+    const cloudData = cur?.data || {};
+    for (const key of _MERGE_LIST_KEYS) {
+      state[key] = _mergeArraysById(state[key], cloudData[key]);
+    }
+    state._savedAt = Date.now();
     const payload = { org:'americannatural', data: _stripBlobs(state), updated_at: new Date().toISOString() };
     const { error } = await sb.from('app_state').upsert(payload, { onConflict: 'org' });
     if (error) { console.error('Cloud save error:', error); showToast('Error al guardar: ' + error.message, 'error'); }
-    else { console.log('Cloud saved ok. creativos:', (state.creativos||[]).length); }
+    else {
+      console.log('Cloud saved ok. creativos:', (state.creativos||[]).length);
+      try { localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state))); } catch(e) {}
+    }
   } catch(e) { console.error('Cloud save error:', e); showToast('Error al guardar en la nube', 'error'); }
+  finally { _savingToCloud = false; }
 }
 
 const SESSION_KEY = 'an_session_v1';
