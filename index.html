@@ -1715,7 +1715,8 @@ function _mergeArraysById(localArr, cloudArr) {
 
 let _savingToCloud = false;
 async function saveToCloud() {
-  if (!sb || _savingToCloud) return;
+  if (!sb) return false;
+  if (_savingToCloud) return false; // caller should retry; do not report success
   _savingToCloud = true;
   try {
     // Fetch latest cloud data first to merge instead of overwrite
@@ -1727,12 +1728,11 @@ async function saveToCloud() {
     state._savedAt = Date.now();
     const payload = { org:'americannatural', data: _stripBlobs(state), updated_at: new Date().toISOString() };
     const { error } = await sb.from('app_state').upsert(payload, { onConflict: 'org' });
-    if (error) { console.error('Cloud save error:', error); showToast('Error al guardar: ' + error.message, 'error'); }
-    else {
-      console.log('Cloud saved ok. creativos:', (state.creativos||[]).length);
-      try { localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state))); } catch(e) {}
-    }
-  } catch(e) { console.error('Cloud save error:', e); showToast('Error al guardar en la nube', 'error'); }
+    if (error) { console.error('Cloud save error:', error); showToast('Error al guardar: ' + error.message, 'error'); return false; }
+    console.log('Cloud saved ok. creativos:', (state.creativos||[]).length);
+    try { localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state))); } catch(e) {}
+    return true;
+  } catch(e) { console.error('Cloud save error:', e); showToast('Error al guardar en la nube', 'error'); return false; }
   finally { _savingToCloud = false; }
 }
 
@@ -2085,25 +2085,32 @@ function _stripBlobs(obj) {
   return obj;
 }
 
-function persistState() {
+async function persistState() {
   state._savedAt = Date.now();
   try {
     localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state)));
   } catch(e) {
     console.warn('localStorage lleno:', e.message);
   }
-  saveToCloud();
+  const lbl = document.getElementById('save-label');
+  if (lbl) lbl.textContent = 'Guardando…';
+  const ok = await saveToCloud();
   // Apply any queued cloud updates now that user has saved
-  if (_pendingCloudData && (_pendingCloudData._savedAt || 0) > state._savedAt) {
+  if (ok && _pendingCloudData && (_pendingCloudData._savedAt || 0) > state._savedAt) {
     setTimeout(() => syncFromCloud(true), 500);
   }
   const dot = document.getElementById('save-dot');
-  const lbl = document.getElementById('save-label');
+  if (!ok) {
+    // Keep dirty indicator — do not claim it was saved when it wasn't
+    if (lbl) lbl.textContent = 'Error al guardar';
+    return false;
+  }
   if (dot) dot.classList.remove('dirty');
   if (lbl) {
     const now = new Date();
     lbl.textContent = `Guardado ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
   }
+  return true;
 }
 function calcDirty() {
   document.getElementById('save-dot').classList.add('dirty');
@@ -5492,10 +5499,16 @@ document.addEventListener('DOMContentLoaded', () => {
   init();
   applySession(); // async: checks Supabase session, syncs cloud, then enters app
 });
-// Auto-save every 30 seconds if dirty
-setInterval(() => { if (document.getElementById('save-dot').classList.contains('dirty')) { persistState(); showToast('Guardado automáticamente'); } }, 30000);
+// Auto-save every 30 seconds if dirty — only when a user is actually logged in
+setInterval(() => {
+  if (currentUser && document.getElementById('save-dot').classList.contains('dirty')) {
+    persistState();
+  }
+}, 30000);
 // Save before closing
-window.addEventListener('beforeunload', () => { if (document.getElementById('save-dot').classList.contains('dirty')) persistState(); });
+window.addEventListener('beforeunload', () => {
+  if (currentUser && document.getElementById('save-dot').classList.contains('dirty')) persistState();
+});
 
 // ── USER MANAGEMENT ──
 function renderUsersList() {
