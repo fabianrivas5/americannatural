@@ -1677,9 +1677,7 @@ async function syncFromCloud() {
       if (!cloudData.users) cloudData.users = def.users;
       state = cloudData;
       try {
-        const forLocal = JSON.parse(JSON.stringify(state));
-        if (forLocal.settings) delete forLocal.settings.loginLogo;
-        localStorage.setItem(APP_KEY, JSON.stringify(forLocal));
+        localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state)));
       } catch(e) { console.warn('localStorage lleno en sync:', e.message); }
       init();
       applyLoginScreenState();
@@ -2037,17 +2035,25 @@ function showToast(msg, type='success') {
   _toastTimer = setTimeout(() => { t.className = ''; }, 3000);
 }
 
+function _stripBlobs(obj) {
+  if (typeof obj === 'string') return obj.startsWith('data:') ? null : obj;
+  if (Array.isArray(obj)) return obj.map(_stripBlobs);
+  if (obj && typeof obj === 'object') {
+    const r = {};
+    for (const k of Object.keys(obj)) r[k] = _stripBlobs(obj[k]);
+    return r;
+  }
+  return obj;
+}
+
 function persistState() {
   state._savedAt = Date.now();
   try {
-    // Exclude large base64 images from localStorage to avoid quota errors
-    const forLocal = JSON.parse(JSON.stringify(state));
-    if (forLocal.settings) delete forLocal.settings.loginLogo;
-    localStorage.setItem(APP_KEY, JSON.stringify(forLocal));
+    localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state)));
   } catch(e) {
-    console.warn('localStorage lleno, guardando solo en nube:', e.message);
+    console.warn('localStorage lleno:', e.message);
   }
-  saveToCloud(); // saves full state including loginLogo
+  saveToCloud();
   const dot = document.getElementById('save-dot');
   const lbl = document.getElementById('save-label');
   if (dot) dot.classList.remove('dirty');
