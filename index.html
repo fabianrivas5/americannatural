@@ -376,6 +376,9 @@ tbody tr:hover{background:var(--accent-light)!important}
 /* ── LOGIN SCREEN ── */
 #login-screen{position:fixed;inset:0;background:var(--accent);z-index:9999;display:flex;align-items:center;justify-content:center}
 #login-screen.hidden{display:none}
+#login-screen.loading .login-box{display:none}
+#login-screen.loading::after{content:'';width:40px;height:40px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .login-box{background:#fff;border-radius:16px;padding:40px 36px;width:360px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.25)}
 .login-logo{text-align:center;margin-bottom:20px;font-size:32px}
 .login-title{font-size:18px;font-weight:700;color:var(--text);text-align:center;margin-bottom:4px}
@@ -1686,8 +1689,9 @@ async function syncFromCloud() {
 async function saveToCloud() {
   if (!sb) return;
   try {
-    await sb.from('app_state').upsert({ org:'americannatural', data: state, updated_at: new Date().toISOString() });
-  } catch(e) { console.warn('Cloud save error:', e); }
+    const { error } = await sb.from('app_state').upsert({ org:'americannatural', data: state, updated_at: new Date().toISOString() });
+    if (error) { console.error('Cloud save error:', error); showToast('Error al guardar en la nube: ' + error.message, 'error'); }
+  } catch(e) { console.error('Cloud save error:', e); showToast('Error al guardar en la nube', 'error'); }
 }
 
 const SESSION_KEY = 'an_session_v1';
@@ -1779,8 +1783,13 @@ async function doLogout() {
 }
 
 async function applySession() {
-  if (!sb) { _showLoginScreen(); return; }
+  // Show spinner while checking session (prevents login flash)
+  const ls = document.getElementById('login-screen');
+  ls.classList.remove('hidden');
+  ls.classList.add('loading');
+  if (!sb) { ls.classList.remove('loading'); _showLoginScreen(); return; }
   const { data } = await sb.auth.getSession();
+  ls.classList.remove('loading');
   if (data?.session?.user) {
     await syncFromCloud();
     _enterApp(_getUserProfile(data.session.user.email));
