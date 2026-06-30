@@ -1652,7 +1652,8 @@ function _mergeDefaultUsers(usersList) {
   return merged;
 }
 
-async function syncFromCloud() {
+let _pendingCloudData = null;
+async function syncFromCloud(force = false) {
   if (!sb) return;
   try {
     const { data, error } = await sb.from('app_state').select('data').eq('org','americannatural').single();
@@ -1664,9 +1665,20 @@ async function syncFromCloud() {
     const cloudSavedAt = cloudData._savedAt || 0;
     const localSavedAt = state._savedAt || 0;
     if (cloudSavedAt > localSavedAt) {
+      // Check if user is currently editing (modal open or dirty state)
+      const modalOpen = document.querySelector('.modal.open');
+      const dot = document.getElementById('save-dot');
+      const isDirty = dot && dot.classList.contains('dirty');
+      if (!force && (modalOpen || isDirty)) {
+        // Queue the update — apply when user finishes editing
+        _pendingCloudData = cloudData;
+        showToast('Hay cambios de otros usuarios. Se aplicarán al guardar. ☁️');
+        return;
+      }
       const def = defaultState();
       if (!cloudData.users) cloudData.users = def.users;
       state = cloudData;
+      _pendingCloudData = null;
       try {
         localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state)));
       } catch(e) { console.warn('localStorage lleno en sync:', e.message); }
@@ -1674,10 +1686,8 @@ async function syncFromCloud() {
       applyLoginScreenState();
       if (localSavedAt > 0) showToast('Datos sincronizados desde la nube ☁️');
     } else if (cloudSavedAt < localSavedAt) {
-      // Local is newer — push local state to cloud so other users get it
       saveToCloud();
     }
-    // Always ensure default admin users are present
     state.users = _mergeDefaultUsers(state.users);
   } catch(e) { console.warn('Cloud sync error:', e); }
 }
@@ -2063,6 +2073,10 @@ function persistState() {
     console.warn('localStorage lleno:', e.message);
   }
   saveToCloud();
+  // Apply any queued cloud updates now that user has saved
+  if (_pendingCloudData && (_pendingCloudData._savedAt || 0) > state._savedAt) {
+    setTimeout(() => syncFromCloud(true), 500);
+  }
   const dot = document.getElementById('save-dot');
   const lbl = document.getElementById('save-label');
   if (dot) dot.classList.remove('dirty');
