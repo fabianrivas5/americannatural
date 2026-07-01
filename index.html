@@ -645,6 +645,11 @@ tbody tr:hover{background:var(--accent-light)!important}
   <div class="sec">
     <div class="sec-hdr"><span class="sec-title">Productos y combos</span>
       <div class="sec-actions">
+        <span id="prod-sel-bar" style="display:none;align-items:center;gap:6px">
+          <span id="prod-sel-count" style="font-size:12px;color:var(--text2)"></span>
+          <button class="btn sm danger" onclick="deleteSelectedProducts()">Eliminar seleccionados</button>
+          <button class="btn sm" onclick="clearProductSelection()">Cancelar</button>
+        </span>
         <button class="btn sm primary" onclick="addProduct()">+ Producto</button>
         <button class="btn sm" onclick="loadDefaultProducts()">Cargar catálogo</button>
         <button class="btn sm danger" onclick="clearProducts()">Limpiar</button>
@@ -653,6 +658,7 @@ tbody tr:hover{background:var(--accent-light)!important}
     <div class="tbl-wrap">
       <table id="prod-table">
         <thead><tr>
+          <th style="width:28px;padding:4px"><input type="checkbox" id="prod-chk-all" title="Seleccionar todos" onchange="toggleAllProducts(this.checked)"></th>
           <th style="width:36px">Foto</th><th>Producto / Combo</th><th>Cant</th><th>Precio ($)*</th><th>Costo unit ($)</th>
           <th>% de tus ventas</th><th>Flete base ($)</th>
           <th>Flete c/seguro</th><th>Total costos</th>
@@ -1859,17 +1865,19 @@ async function doLogout() {
 }
 
 async function applySession() {
-  // Show spinner while checking session (prevents login flash)
+  // Keep login-screen visible with spinner until auth is fully confirmed — no premature login form flash
   const ls = document.getElementById('login-screen');
   ls.classList.remove('hidden');
   ls.classList.add('loading');
   if (!sb) { ls.classList.remove('loading'); _showLoginScreen(); return; }
   const { data } = await sb.auth.getSession();
-  ls.classList.remove('loading');
   if (data?.session?.user) {
-    await syncFromCloud(false, true); // pushOnNewer: sync bidirectionally on session restore
+    await syncFromCloud(false, true);
     _enterApp(_getUserProfile(data.session.user.email));
+    // login-screen is hidden by _enterApp — loading class is irrelevant after hide
   } else {
+    // Only remove loading (show login form) after confirming there is NO active session
+    ls.classList.remove('loading');
     _showLoginScreen();
   }
 }
@@ -2306,18 +2314,73 @@ function loadDefaultProducts() { state.products = defaultProducts(); renderProdu
 function clearProducts() { if(!confirm('¿Limpiar todos los productos?')) return; state.products = []; renderProducts(); recalc(); calcDirty(); }
 function addProduct() {
   state.products.push({ id: uid(), name:'Nuevo combo', qty:1, price:39.90, cost:3.50, mix:5, flete:4.50 });
-  renderProducts(); recalc(); calcDirty();
+  renderProducts(); recalc(); calcDirty(); persistState();
 }
-function removeProduct(id) { state.products = state.products.filter(p => p.id !== id); renderProducts(); recalc(); calcDirty(); }
+function removeProduct(id) { state.products = state.products.filter(p => p.id !== id); renderProducts(); recalc(); calcDirty(); persistState(); }
 function updateProduct(id, field, val) {
   const p = state.products.find(x => x.id === id);
   if (p) { p[field] = isNaN(+val) ? val : +val; recalc(); calcDirty(); }
+}
+
+let _selectedProducts = new Set();
+
+function _updateSelBar() {
+  const bar = document.getElementById('prod-sel-bar');
+  const cnt = document.getElementById('prod-sel-count');
+  const chkAll = document.getElementById('prod-chk-all');
+  if (!bar) return;
+  const n = _selectedProducts.size;
+  if (n > 0) {
+    bar.style.display = 'flex';
+    cnt.textContent = n + ' seleccionado' + (n > 1 ? 's' : '');
+  } else {
+    bar.style.display = 'none';
+  }
+  if (chkAll) chkAll.indeterminate = n > 0 && n < state.products.length;
+  if (chkAll) chkAll.checked = n > 0 && n === state.products.length;
+}
+
+function toggleProductSelect(id, checked) {
+  if (checked) _selectedProducts.add(id); else _selectedProducts.delete(id);
+  _updateSelBar();
+}
+
+function toggleAllProducts(checked) {
+  _selectedProducts = checked ? new Set(state.products.map(p => p.id)) : new Set();
+  // Update all row checkboxes
+  state.products.forEach(p => {
+    const el = document.getElementById('pchk-' + p.id);
+    if (el) el.checked = checked;
+  });
+  _updateSelBar();
+}
+
+function clearProductSelection() {
+  _selectedProducts = new Set();
+  state.products.forEach(p => {
+    const el = document.getElementById('pchk-' + p.id);
+    if (el) el.checked = false;
+  });
+  const chkAll = document.getElementById('prod-chk-all');
+  if (chkAll) { chkAll.checked = false; chkAll.indeterminate = false; }
+  _updateSelBar();
+}
+
+function deleteSelectedProducts() {
+  const n = _selectedProducts.size;
+  if (!n) return;
+  if (!confirm(`¿Eliminar ${n} producto${n > 1 ? 's' : ''} seleccionado${n > 1 ? 's' : ''}? Esta acción no se puede deshacer.`)) return;
+  state.products = state.products.filter(p => !_selectedProducts.has(p.id));
+  _selectedProducts = new Set();
+  renderProducts(); recalc(); calcDirty(); persistState();
+  showToast(n + ' producto' + (n > 1 ? 's' : '') + ' eliminado' + (n > 1 ? 's' : ''));
 }
 
 function renderProducts() {
   const tbody = document.getElementById('prod-body');
   tbody.innerHTML = state.products.map(p => `
     <tr>
+      <td style="padding:4px;text-align:center"><input type="checkbox" id="pchk-${p.id}" ${_selectedProducts.has(p.id)?'checked':''} onchange="toggleProductSelect('${p.id}',this.checked)"></td>
       <td style="text-align:center;padding:2px 4px">
         <div style="position:relative;display:inline-block;cursor:pointer" onclick="document.getElementById('prod-img-${p.id}').click()" title="Subir foto del producto">
           ${p.img
@@ -2361,10 +2424,11 @@ async function uploadProductImg(id, input) {
 function duplicateProduct(id) {
   const p = state.products.find(x => x.id === id);
   if (!p) return;
+  // Deep copy to avoid shared object references (img URL is a string, safe to share)
   const copy = { ...p, id: uid(), name: p.name + ' (copia)' };
   const idx = state.products.findIndex(x => x.id === id);
   state.products.splice(idx + 1, 0, copy);
-  renderProducts(); recalc(); calcDirty();
+  renderProducts(); recalc(); calcDirty(); persistState();
   showToast('Producto duplicado');
 }
 
@@ -2437,11 +2501,10 @@ function recalc() {
     { l:'Mix total', v:pct(mixSum,0), c:Math.abs(mixSum-100)<1?'ok':'bad' },
   ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-label">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
 
-  // persist params
+  // Update params in state (no cloud save here — saves happen via calcDirty + autosave or manual Guardar)
   const cpaModeEl = document.getElementById('p-cpa-mode');
   state.settings.params = { cancel:cancel*100, devol:devol*100, comis, mobj:mobj*100, cpaMode: cpaModeEl ? cpaModeEl.value : 'conservador' };
   state.pedidosMes = pedidos;
-  persistState();
 
   // update cascade on dashboard
   updateDashCascade(wPrice, wMv, wMd, wMe, wMop, wCpaO);
