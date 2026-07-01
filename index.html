@@ -1857,7 +1857,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // Keys where LOCAL is authoritative (deletions must stick — no union merge with cloud)
-const _LOCAL_AUTH_KEYS = ['products','costCaps','versions','adAccounts','pixels','landings','enfoques','team'];
+const _LOCAL_AUTH_KEYS = ['products','costCaps','versions','adAccounts','pixels','landings','enfoques','team','painPoints'];
 // Keys where we use union merge (multi-user append-only content)
 const _MERGE_LIST_KEYS = ['creativos','recursos','users'];
 // All array keys (for syncFromCloud score)
@@ -5463,7 +5463,7 @@ function onCrPixelChange() {
   const pixelId = (document.getElementById('cr-pixel')||{}).value||'';
   const sel = document.getElementById('cr-landing-sel');
   if (!sel) return;
-  const landings = (state.landings||[]).filter(l => l.status==='active' && (!pixelId || l.pixelId===pixelId));
+  const landings = (state.landings||[]).filter(l => !pixelId || !l.pixelId || l.pixelId===pixelId);
   sel.innerHTML = '<option value="">— Seleccionar landing —</option>' + landings.map(l=>`<option value="${l.id}" data-url="${l.url||''}">${l.name}</option>`).join('');
 }
 function onCrAdAccountChange() {
