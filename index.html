@@ -4973,14 +4973,15 @@ function saveCreativo() {
     decision:  sem.color,
     metrics,
   };
-  // Validate only when transitioning TO a new stage (not on re-saves within the same stage)
+  // Validate stage transition — if it fails, save with previous status so no data is lost
   const prevStatus = existing ? existing.status : 'idea';
+  let stageBlocked = false;
   if (cr.status !== prevStatus) {
     const v = validateStageTransition(cr, cr.status);
     if (!v.ok) {
-      const col = (KANBAN_COLS.find(x=>x.id===cr.status)||{}).label || cr.status;
-      alert(`No se puede mover a "${col}".\n\nFalta: ${v.missing.join(', ')}.`);
-      return;
+      stageBlocked = true;
+      cr.status = prevStatus; // revert status, keep all other data
+      showToast(`Datos guardados. Para pasar a esa etapa falta: ${v.missing.join(', ')}.`, 'error', 6000);
     }
   }
 
@@ -4989,7 +4990,7 @@ function saveCreativo() {
     if (idx>=0) state.creativos[idx]=cr; else state.creativos.push(cr);
   } else { state.creativos.push(cr); }
   closeModal('modal-creativo');
-  showToast('Creativo guardado');
+  if (!stageBlocked) showToast('Creativo guardado');
   renderKanban(); calcDirty(); persistState();
 }
 
