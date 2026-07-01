@@ -1482,9 +1482,10 @@ tbody tr:hover{background:var(--accent-light)!important}
         </div>
       </div>
       <div class="g3 mb10" style="border:1px solid var(--border);border-radius:var(--r);padding:10px;background:var(--surface2)">
-        <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">🔗 IDs Meta Ads Manager</div>
+        <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:2px">🔗 IDs Meta Ads Manager</div>
+        <div style="grid-column:1/-1;font-size:10px;color:var(--text3);margin-bottom:6px">Obtén el Ad ID en <b>Ads Manager → columna "ID del anuncio"</b>. No es el ID del post de Facebook.</div>
         <div class="field"><label>Ad ID <span style="font-size:9px;color:var(--text3)">(obligatorio para sync)</span></label>
-          <input id="cr-meta-ad-id" placeholder="52605273395436" oninput="calcDirty()">
+          <input id="cr-meta-ad-id" placeholder="120213xxxxxxxxxx" oninput="calcDirty()">
         </div>
         <div class="field"><label>Campaign ID <span style="font-size:9px;color:var(--text3)">(opcional)</span></label>
           <input id="cr-meta-campaign-id" placeholder="ID de campaña" oninput="calcDirty()">
@@ -4581,7 +4582,12 @@ async function syncMetaMetrics() {
     const json = await res.json();
 
     if (!res.ok) {
-      const msg = json?.error || `Error ${res.status}`;
+      let msg = json?.error || `Error ${res.status}`;
+      if (msg.includes('Ad ID inválido') || msg.includes('not found')) {
+        msg = 'Ad ID no encontrado. Ve a Ads Manager → columna "ID del anuncio" y copia el número correcto.';
+      } else if (msg.includes('ads_read') || msg.includes('permiso')) {
+        msg = 'Sin permiso. El token necesita acceso a la cuenta publicitaria que tiene este anuncio.';
+      }
       statusEl.textContent = '✗ ' + msg;
       statusEl.style.color = 'var(--danger)';
       showToast('Error Meta: ' + msg, 'error');
@@ -4880,17 +4886,14 @@ function saveCreativo() {
     decision:  sem.color,
     metrics,
   };
-  // Validate restricted stage transitions
-  const restrictedStages = ['listo','testeo','validado','escalando'];
-  if (restrictedStages.includes(cr.status)) {
-    const prevStatus = existing ? existing.status : 'idea';
-    if (cr.status !== prevStatus || restrictedStages.includes(cr.status)) {
-      const v = validateStageTransition(cr, cr.status);
-      if (!v.ok) {
-        const col = (KANBAN_COLS.find(x=>x.id===cr.status)||{}).label || cr.status;
-        alert(`No se puede guardar en etapa "${col}".\n\nFalta: ${v.missing.join(', ')}.`);
-        return;
-      }
+  // Validate only when transitioning TO a new stage (not on re-saves within the same stage)
+  const prevStatus = existing ? existing.status : 'idea';
+  if (cr.status !== prevStatus) {
+    const v = validateStageTransition(cr, cr.status);
+    if (!v.ok) {
+      const col = (KANBAN_COLS.find(x=>x.id===cr.status)||{}).label || cr.status;
+      alert(`No se puede mover a "${col}".\n\nFalta: ${v.missing.join(', ')}.`);
+      return;
     }
   }
 
