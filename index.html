@@ -1660,8 +1660,7 @@ function _mergeDefaultUsers(usersList) {
 
 let _pendingCloudData = null;
 function _dataScore(s) {
-  // Count meaningful data items — excludes versions/snapshots which are housekeeping, not real data
-  const SCORE_KEYS = ['creativos','products','costCaps','adAccounts','pixels','landings','recursos','enfoques','team'];
+  const SCORE_KEYS = ['creativos','products','recursos','adAccounts','pixels','landings'];
   return SCORE_KEYS.reduce((n, k) => n + (Array.isArray(s[k]) ? s[k].length : 0), 0);
 }
 
@@ -1696,8 +1695,13 @@ async function syncFromCloud(force = false, pushOnNewer = false) {
       }
       const def = defaultState();
       if (!cloudData.users) cloudData.users = def.users;
+      // Union merge only for append-only keys (creativos, recursos, users)
       for (const key of _MERGE_LIST_KEYS) {
         cloudData[key] = _mergeArraysById(state[key], cloudData[key]);
+      }
+      // Local-auth keys: local wins — preserve local deletions even when cloud is "newer"
+      for (const key of _LOCAL_AUTH_KEYS) {
+        if (Array.isArray(state[key]) && state[key].length > 0) cloudData[key] = state[key];
       }
       if (!force && _dataScore(cloudData) < _dataScore(state)) {
         console.warn('syncFromCloud: merged cloud has less data — keeping local, pushing to cloud');
@@ -1729,7 +1733,12 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-const _MERGE_LIST_KEYS = ['creativos','products','costCaps','versions','adAccounts','pixels','landings','recursos','enfoques','team','users'];
+// Keys where LOCAL is authoritative (deletions must stick — no union merge with cloud)
+const _LOCAL_AUTH_KEYS = ['products','costCaps','versions','adAccounts','pixels','landings','enfoques','team'];
+// Keys where we use union merge (multi-user append-only content)
+const _MERGE_LIST_KEYS = ['creativos','recursos','users'];
+// All array keys (for syncFromCloud score)
+const _ALL_ARRAY_KEYS = [..._LOCAL_AUTH_KEYS, ..._MERGE_LIST_KEYS];
 
 function _mergeArraysById(localArr, cloudArr) {
   localArr = Array.isArray(localArr) ? localArr : [];
@@ -1746,12 +1755,14 @@ async function saveToCloud() {
   if (_savingToCloud) return false;
   _savingToCloud = true;
   try {
-    // Fetch latest cloud data first to merge instead of overwrite
+    // Fetch cloud first to merge append-only keys; local-auth keys are taken as-is (deletions stick)
     const { data: cur } = await sb.from('app_state').select('data').eq('org','americannatural').single();
     const cloudData = cur?.data || {};
+    // Union merge only for multi-user append-only arrays (creativos, recursos, users)
     for (const key of _MERGE_LIST_KEYS) {
       state[key] = _mergeArraysById(state[key], cloudData[key]);
     }
+    // Local-auth keys: local wins completely — no merge, deletions respected
     // Only set _savedAt now — after merge, before write — so it accurately reflects what's being saved
     const savedAt = Date.now();
     const stateToSave = { ..._stripBlobs(state), _savedAt: savedAt };
@@ -2376,11 +2387,38 @@ function deleteSelectedProducts() {
   showToast(n + ' producto' + (n > 1 ? 's' : '') + ' eliminado' + (n > 1 ? 's' : ''));
 }
 
+let _dragSrcId = null;
+
+function _initProductDrag(tbody) {
+  tbody.querySelectorAll('tr[data-pid]').forEach(row => {
+    row.addEventListener('dragstart', e => {
+      _dragSrcId = row.dataset.pid;
+      row.style.opacity = '0.4';
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    row.addEventListener('dragend', () => { row.style.opacity = ''; });
+    row.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; row.style.outline = '2px solid var(--accent)'; });
+    row.addEventListener('dragleave', () => { row.style.outline = ''; });
+    row.addEventListener('drop', e => {
+      e.preventDefault(); row.style.outline = '';
+      const targetId = row.dataset.pid;
+      if (!_dragSrcId || _dragSrcId === targetId) return;
+      const from = state.products.findIndex(p => p.id === _dragSrcId);
+      const to   = state.products.findIndex(p => p.id === targetId);
+      if (from < 0 || to < 0) return;
+      const [item] = state.products.splice(from, 1);
+      state.products.splice(to, 0, item);
+      renderProducts(); recalc(); calcDirty(); persistState();
+    });
+  });
+}
+
 function renderProducts() {
   const tbody = document.getElementById('prod-body');
   tbody.innerHTML = state.products.map(p => `
-    <tr>
+    <tr draggable="true" data-pid="${p.id}">
       <td style="padding:4px;text-align:center"><input type="checkbox" id="pchk-${p.id}" ${_selectedProducts.has(p.id)?'checked':''} onchange="toggleProductSelect('${p.id}',this.checked)"></td>
+      <td style="text-align:center;padding:2px 4px;cursor:grab" title="Arrastrar para reordenar">⠿</td>
       <td style="text-align:center;padding:2px 4px">
         <div style="position:relative;display:inline-block;cursor:pointer" onclick="document.getElementById('prod-img-${p.id}').click()" title="Subir foto del producto">
           ${p.img
@@ -2410,6 +2448,7 @@ function renderProducts() {
         <button class="btn sm danger" onclick="removeProduct('${p.id}')">✕</button>
       </td>
     </tr>`).join('');
+  _initProductDrag(tbody);
 }
 
 async function uploadProductImg(id, input) {
