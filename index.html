@@ -1653,8 +1653,20 @@ function _mergeDefaultUsers(usersList) {
 }
 
 let _pendingCloudData = null;
+function _dataScore(s) {
+  // Count total meaningful items — used to avoid replacing rich local state with empty cloud data
+  return _MERGE_LIST_KEYS.reduce((n, k) => n + (Array.isArray(s[k]) ? s[k].length : 0), 0);
+}
+
+let _lastSyncAt = 0;
 async function syncFromCloud(force = false) {
   if (!sb) return;
+  // Rate-limit: don't sync more than once every 10 seconds unless forced
+  const now = Date.now();
+  if (!force && now - _lastSyncAt < 10000) return;
+  // Don't sync while user is actively typing in any input
+  if (!force && document.activeElement && ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
+  _lastSyncAt = now;
   try {
     const { data, error } = await sb.from('app_state').select('data').eq('org','americannatural').single();
     if (error || !data?.data || Object.keys(data.data).length === 0) {
@@ -1680,6 +1692,12 @@ async function syncFromCloud(force = false) {
       // Always merge arrays (union) — never wholesale-replace to avoid losing local data
       for (const key of _MERGE_LIST_KEYS) {
         cloudData[key] = _mergeArraysById(state[key], cloudData[key]);
+      }
+      // Safety: if cloud (after merge) has fewer total items than local, keep local
+      if (!force && _dataScore(cloudData) < _dataScore(state)) {
+        console.warn('syncFromCloud: cloud has less data than local — skipping replace, pushing local to cloud');
+        saveToCloud();
+        return;
       }
       state = cloudData;
       _pendingCloudData = null;
@@ -2089,7 +2107,25 @@ function _stripBlobs(obj) {
   return obj;
 }
 
+function _autoSnapshot() {
+  try {
+    const snap = {
+      id: 'auto_' + Date.now(),
+      name: 'Auto ' + new Date().toLocaleString('es', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }),
+      snapshot: JSON.stringify(_stripBlobs(state)),
+      ts: Date.now(),
+      auto: true
+    };
+    if (!Array.isArray(state.versions)) state.versions = [];
+    // Keep only last 5 auto-snapshots + all manual ones
+    const manuals = state.versions.filter(v => !v.auto);
+    const autos = state.versions.filter(v => v.auto).slice(-4);
+    state.versions = [...manuals, ...autos, snap];
+  } catch(e) { console.warn('Auto-snapshot failed:', e); }
+}
+
 async function persistState() {
+  _autoSnapshot();
   state._savedAt = Date.now();
   try {
     localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state)));
