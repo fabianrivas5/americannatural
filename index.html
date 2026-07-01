@@ -831,7 +831,17 @@ tbody tr:hover{background:var(--accent-light)!important}
   <div class="sec">
     <div class="sec-hdr">
       <span class="sec-title">Performance por creativo</span>
-      <div class="sec-actions">
+      <div class="sec-actions" style="gap:6px;flex-wrap:wrap">
+        <select id="sync-all-range" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text)">
+          <option value="today">Hoy</option>
+          <option value="yesterday">Ayer</option>
+          <option value="last_3d">Últimos 3 días</option>
+          <option value="last_7_days" selected>Últimos 7 días</option>
+          <option value="last_30_days">Últimos 30 días</option>
+          <option value="maximum">Desde lanzamiento</option>
+        </select>
+        <button id="sync-all-btn" onclick="syncAllMetrics()" style="font-size:12px;padding:4px 10px;border-radius:var(--r);border:1px solid var(--accent);background:var(--accent-light);color:var(--accent);cursor:pointer;font-weight:600;white-space:nowrap">↻ Sync All Meta</button>
+        <span id="sync-all-status" style="font-size:11px;color:var(--text3);align-self:center"></span>
         <select id="cr-sort" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text)" onchange="renderCreativosTable()">
           <option value="cpa">Ordenar: Mejor CPA</option>
           <option value="cpa_desc">Ordenar: Peor CPA</option>
@@ -3615,7 +3625,6 @@ function validateStageTransition(c, toStatus) {
   }
 
   if (toStatus === 'testeo') {
-    if (!m.presup || m.presup <= 0) missing.push('presupuesto planificado');
     if (!c.adAccount)  missing.push('cuenta publicitaria');
     if (!c.pixelId)    missing.push('pixel');
     if (!c.landing && !c.landingId) missing.push('landing o URL landing');
@@ -4552,6 +4561,84 @@ function getTrafficCpaTargets(productName) {
 
   const t = getProductCpaTargets(productName);
   return { ...t, cpaSeguro: t.cpaObj, mode };
+}
+
+async function syncAllMetrics() {
+  const dateRange = document.getElementById('sync-all-range').value || 'last_7_days';
+  const btn = document.getElementById('sync-all-btn');
+  const statusEl = document.getElementById('sync-all-status');
+
+  const targets = state.creativos.filter(c => c.metaAdId && c.metaAdId.trim());
+  if (!targets.length) { showToast('Ningún creativo tiene Ad ID configurado', 'error'); return; }
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { showToast('Sesión expirada', 'error'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Sincronizando…';
+  statusEl.textContent = '';
+
+  let ok = 0, fail = 0;
+
+  for (const cr of targets) {
+    statusEl.textContent = `${ok + fail + 1}/${targets.length} — ${cr.name}`;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/meta-sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ adId: cr.metaAdId.trim(), dateRange })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.metrics) { fail++; continue; }
+
+      const m = json.metrics;
+      const idx = state.creativos.findIndex(c => c.id === cr.id);
+      if (idx === -1) { fail++; continue; }
+
+      const metrics = state.creativos[idx].metrics || {};
+      if (m.spend        != null) metrics.presup          = m.spend;
+      if (m.impressions  != null) metrics.impresiones      = m.impressions;
+      if (m.reach        != null) metrics.alcance          = m.reach;
+      if (m.frequency    != null) metrics.frecuencia       = m.frequency;
+      if (m.clicks       != null) metrics.clicks           = m.clicks;
+      if (m.cpm          != null) metrics.cpm              = m.cpm;
+      if (m.cpc          != null) metrics.cpc              = m.cpc;
+      if (m.cpcEnlace    != null) metrics.cpcEnlace        = m.cpcEnlace;
+      if (m.ctr          != null) metrics.ctr              = m.ctr;
+      if (m.ctrUnico     != null) metrics.ctrUnico         = m.ctrUnico;
+      if (m.ctrEnlace    != null) metrics.ctrEnlace        = m.ctrEnlace;
+      if (m.addToCart    != null) metrics.leads            = m.addToCart;
+      if (m.purchases    != null) metrics.ventas           = m.purchases;
+      if (m.costPerPurchase != null) metrics.cpa           = m.costPerPurchase;
+      if (m.mensajes     != null) metrics.mensajes         = m.mensajes;
+      if (m.resultados   != null) metrics.resultados       = m.resultados;
+      if (m.costoResultado != null) metrics.costoResultado = m.costoResultado;
+      if (m.objetivo)             metrics.objetivoCampana  = m.objetivo;
+      if (m.fechaLanzamiento)     metrics.fechaMetaLanzamiento = m.fechaLanzamiento;
+      state.creativos[idx].metrics = metrics;
+
+      if (!Array.isArray(state.creativos[idx].metaSyncHistory)) state.creativos[idx].metaSyncHistory = [];
+      state.creativos[idx].metaSyncHistory.push({ ts: Date.now(), range: dateRange, metrics: m });
+      if (state.creativos[idx].metaSyncHistory.length > 20)
+        state.creativos[idx].metaSyncHistory = state.creativos[idx].metaSyncHistory.slice(-20);
+
+      ok++;
+    } catch (_) { fail++; }
+  }
+
+  btn.disabled = false;
+  btn.textContent = '↻ Sync All Meta';
+  statusEl.textContent = `✓ ${ok} ok${fail ? ` · ${fail} sin datos` : ''}`;
+  statusEl.style.color = fail ? 'var(--warn)' : 'var(--success)';
+
+  if (ok > 0) {
+    renderCreativosTable();
+    calcDirty();
+    persistState();
+    showToast(`Sync completado: ${ok} creativo(s) actualizados`, 'success');
+  } else {
+    showToast('Sin datos disponibles aún — espera que los anuncios generen impresiones', 'error');
+  }
 }
 
 async function syncMetaMetrics() {
