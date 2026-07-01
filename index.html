@@ -1699,9 +1699,10 @@ async function syncFromCloud(force = false, pushOnNewer = false) {
       }
       const def = defaultState();
       if (!cloudData.users) cloudData.users = def.users;
-      // Union merge only for append-only keys (creativos, recursos, users)
+      // Merge multi-user arrays: cloud wins for existing items (editor's status change propagates to admin)
       for (const key of _MERGE_LIST_KEYS) {
-        cloudData[key] = _mergeArraysById(state[key], cloudData[key]);
+        const cw = _CLOUD_WINS_KEYS.includes(key);
+        cloudData[key] = _mergeArraysById(state[key], cloudData[key], cw);
       }
       // Local-auth keys: local wins — preserve local deletions even when cloud is "newer"
       for (const key of _LOCAL_AUTH_KEYS) {
@@ -1744,14 +1745,25 @@ const _MERGE_LIST_KEYS = ['creativos','recursos','users'];
 // All array keys (for syncFromCloud score)
 const _ALL_ARRAY_KEYS = [..._LOCAL_AUTH_KEYS, ..._MERGE_LIST_KEYS];
 
-function _mergeArraysById(localArr, cloudArr) {
+// cloudWins=true: cloud wins for existing items (use for multi-user content like creativos)
+// cloudWins=false: local wins for existing items (use for new items added locally before sync)
+function _mergeArraysById(localArr, cloudArr, cloudWins = false) {
   localArr = Array.isArray(localArr) ? localArr : [];
   cloudArr = Array.isArray(cloudArr) ? cloudArr : [];
   const map = new Map();
-  for (const item of cloudArr) if (item && item.id != null) map.set(item.id, item);
-  for (const item of localArr) if (item && item.id != null) map.set(item.id, item); // local wins on conflict, union keeps all
+  if (cloudWins) {
+    // Local first, then cloud overwrites — cloud wins on conflict, local-only new items preserved
+    for (const item of localArr) if (item && item.id != null) map.set(item.id, item);
+    for (const item of cloudArr) if (item && item.id != null) map.set(item.id, item);
+  } else {
+    // Cloud first, then local overwrites — local wins on conflict (for append-only local adds)
+    for (const item of cloudArr) if (item && item.id != null) map.set(item.id, item);
+    for (const item of localArr) if (item && item.id != null) map.set(item.id, item);
+  }
   return Array.from(map.values());
 }
+// Keys where cloud wins on conflict (multi-user editable content)
+const _CLOUD_WINS_KEYS = ['creativos','recursos'];
 
 let _savingToCloud = false;
 async function saveToCloud() {
@@ -1762,9 +1774,10 @@ async function saveToCloud() {
     // Fetch cloud first to merge append-only keys; local-auth keys are taken as-is (deletions stick)
     const { data: cur } = await sb.from('app_state').select('data').eq('org','americannatural').single();
     const cloudData = cur?.data || {};
-    // Union merge only for multi-user append-only arrays (creativos, recursos, users)
+    // Merge multi-user arrays: cloud wins for existing items (latest edit wins), union for new items
     for (const key of _MERGE_LIST_KEYS) {
-      state[key] = _mergeArraysById(state[key], cloudData[key]);
+      const cw = _CLOUD_WINS_KEYS.includes(key);
+      state[key] = _mergeArraysById(state[key], cloudData[key], cw);
     }
     // Local-auth keys: local wins completely — no merge, deletions respected
     // Only set _savedAt now — after merge, before write — so it accurately reflects what's being saved
