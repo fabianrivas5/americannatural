@@ -1654,60 +1654,59 @@ function _mergeDefaultUsers(usersList) {
 
 let _pendingCloudData = null;
 function _dataScore(s) {
-  // Count total meaningful items — used to avoid replacing rich local state with empty cloud data
-  return _MERGE_LIST_KEYS.reduce((n, k) => n + (Array.isArray(s[k]) ? s[k].length : 0), 0);
+  // Count meaningful data items — excludes versions/snapshots which are housekeeping, not real data
+  const SCORE_KEYS = ['creativos','products','costCaps','adAccounts','pixels','landings','recursos','enfoques','team'];
+  return SCORE_KEYS.reduce((n, k) => n + (Array.isArray(s[k]) ? s[k].length : 0), 0);
 }
 
 let _lastSyncAt = 0;
-async function syncFromCloud(force = false) {
+// pushOnNewer: true only on login/session-restore — not on tab-switch (to avoid save loops)
+async function syncFromCloud(force = false, pushOnNewer = false) {
   if (!sb) return;
-  // Rate-limit: don't sync more than once every 10 seconds unless forced
   const now = Date.now();
   if (!force && now - _lastSyncAt < 10000) return;
-  // Don't sync while user is actively typing in any input
   if (!force && document.activeElement && ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
   _lastSyncAt = now;
   try {
     const { data, error } = await sb.from('app_state').select('data').eq('org','americannatural').single();
     if (error || !data?.data || Object.keys(data.data).length === 0) {
       state.users = _mergeDefaultUsers(state.users);
+      // No cloud data at all — push local state to initialize cloud
+      if (!error && pushOnNewer && (state._savedAt || 0) > 0) saveToCloud();
       return;
     }
     const cloudData = data.data;
     const cloudSavedAt = cloudData._savedAt || 0;
     const localSavedAt = state._savedAt || 0;
+
     if (cloudSavedAt > localSavedAt) {
-      // Check if user is currently editing (modal open or dirty state)
       const modalOpen = document.querySelector('.modal.open');
       const dot = document.getElementById('save-dot');
       const isDirty = dot && dot.classList.contains('dirty');
       if (!force && (modalOpen || isDirty)) {
-        // Queue the update — apply when user finishes editing
         _pendingCloudData = cloudData;
         showToast('Hay cambios de otros usuarios. Se aplicarán al guardar. ☁️');
         return;
       }
       const def = defaultState();
       if (!cloudData.users) cloudData.users = def.users;
-      // Always merge arrays (union) — never wholesale-replace to avoid losing local data
       for (const key of _MERGE_LIST_KEYS) {
         cloudData[key] = _mergeArraysById(state[key], cloudData[key]);
       }
-      // Safety: if cloud (after merge) has fewer total items than local, keep local
       if (!force && _dataScore(cloudData) < _dataScore(state)) {
-        console.warn('syncFromCloud: cloud has less data than local — skipping replace, pushing local to cloud');
-        saveToCloud();
+        console.warn('syncFromCloud: merged cloud has less data — keeping local, pushing to cloud');
+        if (pushOnNewer) saveToCloud();
         return;
       }
       state = cloudData;
       _pendingCloudData = null;
-      try {
-        localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state)));
-      } catch(e) { console.warn('localStorage lleno en sync:', e.message); }
+      try { localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state))); } catch(e) {}
       init();
       applyLoginScreenState();
       if (localSavedAt > 0) showToast('Datos sincronizados desde la nube ☁️');
-    } else if (cloudSavedAt < localSavedAt) {
+
+    } else if (cloudSavedAt < localSavedAt && pushOnNewer) {
+      // Only push to cloud when explicitly asked (login/session restore), not on tab-switch
       saveToCloud();
     }
     state.users = _mergeDefaultUsers(state.users);
@@ -1738,7 +1737,7 @@ function _mergeArraysById(localArr, cloudArr) {
 let _savingToCloud = false;
 async function saveToCloud() {
   if (!sb) return false;
-  if (_savingToCloud) return false; // caller should retry; do not report success
+  if (_savingToCloud) return false;
   _savingToCloud = true;
   try {
     // Fetch latest cloud data first to merge instead of overwrite
@@ -1747,11 +1746,23 @@ async function saveToCloud() {
     for (const key of _MERGE_LIST_KEYS) {
       state[key] = _mergeArraysById(state[key], cloudData[key]);
     }
-    state._savedAt = Date.now();
-    const payload = { org:'americannatural', data: _stripBlobs(state), updated_at: new Date().toISOString() };
+    // Only set _savedAt now — after merge, before write — so it accurately reflects what's being saved
+    const savedAt = Date.now();
+    const stateToSave = { ..._stripBlobs(state), _savedAt: savedAt };
+    // Guard: trim auto-snapshots from cloud payload if too large (>400KB) to prevent timeouts
+    let versionsForCloud = (stateToSave.versions || []);
+    const roughSize = JSON.stringify(stateToSave).length;
+    if (roughSize > 400000) {
+      versionsForCloud = versionsForCloud.filter(v => !v.auto).slice(-3); // only manual, max 3
+      stateToSave.versions = versionsForCloud;
+      console.warn('Cloud payload too large (' + Math.round(roughSize/1024) + 'KB) — trimmed auto-snapshots');
+    }
+    const payload = { org:'americannatural', data: stateToSave, updated_at: new Date().toISOString() };
     const { error } = await sb.from('app_state').upsert(payload, { onConflict: 'org' });
     if (error) { console.error('Cloud save error:', error); showToast('Error al guardar: ' + error.message, 'error'); return false; }
-    console.log('Cloud saved ok. creativos:', (state.creativos||[]).length);
+    // Commit _savedAt to state only after confirmed save
+    state._savedAt = savedAt;
+    console.log('Cloud saved ok. creativos:', (state.creativos||[]).length, '| payload:', Math.round(roughSize/1024) + 'KB');
     try { localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state))); } catch(e) {}
     return true;
   } catch(e) { console.error('Cloud save error:', e); showToast('Error al guardar en la nube', 'error'); return false; }
@@ -1828,7 +1839,7 @@ async function doLogin() {
     if (!sb) throw new Error('Sin conexión');
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
     if (error) throw error;
-    await syncFromCloud();
+    await syncFromCloud(false, true); // pushOnNewer: sync bidirectionally on login
     _enterApp(_getUserProfile(data.user.email));
   } catch(err) {
     errEl.textContent = err.message === 'Invalid login credentials'
@@ -1856,7 +1867,7 @@ async function applySession() {
   const { data } = await sb.auth.getSession();
   ls.classList.remove('loading');
   if (data?.session?.user) {
-    await syncFromCloud();
+    await syncFromCloud(false, true); // pushOnNewer: sync bidirectionally on session restore
     _enterApp(_getUserProfile(data.session.user.email));
   } else {
     _showLoginScreen();
@@ -1896,7 +1907,7 @@ async function doUpdatePassword() {
     setTimeout(async () => {
       const { data } = await sb.auth.getSession();
       if (data?.session?.user) {
-        await syncFromCloud();
+        await syncFromCloud(false, true);
         _enterApp(_getUserProfile(data.session.user.email));
       } else { showLoginForm(); }
     }, 1500);
@@ -2109,24 +2120,25 @@ function _stripBlobs(obj) {
 
 function _autoSnapshot() {
   try {
+    if (!Array.isArray(state.versions)) state.versions = [];
+    // Snapshot the state WITHOUT versions to prevent exponential payload growth
+    const { versions: _v, ...stateWithoutVersions } = state;
     const snap = {
       id: 'auto_' + Date.now(),
       name: 'Auto ' + new Date().toLocaleString('es', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }),
-      snapshot: JSON.stringify(_stripBlobs(state)),
+      snapshot: JSON.stringify(_stripBlobs(stateWithoutVersions)),
       ts: Date.now(),
       auto: true
     };
-    if (!Array.isArray(state.versions)) state.versions = [];
-    // Keep only last 5 auto-snapshots + all manual ones
     const manuals = state.versions.filter(v => !v.auto);
-    const autos = state.versions.filter(v => v.auto).slice(-4);
+    const autos = state.versions.filter(v => v.auto).slice(-4); // keep last 4 auto + new = 5 total
     state.versions = [...manuals, ...autos, snap];
   } catch(e) { console.warn('Auto-snapshot failed:', e); }
 }
 
 async function persistState() {
   _autoSnapshot();
-  state._savedAt = Date.now();
+  // Do NOT set _savedAt here — only set it after confirmed cloud save to avoid false "local is newer"
   try {
     localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state)));
   } catch(e) {
@@ -2134,14 +2146,9 @@ async function persistState() {
   }
   const lbl = document.getElementById('save-label');
   if (lbl) lbl.textContent = 'Guardando…';
-  const ok = await saveToCloud();
-  // Apply any queued cloud updates now that user has saved
-  if (ok && _pendingCloudData && (_pendingCloudData._savedAt || 0) > state._savedAt) {
-    setTimeout(() => syncFromCloud(true), 500);
-  }
+  const ok = await saveToCloud(); // saveToCloud sets state._savedAt only on success
   const dot = document.getElementById('save-dot');
   if (!ok) {
-    // Keep dirty indicator — do not claim it was saved when it wasn't
     if (lbl) lbl.textContent = 'Error al guardar';
     return false;
   }
@@ -2149,6 +2156,10 @@ async function persistState() {
   if (lbl) {
     const now = new Date();
     lbl.textContent = `Guardado ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  }
+  // Only apply pending cloud changes if they are from AFTER our successful save
+  if (_pendingCloudData && (_pendingCloudData._savedAt || 0) > (state._savedAt || 0)) {
+    _pendingCloudData = null; // discard stale pending — our save was the latest
   }
   return true;
 }
