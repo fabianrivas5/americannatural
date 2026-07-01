@@ -1481,11 +1481,39 @@ tbody tr:hover{background:var(--accent-light)!important}
           <span class="hint">Link del post/anuncio ya publicado en Facebook, TikTok u otra plataforma. Requerido para iniciar testeo.</span>
         </div>
       </div>
+      <div class="g3 mb10" style="border:1px solid var(--border);border-radius:var(--r);padding:10px;background:var(--surface2)">
+        <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">🔗 IDs Meta Ads Manager</div>
+        <div class="field"><label>Ad ID <span style="font-size:9px;color:var(--text3)">(obligatorio para sync)</span></label>
+          <input id="cr-meta-ad-id" placeholder="52605273395436" oninput="calcDirty()">
+        </div>
+        <div class="field"><label>Campaign ID <span style="font-size:9px;color:var(--text3)">(opcional)</span></label>
+          <input id="cr-meta-campaign-id" placeholder="ID de campaña" oninput="calcDirty()">
+        </div>
+        <div class="field"><label>Adset ID <span style="font-size:9px;color:var(--text3)">(opcional)</span></label>
+          <input id="cr-meta-adset-id" placeholder="ID de adset" oninput="calcDirty()">
+        </div>
+      </div>
     </div>
 
     <!-- ═══ s-metrics: Listo, Testeo, Revisión, Validado, Escalando, Rechazado ═══ -->
     <div class="stage-sec" data-sec="s-metrics">
-      <div class="msec-title">📊 Métricas</div>
+      <div class="msec-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>📊 Métricas</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="cr-meta-date-range" style="font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid var(--border)">
+            <option value="today">Hoy</option>
+            <option value="yesterday">Ayer</option>
+            <option value="last_3d">Últimos 3 días</option>
+            <option value="last_7_days" selected>Últimos 7 días</option>
+            <option value="last_30_days">Últimos 30 días</option>
+            <option value="since_launch">Desde lanzamiento</option>
+          </select>
+          <button class="btn sm" id="cr-meta-sync-btn" onclick="syncMetaMetrics()" style="font-size:11px;white-space:nowrap" title="Sincronizar desde Meta Ads Manager">
+            ↻ Meta
+          </button>
+        </div>
+      </div>
+      <div id="cr-meta-sync-status" style="font-size:11px;color:var(--text3);margin:-4px 0 8px;min-height:16px"></div>
       <div class="g4 mb8" style="background:var(--surface2);border-radius:var(--r);padding:10px">
         <div class="field"><label id="presup-label">Presupuesto / Gasto ($)</label><input type="number" id="cr-presup" step=".01" value="0" oninput="calcCreativoProfit()"></div>
         <div class="field"><label>Impresiones</label><input type="number" id="cr-impresiones" value="0"></div>
@@ -4387,6 +4415,10 @@ function openCreativoModal(id) {
     sv('cr-fecha-limite', c.fechaLimite||'');
     sv('cr-fecha-entrega-real', c.fechaEntregaReal||'');
     sv('cr-launch-date', c.launchDate); sv('cr-publico', c.publico);
+    sv('cr-meta-ad-id', c.metaAdId||''); sv('cr-meta-campaign-id', c.metaCampaignId||''); sv('cr-meta-adset-id', c.metaAdsetId||'');
+    const lastSync = c.metaSyncHistory?.[c.metaSyncHistory.length-1];
+    const statusEl = document.getElementById('cr-meta-sync-status');
+    if (statusEl) statusEl.textContent = lastSync ? `Última sync: ${new Date(lastSync.ts).toLocaleString('es')} · ${lastSync.range}` : '';
     sv('cr-comments', c.comments); sv('cr-resp-testeo', c.respTesteo);
     sv('cr-landing', c.landing); sv('cr-guion', c.guion);
     sv('cr-tipo-solicitud', c.tipoSolicitud||'Nuevo creativo');
@@ -4501,6 +4533,84 @@ function getTrafficCpaTargets(productName) {
 
   const t = getProductCpaTargets(productName);
   return { ...t, cpaSeguro: t.cpaObj, mode };
+}
+
+async function syncMetaMetrics() {
+  const adId = document.getElementById('cr-meta-ad-id').value.trim();
+  if (!adId) { showToast('Ingresa un Ad ID primero', 'error'); return; }
+
+  const dateRange = document.getElementById('cr-meta-date-range').value || 'last_7_days';
+  const statusEl  = document.getElementById('cr-meta-sync-status');
+  const btn       = document.getElementById('cr-meta-sync-btn');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Sincronizando…';
+  statusEl.textContent = '';
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { showToast('Sesión expirada, inicia sesión de nuevo', 'error'); return; }
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/meta-sync`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ adId, dateRange })
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      const msg = json?.error || `Error ${res.status}`;
+      statusEl.textContent = '✗ ' + msg;
+      statusEl.style.color = 'var(--danger)';
+      showToast('Error Meta: ' + msg, 'error');
+      return;
+    }
+
+    const m = json.metrics;
+
+    // Mapear campos de métricas al formulario
+    if (m.spend       != null) document.getElementById('cr-presup').value      = m.spend.toFixed(2);
+    if (m.impressions != null) document.getElementById('cr-impresiones').value = m.impressions;
+    if (m.clicks      != null) document.getElementById('cr-clics').value        = m.clicks;
+    if (m.cpm         != null) document.getElementById('cr-cpm').value          = m.cpm.toFixed(2);
+    if (m.ctr         != null) document.getElementById('cr-ctr').value          = m.ctr.toFixed(2);
+    if (m.addToCart   != null) document.getElementById('cr-add-cart').value     = m.addToCart;
+    if (m.initCheckout!= null) document.getElementById('cr-init-checkout').value= m.initCheckout;
+    if (m.purchases   != null) document.getElementById('cr-compras').value      = m.purchases;
+    if (m.costPerPurchase != null) document.getElementById('cr-cpa').value      = m.costPerPurchase.toFixed(2);
+
+    // Guardar en historial del creativo
+    const crId = document.getElementById('cr-id')?.value;
+    if (crId) {
+      const idx = state.creativos.findIndex(c => c.id == crId);
+      if (idx !== -1) {
+        if (!Array.isArray(state.creativos[idx].metaSyncHistory)) state.creativos[idx].metaSyncHistory = [];
+        state.creativos[idx].metaSyncHistory.push({ ts: Date.now(), dateRange, metrics: m });
+        // Limitar historial a las últimas 20 entradas
+        if (state.creativos[idx].metaSyncHistory.length > 20)
+          state.creativos[idx].metaSyncHistory = state.creativos[idx].metaSyncHistory.slice(-20);
+      }
+    }
+
+    statusEl.textContent = `✓ Sync ${new Date().toLocaleString('es', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}`;
+    statusEl.style.color = 'var(--success)';
+    showToast('Métricas Meta importadas', 'success');
+
+    calcCreativoProfit();
+
+  } catch (err) {
+    console.error('syncMetaMetrics error:', err);
+    statusEl.textContent = '✗ Error de red';
+    statusEl.style.color = 'var(--danger)';
+    showToast('Error de conexión con Meta', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '↻ Meta';
+  }
 }
 
 function calcCreativoProfit() {
@@ -4705,6 +4815,10 @@ function saveCreativo() {
     respEscalado:      gv('cr-resp-escalado'),
     publico:           gv('cr-publico'),
     adAccount:         gv('cr-ad-account'),
+    metaAdId:          gv('cr-meta-ad-id').trim(),
+    metaCampaignId:    gv('cr-meta-campaign-id').trim(),
+    metaAdsetId:       gv('cr-meta-adset-id').trim(),
+    metaSyncHistory:   existing?.metaSyncHistory || [],
     comments:          gv('cr-comments'),
     guion:             gv('cr-guion'),
     tipoSolicitud:     gv('cr-tipo-solicitud'),
