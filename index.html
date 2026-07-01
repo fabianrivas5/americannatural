@@ -1514,6 +1514,11 @@ tbody tr:hover{background:var(--accent-light)!important}
         </div>
       </div>
       <div id="cr-meta-sync-status" style="font-size:11px;color:var(--text3);margin:-4px 0 8px;min-height:16px"></div>
+      <div class="g3 mb6" style="background:var(--surface2);border-radius:var(--r);padding:8px 10px">
+        <div class="field"><label style="font-size:10px;color:var(--accent)">Objetivo campaña</label><input id="cr-objetivo-campana" readonly style="background:var(--surface);font-size:11px" placeholder="—"></div>
+        <div class="field"><label style="font-size:10px;color:var(--accent)">Lanzamiento (Meta)</label><input id="cr-fecha-meta-lanzamiento" readonly style="background:var(--surface);font-size:11px" placeholder="—"></div>
+        <div class="field"><label style="font-size:10px;color:var(--accent)">Frecuencia</label><input type="number" id="cr-frecuencia" step=".01" value="0" style="font-size:11px"></div>
+      </div>
       <div class="g4 mb8" style="background:var(--surface2);border-radius:var(--r);padding:10px">
         <div class="field"><label id="presup-label">Presupuesto / Gasto ($)</label><input type="number" id="cr-presup" step=".01" value="0" oninput="calcCreativoProfit()"></div>
         <div class="field"><label>Impresiones</label><input type="number" id="cr-impresiones" value="0"></div>
@@ -1522,13 +1527,23 @@ tbody tr:hover{background:var(--accent-light)!important}
       </div>
       <div class="g4 mb8" style="background:var(--surface2);border-radius:var(--r);padding:10px">
         <div class="field"><label>CPM ($)</label><input type="number" id="cr-cpm" step=".01" value="0" oninput="calcCreativoProfit()"></div>
-        <div class="field"><label>CPC ($)</label><input type="number" id="cr-cpc" step=".01" value="0" oninput="calcCreativoProfit()"></div>
-        <div class="field"><label>CTR (%)</label><input type="number" id="cr-ctr" step=".01" value="0" oninput="calcCreativoProfit()"></div>
+        <div class="field"><label>CPC ($) — todos</label><input type="number" id="cr-cpc" step=".01" value="0" oninput="calcCreativoProfit()"></div>
+        <div class="field"><label>CPC enlace ($)</label><input type="number" id="cr-cpc-enlace" step=".01" value="0"></div>
         <div class="field"><label>Pedidos generados</label><input type="number" id="cr-leads" value="0" oninput="calcCreativoProfit()"></div>
       </div>
       <div class="g4 mb8" style="background:var(--surface2);border-radius:var(--r);padding:10px">
+        <div class="field"><label>CTR (%) — todos</label><input type="number" id="cr-ctr" step=".01" value="0" oninput="calcCreativoProfit()"></div>
+        <div class="field"><label>CTR único (%)</label><input type="number" id="cr-ctr-unico" step=".01" value="0"></div>
+        <div class="field"><label>CTR enlace (%)</label><input type="number" id="cr-ctr-enlace" step=".01" value="0"></div>
+        <div class="field"><label>Mensajes iniciados</label><input type="number" id="cr-mensajes" value="0"></div>
+      </div>
+      <div class="g4 mb8" style="background:var(--surface2);border-radius:var(--r);padding:10px">
+        <div class="field"><label>Resultados</label><input type="number" id="cr-resultados" value="0"></div>
+        <div class="field"><label>Costo por resultado ($)</label><input type="number" id="cr-costo-resultado" step=".01" value="0"></div>
         <div class="field"><label>Ventas / entregados</label><input type="number" id="cr-ventas" value="0" oninput="calcCreativoProfit()"></div>
         <div class="field"><label>CPA ($)</label><input type="number" id="cr-cpa" step=".01" value="0" oninput="calcCreativoProfit()"></div>
+      </div>
+      <div class="g4 mb8" style="background:var(--surface2);border-radius:var(--r);padding:10px">
         <div class="field">
           <label>Revenue ($) <span id="cr-revenue-auto-badge" style="font-size:9px;background:var(--accent-light);color:var(--accent);padding:1px 5px;border-radius:8px;display:none">AUTO</span></label>
           <input type="number" id="cr-revenue" step=".01" value="0" oninput="calcCreativoProfit();document.getElementById('cr-revenue-auto-badge').style.display='none'">
@@ -4431,7 +4446,9 @@ function openCreativoModal(id) {
     sc('cr-fallo-landing', c.fallos?.landing); sc('cr-fallo-cpa', c.fallos?.cpa);
     sc('cr-fallo-pedidos', c.fallos?.pedidos);
     const m = c.metrics||{};
-    ['presup','cpm','cpc','ctr','leads','cpa','ventas','roas','impresiones','alcance','clicks','revenue'].forEach(k=>sn('cr-'+k, m[k]));
+    ['presup','cpm','cpc','cpc-enlace','ctr','ctr-unico','ctr-enlace','clicks','impresiones','alcance','frecuencia','mensajes','leads','cpa','ventas','resultados','costo-resultado','revenue','roas'].forEach(k=>sn('cr-'+k, m[k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase())]??m[k]??0));
+    sv('cr-objetivo-campana', m.objetivoCampana||'');
+    sv('cr-fecha-meta-lanzamiento', m.fechaMetaLanzamiento||'');
     const revBadge = document.getElementById('cr-revenue-auto-badge'); if(revBadge) revBadge.style.display='none';
     _crThumbBase64 = c.thumb||null; _crFileType = c.thumbType||'image'; _crFileName = c.thumbName||'';
     showThumbPreview(_crThumbBase64, _crFileType, _crFileName);
@@ -4445,7 +4462,8 @@ function openCreativoModal(id) {
     ['cr-name','cr-hook','cr-angle','cr-link','cr-ad-link','cr-link-ref','cr-landing','cr-comments','cr-resp','cr-resp-testeo',
      'cr-launch-date','cr-publico','cr-guion','cr-aprendizaje','cr-motivo','cr-adset-escalado',
      'cr-fecha-limite','cr-fecha-entrega-real','cr-pain'].forEach(i=>sv(i,''));
-    ['cr-presup','cr-cpm','cr-cpc','cr-ctr','cr-leads','cr-cpa','cr-ventas','cr-roas','cr-impresiones','cr-alcance','cr-clicks','cr-revenue'].forEach(i=>sn(i,0));
+    ['cr-presup','cr-cpm','cr-cpc','cr-cpc-enlace','cr-ctr','cr-ctr-unico','cr-ctr-enlace','cr-leads','cr-mensajes','cr-cpa','cr-ventas','cr-resultados','cr-costo-resultado','cr-roas','cr-impresiones','cr-alcance','cr-frecuencia','cr-clicks','cr-revenue'].forEach(i=>sn(i,0));
+    sv('cr-objetivo-campana',''); sv('cr-fecha-meta-lanzamiento','');
     ['cr-fallo-hook','cr-fallo-creativo','cr-fallo-publico','cr-fallo-oferta','cr-fallo-landing','cr-fallo-cpa','cr-fallo-pedidos'].forEach(i=>sc(i,false));
     // set fechaCreacion = today
     const td = new Date(); sv('cr-fecha-creacion', `${td.getFullYear()}-${String(td.getMonth()+1).padStart(2,'0')}-${String(td.getDate()).padStart(2,'0')}`);
@@ -4573,15 +4591,26 @@ async function syncMetaMetrics() {
     const m = json.metrics;
 
     // Mapear campos de métricas al formulario
-    if (m.spend       != null) document.getElementById('cr-presup').value      = m.spend.toFixed(2);
-    if (m.impressions != null) document.getElementById('cr-impresiones').value = m.impressions;
-    if (m.clicks      != null) document.getElementById('cr-clics').value        = m.clicks;
-    if (m.cpm         != null) document.getElementById('cr-cpm').value          = m.cpm.toFixed(2);
-    if (m.ctr         != null) document.getElementById('cr-ctr').value          = m.ctr.toFixed(2);
-    if (m.addToCart   != null) document.getElementById('cr-add-cart').value     = m.addToCart;
-    if (m.initCheckout!= null) document.getElementById('cr-init-checkout').value= m.initCheckout;
-    if (m.purchases   != null) document.getElementById('cr-compras').value      = m.purchases;
-    if (m.costPerPurchase != null) document.getElementById('cr-cpa').value      = m.costPerPurchase.toFixed(2);
+    const sv2 = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+    sv2('cr-presup',            m.spend?.toFixed(2));
+    sv2('cr-impresiones',       m.impressions);
+    sv2('cr-alcance',           m.reach);
+    sv2('cr-clicks',            m.clicks);
+    sv2('cr-frecuencia',        m.frequency?.toFixed(2));
+    sv2('cr-cpm',               m.cpm?.toFixed(2));
+    sv2('cr-cpc',               m.cpc?.toFixed(2));
+    sv2('cr-cpc-enlace',        m.cpcEnlace?.toFixed(2));
+    sv2('cr-ctr',               m.ctr?.toFixed(2));
+    sv2('cr-ctr-unico',         m.ctrUnico?.toFixed(2));
+    sv2('cr-ctr-enlace',        m.ctrEnlace?.toFixed(2));
+    sv2('cr-mensajes',          m.mensajes);
+    sv2('cr-leads',             m.addToCart);
+    sv2('cr-ventas',            m.purchases);
+    sv2('cr-cpa',               m.costPerPurchase?.toFixed(2));
+    sv2('cr-resultados',        m.resultados);
+    sv2('cr-costo-resultado',   m.costoResultado?.toFixed(2));
+    if (m.objetivo)        { const el = document.getElementById('cr-objetivo-campana');        if (el) el.value = m.objetivo; }
+    if (m.fechaLanzamiento){ const el = document.getElementById('cr-fecha-meta-lanzamiento'); if (el) el.value = m.fechaLanzamiento; }
 
     // Guardar en historial del creativo
     const crId = document.getElementById('cr-id')?.value;
@@ -4770,18 +4799,27 @@ function saveCreativo() {
   }
   const gn = id => { const el=document.getElementById(id); return el?+el.value||0:0; };
   const metrics = {
-    presup:      gn('cr-presup'),
-    cpm:         gn('cr-cpm'),
-    cpc:         gn('cr-cpc'),
-    ctr:         gn('cr-ctr'),
-    clicks:      gn('cr-clicks'),
-    impresiones: gn('cr-impresiones'),
-    alcance:     gn('cr-alcance'),
-    leads:       gn('cr-leads'),
-    cpa:         gn('cr-cpa'),
-    ventas:      gn('cr-ventas'),
-    revenue:     gn('cr-revenue'),
-    roas:        gn('cr-roas'),
+    presup:          gn('cr-presup'),
+    cpm:             gn('cr-cpm'),
+    cpc:             gn('cr-cpc'),
+    cpcEnlace:       gn('cr-cpc-enlace'),
+    ctr:             gn('cr-ctr'),
+    ctrUnico:        gn('cr-ctr-unico'),
+    ctrEnlace:       gn('cr-ctr-enlace'),
+    clicks:          gn('cr-clicks'),
+    impresiones:     gn('cr-impresiones'),
+    alcance:         gn('cr-alcance'),
+    frecuencia:      gn('cr-frecuencia'),
+    mensajes:        gn('cr-mensajes'),
+    leads:           gn('cr-leads'),
+    cpa:             gn('cr-cpa'),
+    ventas:          gn('cr-ventas'),
+    resultados:      gn('cr-resultados'),
+    costoResultado:  gn('cr-costo-resultado'),
+    revenue:         gn('cr-revenue'),
+    roas:            gn('cr-roas'),
+    objetivoCampana:  gv('cr-objetivo-campana'),
+    fechaMetaLanzamiento: gv('cr-fecha-meta-lanzamiento'),
   };
   const productName = gv('cr-product');
   const targets = productName ? getTrafficCpaTargets(productName) : null;
