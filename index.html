@@ -1782,8 +1782,72 @@ async function syncFromCloud(force = false, pushOnNewer = false) {
   } catch(e) { console.warn('Cloud sync error:', e); }
 }
 
+let _metaAutoSyncInterval = null;
 function startAutoSync() {
-  // Sync only when tab becomes visible (no interruptions while editing)
+  // Auto-sync Meta metrics every 30 minutes (only when logged in, tab visible, no modal open)
+  if (_metaAutoSyncInterval) clearInterval(_metaAutoSyncInterval);
+  _metaAutoSyncInterval = setInterval(() => {
+    if (!currentUser) return;
+    if (document.visibilityState !== 'visible') return;
+    if (document.querySelector('.modal.open')) return;
+    const hasAdIds = (state.creativos || []).some(c => c.metaAdId && c.metaAdId.trim());
+    if (!hasAdIds) return;
+    console.log('[AutoSync Meta] Sincronizando métricas…');
+    const rangeEl = document.getElementById('sync-all-range');
+    const dateRange = rangeEl ? rangeEl.value : 'last_7_days';
+    // Silent sync — update state without UI disruption
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+      const targets = (state.creativos || []).filter(c => c.metaAdId && c.metaAdId.trim());
+      targets.forEach(async cr => {
+        try {
+          const res = await fetch(`${SUPABASE_URL}/functions/v1/meta-sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+            body: JSON.stringify({ adId: cr.metaAdId.trim(), dateRange })
+          });
+          const json = await res.json();
+          if (!res.ok || !json.metrics) return;
+          const m = json.metrics;
+          const idx = state.creativos.findIndex(c => c.id === cr.id);
+          if (idx === -1) return;
+          const metrics = state.creativos[idx].metrics || {};
+          if (m.spend        != null) metrics.presup          = m.spend;
+          if (m.impressions  != null) metrics.impresiones      = m.impressions;
+          if (m.reach        != null) metrics.alcance          = m.reach;
+          if (m.frequency    != null) metrics.frecuencia       = m.frequency;
+          if (m.clicks       != null) metrics.clicks           = m.clicks;
+          if (m.cpm          != null) metrics.cpm              = m.cpm;
+          if (m.cpc          != null) metrics.cpc              = m.cpc;
+          if (m.cpcEnlace    != null) metrics.cpcEnlace        = m.cpcEnlace;
+          if (m.ctr          != null) metrics.ctr              = m.ctr;
+          if (m.ctrUnico     != null) metrics.ctrUnico         = m.ctrUnico;
+          if (m.ctrEnlace    != null) metrics.ctrEnlace        = m.ctrEnlace;
+          if (m.addToCart    != null) metrics.leads            = m.addToCart;
+          if (m.purchases    != null) metrics.ventas           = m.purchases;
+          if (m.costPerPurchase != null) metrics.cpa           = m.costPerPurchase;
+          if (m.mensajes     != null) metrics.mensajes         = m.mensajes;
+          if (m.resultados   != null) metrics.resultados       = m.resultados;
+          if (m.costoResultado != null) metrics.costoResultado = m.costoResultado;
+          if (m.objetivo)             metrics.objetivoCampana  = m.objetivo;
+          if (m.fechaLanzamiento)     metrics.fechaMetaLanzamiento = m.fechaLanzamiento;
+          state.creativos[idx].metrics = metrics;
+          if (!Array.isArray(state.creativos[idx].metaSyncHistory)) state.creativos[idx].metaSyncHistory = [];
+          state.creativos[idx].metaSyncHistory.push({ ts: Date.now(), range: dateRange, metrics: m });
+          if (state.creativos[idx].metaSyncHistory.length > 20)
+            state.creativos[idx].metaSyncHistory = state.creativos[idx].metaSyncHistory.slice(-20);
+        } catch(_) {}
+      });
+      // After all fetches settle, update UI and save
+      setTimeout(() => {
+        renderCreativosTable();
+        calcDirty();
+        persistState();
+        const statusEl = document.getElementById('sync-all-status');
+        if (statusEl) { statusEl.textContent = `Auto ${new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}`; statusEl.style.color = 'var(--success)'; }
+      }, targets.length * 1200 + 500);
+    });
+  }, 30 * 60 * 1000); // 30 minutes
 }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && currentUser) {
