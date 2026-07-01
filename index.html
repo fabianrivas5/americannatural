@@ -833,10 +833,10 @@ tbody tr:hover{background:var(--accent-light)!important}
       <span class="sec-title">Performance por creativo</span>
       <div class="sec-actions" style="gap:6px;flex-wrap:wrap">
         <select id="sync-all-range" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text)">
-          <option value="today">Hoy</option>
+          <option value="today" selected>Hoy</option>
           <option value="yesterday">Ayer</option>
           <option value="last_3d">Últimos 3 días</option>
-          <option value="last_7_days" selected>Últimos 7 días</option>
+          <option value="last_7_days">Últimos 7 días</option>
           <option value="last_30_days">Últimos 30 días</option>
           <option value="maximum">Desde lanzamiento</option>
         </select>
@@ -860,10 +860,10 @@ tbody tr:hover{background:var(--accent-light)!important}
     <div class="tbl-wrap">
       <table id="creativos-table">
         <thead><tr>
-          <th>Creativo</th><th>Producto</th><th>Formato</th><th>Enfoque</th><th>Dolor</th><th>Público</th><th>Landing</th>
+          <th>Creativo</th><th>Producto</th><th>Formato</th><th>Enfoque</th><th>Dolor</th><th>Público</th><th>Landing</th><th>Tester</th>
           <th>Presup.</th><th>Impr.</th><th>CPM</th><th>CPC</th><th>CTR</th><th>Clicks</th>
-          <th>Pedidos</th><th>CPA</th><th>Ventas</th><th>Revenue</th><th>ROAS</th><th>Profit</th>
-          <th>Estado</th><th>Semáforo</th><th></th>
+          <th>Cart</th><th>Pedidos</th><th>CPA</th><th>Resultados</th><th>Costo/Res.</th><th>Visitas LP</th><th>Costo/Visita</th><th>Ventas</th><th>Revenue</th><th>ROAS</th><th>Profit</th>
+          <th>Estado</th><th style="white-space:nowrap">Semáforo <span onclick="showSemaforoTooltip(event)" style="cursor:pointer;font-size:10px;background:var(--surface2);border:1px solid var(--border);border-radius:50%;padding:0 4px;font-weight:700" title="¿Cómo se calcula?">?</span></th><th></th>
         </tr></thead>
         <tbody id="creativos-body"></tbody>
       </table>
@@ -1512,10 +1512,10 @@ tbody tr:hover{background:var(--accent-light)!important}
         <span>📊 Métricas</span>
         <div style="display:flex;gap:6px;align-items:center">
           <select id="cr-meta-date-range" style="font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid var(--border)">
-            <option value="today">Hoy</option>
+            <option value="today" selected>Hoy</option>
             <option value="yesterday">Ayer</option>
             <option value="last_3d">Últimos 3 días</option>
-            <option value="last_7_days" selected>Últimos 7 días</option>
+            <option value="last_7_days">Últimos 7 días</option>
             <option value="last_30_days">Últimos 30 días</option>
             <option value="since_launch">Desde lanzamiento</option>
           </select>
@@ -1794,7 +1794,7 @@ function startAutoSync() {
     if (!hasAdIds) return;
     console.log('[AutoSync Meta] Sincronizando métricas…');
     const rangeEl = document.getElementById('sync-all-range');
-    const dateRange = rangeEl ? rangeEl.value : 'last_7_days';
+    const dateRange = rangeEl ? rangeEl.value : 'today';
     // Silent sync — update state without UI disruption
     sb.auth.getSession().then(({ data: { session } }) => {
       if (!session) return;
@@ -1826,9 +1826,11 @@ function startAutoSync() {
           if (m.addToCart    != null) metrics.leads            = m.addToCart;
           if (m.purchases    != null) metrics.ventas           = m.purchases;
           if (m.costPerPurchase != null) metrics.cpa           = m.costPerPurchase;
-          if (m.mensajes     != null) metrics.mensajes         = m.mensajes;
-          if (m.resultados   != null) metrics.resultados       = m.resultados;
-          if (m.costoResultado != null) metrics.costoResultado = m.costoResultado;
+          if (m.mensajes          != null) metrics.mensajes          = m.mensajes;
+          if (m.resultados        != null) metrics.resultados        = m.resultados;
+          if (m.costoResultado    != null) metrics.costoResultado    = m.costoResultado;
+          if (m.visitasPagina     != null) metrics.visitasPagina     = m.visitasPagina;
+          if (m.costoVisitaPagina != null) metrics.costoVisitaPagina = m.costoVisitaPagina;
           if (m.objetivo)             metrics.objetivoCampana  = m.objetivo;
           if (m.fechaLanzamiento)     metrics.fechaMetaLanzamiento = m.fechaLanzamiento;
           state.creativos[idx].metrics = metrics;
@@ -3622,7 +3624,9 @@ function renderKanban() {
              ${_extraFiles?`<span style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;font-size:9px;border-radius:3px;padding:1px 5px">+${_extraFiles}</span>`:''}
              ${!_firstFile&&_refFirst?`<span style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.55);color:#fff;font-size:9px;border-radius:3px;padding:1px 5px">Ref</span>`:''}
              </div>`
-          : `<div style="height:40px;border-radius:5px;background:var(--surface2);border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);margin-bottom:7px">Sin preview</div>`;
+          : (c.link
+              ? `<a href="${c.link}" target="_blank" onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:5px;margin-bottom:7px;padding:5px 8px;border-radius:5px;background:var(--surface2);border:1px solid var(--border);font-size:10px;color:var(--blue);text-decoration:none;font-weight:600">${c.link.includes('facebook')||c.link.includes('fb.com')?'📘 Abrir anuncio':c.link.includes('drive.google')?'📁 Abrir en Drive':'🔗 Ver creativo'} ↗</a>`
+              : '');
 
         // Production semáforo badge
         const prodSem = c.status==='produccion' ? (() => {
@@ -3643,6 +3647,7 @@ function renderKanban() {
           ${c.angle ? `<div style="font-size:10px;color:var(--accent);margin-bottom:1px">🎯 ${c.angle}</div>` : ''}
           ${c.painPoint ? `<div style="font-size:10px;color:#f97316;margin-bottom:1px">😣 ${c.painPoint}</div>` : ''}
           ${c.resp ? `<div style="font-size:10px;color:var(--text2);margin-bottom:1px">✏️ ${c.resp}</div>` : ''}
+          ${c.status==='testeo'||c.status==='validado'||c.status==='escalando' ? `<div style="font-size:10px;font-weight:600;margin-bottom:1px;color:${c.respTesteo?'#7c3aed':'var(--text3)'}">🧪 Tester: ${c.respTesteo||'sin asignar'}</div>` : ''}
           ${prodSem ? `<div style="font-size:9px;font-weight:700;display:inline-block;border-radius:4px;padding:1px 6px;margin-bottom:3px;background:${prodSem.bg};color:${prodSem.color}">🚦 ${prodSem.label}</div>` : ''}
           ${c.fechaLimite ? `<div style="font-size:10px;color:var(--amber);margin-bottom:2px">⏰ ${c.fechaLimite}</div>` : ''}
           ${hasMet ? `<div class="kb-card-metrics" style="margin-top:3px">
@@ -3834,26 +3839,36 @@ function renderCreativosTable() {
       <td style="font-size:11px;color:#f97316">${c.painPoint||'—'}</td>
       <td style="font-size:10px;color:var(--text3);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.publico||'—'}</td>
       <td style="font-size:10px">${c.landing?`<a href="${c.landing}" target="_blank" style="color:var(--blue)" title="${c.landing}">🔗 Landing</a>`:'—'}</td>
+      <td style="font-size:10px;color:${c.respTesteo?'#7c3aed':'var(--text3)'};white-space:nowrap">${c.respTesteo||'—'}</td>
       <td>${m.presup>0?fmt(m.presup):'—'}</td>
       <td style="font-size:11px">${m.impresiones>0?m.impresiones.toLocaleString():'—'}</td>
       <td><span class="badge ${m.cpm>15?'bad':m.cpm>10?'warn':'gray'}">${m.cpm>0?fmt(m.cpm):'—'}</span></td>
       <td><span class="badge ${m.cpc>0.8?'bad':m.cpc>0.5?'warn':'gray'}">${m.cpc>0?fmt(m.cpc):'—'}</span></td>
       <td><span class="badge ${ctrC}">${m.ctr>0?pct(m.ctr):'—'}</span></td>
       <td style="font-size:11px">${m.clicks>0?m.clicks.toLocaleString():'—'}</td>
-      <td>${m.leads>0?m.leads:'—'}</td>
+      <td style="font-size:11px">${m.leads>0?m.leads:'—'}</td>
+      <td style="font-size:11px">${m.ventas>0?m.ventas:'—'}</td>
       <td><span class="badge ${cpaC}">${m.cpa>0?fmt(m.cpa):'—'}</span></td>
-      <td>${m.ventas>0?m.ventas:'—'}</td>
+      <td style="font-size:11px">${m.resultados>0?m.resultados:'—'}</td>
+      <td style="font-size:11px">${m.costoResultado>0?fmt(m.costoResultado):'—'}</td>
+      <td style="font-size:11px">${m.visitasPagina>0?m.visitasPagina.toLocaleString():'—'}</td>
+      <td style="font-size:11px">${m.costoVisitaPagina>0?fmt(m.costoVisitaPagina):'—'}</td>
+      <td style="font-size:11px">${m.ventas>0?m.ventas:'—'}</td>
       <td>${m.revenue>0?fmt(m.revenue):'—'}</td>
       <td><span class="badge ${roasC}">${m.roas>0?m.roas.toFixed(2)+'x':'—'}</span></td>
       <td style="font-weight:600;color:${profit>0?'var(--ok)':profit<0?'var(--bad)':'var(--text3)'}">${m.revenue>0?fmt(profit):'—'}</td>
       <td><span class="badge ${getStatusCls(c.status)}">${getStatusLabel(c.status)}</span></td>
-      <td style="font-size:11px;min-width:140px;font-weight:600;color:${semBg}">${sem.dot} ${sem.rec}</td>
+      <td style="font-size:11px;min-width:160px;font-weight:600;color:${semBg}">
+        <span title="${sem.reason||''}">${sem.dot} ${sem.rec}</span>
+        ${sem.reason ? `<div style="font-size:10px;font-weight:400;color:var(--text3);margin-top:2px">${sem.reason}</div>` : ''}
+        ${sem.label==='Escalar'&&(m.ventas||0)>=10 ? `<button class="btn sm primary" style="font-size:10px;margin-top:4px;padding:2px 6px;background:#7c3aed" onclick="moveCard('${c.id}','escalando')">🚀 Enviar a escalado</button>` : ''}
+      </td>
       <td>
         <button class="btn sm" onclick="openCreativoModal('${c.id}')" title="Editar">✎</button>
         <button class="btn sm danger" onclick="deleteCreativo('${c.id}')">✕</button>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="20" style="text-align:center;padding:20px;color:var(--text3)">Sin creativos registrados</td></tr>`;
+  }).join('') || `<tr><td colspan="28" style="text-align:center;padding:20px;color:var(--text3)">Sin creativos registrados</td></tr>`;
 }
 
 function renderCreativosSummary() {
@@ -4571,7 +4586,7 @@ function autoCalcRevenue() {
 
 function getProductCpaTargets(productName) {
   const prod = state.products.find(p => p.name === productName);
-  if (!prod) return { cpaObj: 22, cpaBE: 28 };
+  if (!prod) return { cpaObj: 22, cpaBE: 28, roasBE: 1.5, price: 30 };
   const cancel = (state.settings.params.cancel||22)/100;
   const devol  = (state.settings.params.devol||10)/100;
   const comis  = state.settings.params.comis||3;
@@ -4581,7 +4596,8 @@ function getProductCpaTargets(productName) {
   const mopDisp = (prod.price - prod.cost - fs - comis)*(1-cancel)*(1-devol) - gfPed;
   const cpaBE  = mopDisp;
   const cpaObj = mopDisp - prod.price*(mobj/100);
-  return { cpaObj: Math.max(0,cpaObj), cpaBE: Math.max(0,cpaBE) };
+  const roasBE = cpaBE > 0 ? prod.price / cpaBE : 1.5;
+  return { cpaObj: Math.max(0,cpaObj), cpaBE: Math.max(0,cpaBE), roasBE: Math.max(1, roasBE), price: prod.price||30 };
 }
 
 function getBaseName(productName) {
@@ -4589,7 +4605,7 @@ function getBaseName(productName) {
 }
 
 function getTrafficCpaTargets(productName) {
-  if (!productName) return { cpaObj:22, cpaBE:28, cpaSeguro:null, mode:'default' };
+  if (!productName) return { cpaObj:22, cpaBE:28, roasBE:1.5, price:30, cpaSeguro:null, mode:'default' };
   const mode = (state.settings.params.cpaMode) || 'conservador';
 
   if (mode === 'combo') {
@@ -4599,7 +4615,9 @@ function getTrafficCpaTargets(productName) {
   if (mode === 'manual') {
     const obj = state.settings.params.manualCpaObj || 0;
     const be  = state.settings.params.manualCpaBE  || 0;
-    return { cpaObj:obj, cpaBE:be, cpaSeguro:obj, mode:'manual' };
+    const prod0 = state.products.find(p=>p.name===productName);
+    const price0 = prod0?.price||30;
+    return { cpaObj:obj, cpaBE:be, roasBE: be>0?price0/be:1.5, price:price0, cpaSeguro:obj, mode:'manual' };
   }
 
   const base = getBaseName(productName);
@@ -4613,7 +4631,7 @@ function getTrafficCpaTargets(productName) {
   const safeT = targets.reduce((min, t) => t.cpaObj < min.cpaObj ? t : min, targets[0]);
 
   if (mode === 'conservador') {
-    return { cpaObj: safeT.cpaObj, cpaBE: safeT.cpaBE, cpaSeguro: safeT.cpaObj, mode:'conservador' };
+    return { cpaObj: safeT.cpaObj, cpaBE: safeT.cpaBE, roasBE: safeT.roasBE||1.5, price: safeT.price||30, cpaSeguro: safeT.cpaObj, mode:'conservador' };
   }
 
   if (mode === 'blended') {
@@ -4674,9 +4692,11 @@ async function syncAllMetrics() {
       if (m.addToCart    != null) metrics.leads            = m.addToCart;
       if (m.purchases    != null) metrics.ventas           = m.purchases;
       if (m.costPerPurchase != null) metrics.cpa           = m.costPerPurchase;
-      if (m.mensajes     != null) metrics.mensajes         = m.mensajes;
-      if (m.resultados   != null) metrics.resultados       = m.resultados;
-      if (m.costoResultado != null) metrics.costoResultado = m.costoResultado;
+      if (m.mensajes          != null) metrics.mensajes          = m.mensajes;
+      if (m.resultados        != null) metrics.resultados        = m.resultados;
+      if (m.costoResultado    != null) metrics.costoResultado    = m.costoResultado;
+      if (m.visitasPagina     != null) metrics.visitasPagina     = m.visitasPagina;
+      if (m.costoVisitaPagina != null) metrics.costoVisitaPagina = m.costoVisitaPagina;
       if (m.objetivo)             metrics.objetivoCampana  = m.objetivo;
       if (m.fechaLanzamiento)     metrics.fechaMetaLanzamiento = m.fechaLanzamiento;
       state.creativos[idx].metrics = metrics;
@@ -4850,48 +4870,77 @@ function calcCreativoProfit() {
 }
 
 function crSemaforo(m, targets) {
-  // targets = { cpaObj, cpaBE } — uses product CPA if available, else defaults
-  const t = targets || { cpaObj: 22, cpaBE: 28 };
-  const cpaObj = t.cpaObj || 22;
-  const cpaBE  = t.cpaBE  || 28;
-  const hasData = m && (m.presup > 0 || m.cpa > 0 || m.ctr > 0);
+  const t       = targets || { cpaObj:22, cpaBE:28, roasBE:1.5, price:30 };
+  const cpaObj  = t.cpaObj  || 22;
+  const cpaBE   = t.cpaBE   || 28;
+  const roasBE  = t.roasBE  || (cpaBE > 0 ? (t.price||30) / cpaBE : 1.5);
+  const hasData = m && (m.presup > 0 || m.cpa > 0 || m.ctr > 0 || m.impresiones > 0);
   if (!hasData) return { color:'gray', dot:'⚪', label:'Sin métricas', rec:'Carga métricas para ver recomendación', nextStatus:null };
 
-  // RED — hard stops
-  if (m.cpm > 15 && m.presup > 5)
-    return { color:'red', dot:'🔴', label:'Apagar', rec:'Revisar hook', nextStatus:'rechazado',
-             reason:'CPM > $15 — audiencia saturada o hook débil' };
-  if (m.cpc > 0.80 && m.cpc > 0)
-    return { color:'red', dot:'🔴', label:'Apagar', rec:'Revisar público', nextStatus:'rechazado',
-             reason:'CPC > $0.80 — tráfico muy caro' };
-  if (m.ctr > 0 && m.ctr < 1)
-    return { color:'red', dot:'🔴', label:'Apagar', rec:'Revisar hook', nextStatus:'rechazado',
-             reason:'CTR < 1% — hook no engancha' };
+  const ventas   = m.ventas   || 0;
+  const leads    = m.leads    || 0;  // addToCart
+  const presup   = m.presup   || 0;
+  const profit   = (m.revenue||0) - presup;
+  const enoughSpend = presup >= cpaBE * 0.5;  // gastó al menos la mitad del CPA BE
+
+  // ─── 🚀 ESCALAR ─── 10+ compras, CPA rentable, ROAS OK, profit positivo
+  if (ventas >= 10 && m.cpa > 0 && m.cpa <= cpaObj && (m.roas||0) >= roasBE && profit > 0)
+    return { color:'green', dot:'🚀', label:'Escalar', rec:'🚀 Escalar ahora', nextStatus:'escalando',
+             reason:`${ventas} compras · CPA ${fmt(m.cpa)} ≤ obj ${fmt(cpaObj)} · ROAS ${(m.roas||0).toFixed(2)}x · Profit ${fmt(profit)}` };
+
+  // ─── 🔴 ROJO — parar urgente ───
+  // Gasto superó CPA BE sin ninguna compra
+  if (presup >= cpaBE && ventas === 0)
+    return { color:'red', dot:'🔴', label:'Apagar', rec:'Apagar campaña', nextStatus:'rechazado',
+             reason:`Gasto ${fmt(presup)} superó BE ${fmt(cpaBE)} sin compras` };
+  // CPA no rentable
   if (m.cpa > 0 && m.cpa > cpaBE)
-    return { color:'red', dot:'🔴', label:'Apagar', rec:'Revisar público', nextStatus:'rechazado',
-             reason:`CPA $${m.cpa.toFixed(2)} > BE $${cpaBE.toFixed(2)}` };
-  if (m.presup > 20 && !m.ventas && !m.leads)
-    return { color:'red', dot:'🔴', label:'Apagar', rec:'Revisar landing', nextStatus:'rechazado',
-             reason:'Gasto sin conversiones — revisar landing o público' };
+    return { color:'red', dot:'🔴', label:'No rentable', rec:'Apagar o revisar', nextStatus:'rechazado',
+             reason:`CPA ${fmt(m.cpa)} supera breakeven ${fmt(cpaBE)}` };
+  // Profit negativo con ventas
+  if (ventas > 0 && profit < 0 && presup > cpaBE * 0.3)
+    return { color:'red', dot:'🔴', label:'Pérdida', rec:'Revisar estructura', nextStatus:'rechazado',
+             reason:`Profit negativo: ${fmt(profit)}` };
+  // CTR menor a 1% con gasto suficiente
+  if (m.ctr > 0 && m.ctr < 1.0 && enoughSpend)
+    return { color:'red', dot:'🔴', label:'CTR bajo', rec:'Cambiar hook', nextStatus:'rechazado',
+             reason:`CTR ${m.ctr.toFixed(2)}% < 1% — hook no engancha` };
+  // ROAS por debajo del breakeven con ventas
+  if (m.roas > 0 && m.roas < roasBE && ventas > 0 && presup > cpaBE * 0.3)
+    return { color:'red', dot:'🔴', label:'ROAS bajo', rec:'No escalar', nextStatus:'rechazado',
+             reason:`ROAS ${m.roas.toFixed(2)}x < BE ${roasBE.toFixed(2)}x` };
+  // Muchos clicks, cero conversiones, gasto alto
+  if ((m.clicks||0) > 50 && ventas === 0 && leads === 0 && presup >= cpaBE * 0.4)
+    return { color:'red', dot:'🔴', label:'Sin conv.', rec:'Revisar landing', nextStatus:'rechazado',
+             reason:`${m.clicks} clicks sin carrito ni compras — revisar landing` };
 
-  // GREEN — clear winners
-  if (m.cpa > 0 && m.cpa <= cpaObj && m.ventas >= 2 && m.ctr >= 2)
-    return { color:'green', dot:'🟢', label:'Escalar', rec:'Escalar', nextStatus:'escalando',
-             reason:`CPA $${m.cpa.toFixed(2)} ≤ objetivo $${cpaObj.toFixed(2)} + buen CTR + ventas` };
-  if (m.cpa > 0 && m.cpa <= cpaObj && m.ventas >= 1)
-    return { color:'green', dot:'🟢', label:'Validado', rec:'Validar', nextStatus:'validado',
-             reason:`CPA $${m.cpa.toFixed(2)} ≤ objetivo $${cpaObj.toFixed(2)} con ventas` };
+  // ─── 🟢 VERDE — va bien ───
+  if (m.cpa > 0 && m.cpa <= cpaObj && ventas >= 5 && profit > 0)
+    return { color:'green', dot:'🟢', label:'Validar', rec:'Validar → escalar', nextStatus:'validado',
+             reason:`CPA ${fmt(m.cpa)} ≤ obj · ${ventas} ventas · profit ${fmt(profit)}` };
+  if (m.cpa > 0 && m.cpa <= cpaObj && ventas >= 2)
+    return { color:'green', dot:'🟢', label:'Va bien', rec:'Validar', nextStatus:'validado',
+             reason:`CPA ${fmt(m.cpa)} ≤ objetivo ${fmt(cpaObj)} con ${ventas} ventas` };
+  if (m.cpa > 0 && m.cpa <= cpaObj && ventas >= 1 && (m.roas||0) >= roasBE)
+    return { color:'green', dot:'🟢', label:'Primera venta', rec:'Dejar correr', nextStatus:'validado',
+             reason:`CPA rentable · ROAS ${(m.roas||0).toFixed(2)}x ≥ BE` };
+  if (m.ctr >= 1.8 && !m.cpa && !enoughSpend)
+    return { color:'green', dot:'🟢', label:'Buen CTR', rec:'Dejar correr', nextStatus:'testeo',
+             reason:`CTR ${m.ctr.toFixed(2)}% ≥ 1.8% — muy buen hook, esperar CPA` };
 
-  // YELLOW — borderline or insufficient data
+  // ─── 🟡 AMARILLO — observar ───
   if (m.cpa > 0 && m.cpa > cpaObj && m.cpa <= cpaBE)
-    return { color:'yellow', dot:'🟡', label:'Vigilar', rec:'Dejar correr', nextStatus:'testeo',
-             reason:`CPA $${m.cpa.toFixed(2)} entre objetivo y BE — necesita más datos` };
-  if (m.ctr >= 2 && !m.cpa)
-    return { color:'yellow', dot:'🟡', label:'Buen CTR', rec:'Medir CPA', nextStatus:'testeo',
-             reason:'CTR ≥ 2% — esperar conversiones' };
-  if (m.ctr >= 1 && !m.cpa)
-    return { color:'yellow', dot:'🟡', label:'Esperando', rec:'Dejar correr', nextStatus:'testeo',
-             reason:'CTR OK — sin datos de CPA aún' };
+    return { color:'yellow', dot:'🟡', label:'Cuidado', rec:'Dejar correr', nextStatus:'testeo',
+             reason:`CPA ${fmt(m.cpa)} entre obj ${fmt(cpaObj)} y BE ${fmt(cpaBE)} — necesita más data` };
+  if ((leads > 0) && ventas === 0 && presup < cpaBE)
+    return { color:'yellow', dot:'🟡', label:'Señales', rec:'Dejar correr', nextStatus:'testeo',
+             reason:`${leads} add to cart sin compras — esperar conversiones` };
+  if (m.ctr >= 1.0 && m.ctr < 1.8 && !m.cpa)
+    return { color:'yellow', dot:'🟡', label:'CTR OK', rec:'Dejar correr', nextStatus:'testeo',
+             reason:`CTR ${m.ctr.toFixed(2)}% — esperar conversiones` };
+  if (presup > 0 && presup < cpaBE * 0.3)
+    return { color:'yellow', dot:'🟡', label:'Poco gasto', rec:'Dejar correr', nextStatus:'testeo',
+             reason:`Gasto ${fmt(presup)} — muy temprano para decidir` };
 
   return { color:'yellow', dot:'🟡', label:'Más datos', rec:'Dejar correr', nextStatus:'testeo',
            reason:'Datos insuficientes para decidir' };
@@ -4902,6 +4951,47 @@ function crDecision(m, targets) {
   const colorMap = { red:'var(--bad)', yellow:'var(--amber)', green:'var(--ok)', gray:'var(--text3)' };
   const clsMap   = { red:'bad', yellow:'warn', green:'ok', gray:'gray' };
   return { label: s.dot+' '+s.rec+(s.reason?' — '+s.reason:''), color:colorMap[s.color], cls:clsMap[s.color] };
+}
+
+function showSemaforoTooltip(e) {
+  e.stopPropagation();
+  const existing = document.getElementById('sem-tooltip-modal');
+  if (existing) { existing.remove(); return; }
+  const div = document.createElement('div');
+  div.id = 'sem-tooltip-modal';
+  div.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 24px;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);max-height:80vh;overflow-y:auto';
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <strong style="font-size:14px">¿Cómo se calcula el semáforo?</strong>
+      <button onclick="document.getElementById('sem-tooltip-modal').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text3)">✕</button>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Cada creativo se evalúa contra las métricas del <strong>producto asignado</strong> en la calculadora.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
+      <div style="background:#fee2e2;border-radius:6px;padding:8px 10px"><strong>🔴 ROJO — Apagar</strong><br>
+        • Gasto ≥ CPA Breakeven sin compras<br>
+        • CPA actual > CPA Breakeven<br>
+        • Profit negativo con ventas<br>
+        • CTR &lt; 1% con gasto suficiente<br>
+        • ROAS &lt; ROAS BE con ventas<br>
+        • Muchos clicks, cero conversiones</div>
+      <div style="background:#fef3c7;border-radius:6px;padding:8px 10px"><strong>🟡 AMARILLO — Dejar correr</strong><br>
+        • CPA entre objetivo y breakeven<br>
+        • Hay add to cart pero sin compras<br>
+        • CTR entre 1.0% y 1.79%<br>
+        • Gasto muy bajo para decidir</div>
+      <div style="background:#d1fae5;border-radius:6px;padding:8px 10px"><strong>🟢 VERDE — Validar</strong><br>
+        • CPA ≤ CPA Objetivo con ventas<br>
+        • CTR ≥ 1.8% (sin CPA aún)<br>
+        • ROAS ≥ ROAS Breakeven</div>
+      <div style="background:#ede9fe;border-radius:6px;padding:8px 10px"><strong>🚀 ESCALAR</strong><br>
+        • 10+ compras<br>
+        • CPA ≤ CPA Objetivo<br>
+        • ROAS ≥ ROAS BE<br>
+        • Profit positivo</div>
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin-top:12px">Los valores de CPA objetivo, CPA BE y ROAS BE se calculan automáticamente desde el producto asignado en la calculadora (precio, costo, flete, comisiones, gastos fijos).</p>`;
+  document.body.appendChild(div);
+  document.addEventListener('click', function rm(ev) { if (!div.contains(ev.target)) { div.remove(); document.removeEventListener('click', rm); } });
 }
 
 function semDot(m, size=14) {
