@@ -1828,10 +1828,10 @@ async function saveToCloud() {
     // Fetch cloud first to merge append-only keys; local-auth keys are taken as-is (deletions stick)
     const { data: cur } = await sb.from('app_state').select('data').eq('org','americannatural').single();
     const cloudData = cur?.data || {};
-    // Merge multi-user arrays: cloud wins for existing items (latest edit wins), union for new items
+    // When SAVING: local always wins for existing items — we're pushing our own changes.
+    // cloudWins is only for syncFromCloud (pulling remote changes from another user).
     for (const key of _MERGE_LIST_KEYS) {
-      const cw = _CLOUD_WINS_KEYS.includes(key);
-      state[key] = _mergeArraysById(state[key], cloudData[key], cw);
+      state[key] = _mergeArraysById(state[key], cloudData[key], false);
     }
     // Local-auth keys: local wins completely — no merge, deletions respected
     // Only set _savedAt now — after merge, before write — so it accurately reflects what's being saved
