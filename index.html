@@ -862,7 +862,7 @@ tbody tr:hover{background:var(--accent-light)!important}
         <thead><tr>
           <th>Creativo</th><th>Estado</th><th>Tester</th>
           <th style="white-space:nowrap">Semáforo <span onclick="showSemaforoTooltip(event)" style="cursor:pointer;font-size:10px;background:var(--surface2);border:1px solid var(--border);border-radius:50%;padding:0 4px;font-weight:700" title="¿Cómo se calcula?">?</span></th>
-          <th>Obj. Campaña</th><th>Resultados</th><th>Costo/Res.</th><th>Gasto</th><th>ROAS</th><th>Valor Conv.</th>
+          <th>Obj. Campaña</th><th>Resultados</th><th>Costo/Res.</th><th>Gasto</th><th title="ROAS de compras (Meta)">ROAS Compras</th><th title="Valor de conversión de compras (Meta)">Valor Conv. Compras</th>
           <th title="CTR único en enlace">CTR✱Enlace</th><th>CPM</th><th title="Clics en el enlace">Clics Enlace</th><th title="CPC en el enlace">CPC Enlace</th>
           <th>Frecuencia</th><th>Visitas LP</th><th>Costo/Visita</th><th>Pagos Inic.</th><th>Carritos</th><th title="Tiempo promedio de reproducción (segundos)">Video (s)</th>
           <th></th>
@@ -1836,6 +1836,8 @@ function startAutoSync() {
           if (m.checkouts         != null) metrics.checkouts         = m.checkouts;
           if (m.clicsEnlace       != null) metrics.clicsEnlace       = m.clicsEnlace;
           if (m.videoTiempo       != null) metrics.videoTiempo       = m.videoTiempo;
+          if (m.purchaseRoas      != null) metrics.purchaseRoas      = m.purchaseRoas;
+          if (m.purchaseValue     != null) metrics.purchaseValue     = m.purchaseValue;
           if (m.objetivo)             metrics.objetivoCampana  = m.objetivo;
           if (m.fechaLanzamiento)     metrics.fechaMetaLanzamiento = m.fechaLanzamiento;
           state.creativos[idx].metrics = metrics;
@@ -3853,8 +3855,8 @@ function renderCreativosTable() {
       <td style="font-size:12px;font-weight:600;color:${m.resultados>0?'var(--text)':'var(--text3)'}">${m.resultados>0?m.resultados:'—'}</td>
       <td><span class="badge ${costoResC}">${m.costoResultado>0?fmt(m.costoResultado):'—'}</span></td>
       <td style="font-size:11px">${m.presup>0?fmt(m.presup):'—'}</td>
-      <td><span class="badge ${roasC}">${m.roas>0?m.roas.toFixed(2)+'x':'—'}</span></td>
-      <td style="font-size:11px;font-weight:600;color:${m.revenue>0?(m.revenue>m.presup?'var(--ok)':'var(--bad)'):'var(--text3)'}">${m.revenue>0?fmt(m.revenue):'—'}</td>
+      <td><span class="badge ${(m.purchaseRoas||0)>0?((m.purchaseRoas>=roasBE)?'ok':(m.purchaseRoas>=roasBE*0.7?'warn':'bad')):'gray'}">${m.purchaseRoas>0?m.purchaseRoas.toFixed(2)+'x':'—'}</span></td>
+      <td style="font-size:11px;font-weight:600;color:${m.purchaseValue>0?(m.purchaseValue>m.presup?'var(--ok)':'var(--bad)'):'var(--text3)'}">${m.purchaseValue>0?fmt(m.purchaseValue):'—'}</td>
       <td style="font-size:11px">${m.ctrUnico>0?pct(m.ctrUnico):'—'}</td>
       <td><span class="badge ${m.cpm>15?'bad':m.cpm>8?'warn':'gray'}">${m.cpm>0?fmt(m.cpm):'—'}</span></td>
       <td style="font-size:11px">${m.clicsEnlace>0?m.clicsEnlace.toLocaleString():'—'}</td>
@@ -4702,6 +4704,8 @@ async function syncAllMetrics() {
       if (m.checkouts         != null) metrics.checkouts         = m.checkouts;
       if (m.clicsEnlace       != null) metrics.clicsEnlace       = m.clicsEnlace;
       if (m.videoTiempo       != null) metrics.videoTiempo       = m.videoTiempo;
+      if (m.purchaseRoas      != null) metrics.purchaseRoas      = m.purchaseRoas;
+      if (m.purchaseValue     != null) metrics.purchaseValue     = m.purchaseValue;
       if (m.objetivo)             metrics.objetivoCampana  = m.objetivo;
       if (m.fechaLanzamiento)     metrics.fechaMetaLanzamiento = m.fechaLanzamiento;
       state.creativos[idx].metrics = metrics;
@@ -4902,8 +4906,8 @@ function crSemaforo(m, targets) {
   if (m.cpa > 0 && m.cpa > cpaBE)
     return { color:'red', dot:'🔴', label:'No rentable', rec:'Apagar o revisar', nextStatus:'rechazado',
              reason:`CPA ${fmt(m.cpa)} supera breakeven ${fmt(cpaBE)}` };
-  // Profit negativo con ventas
-  if (ventas > 0 && profit < 0 && presup > cpaBE * 0.3)
+  // Profit negativo con ventas — solo cuando hay revenue real de Meta (purchaseValue)
+  if (ventas > 0 && (m.purchaseValue||0) > 0 && profit < 0 && presup > cpaBE * 0.3)
     return { color:'red', dot:'🔴', label:'Pérdida', rec:'Revisar estructura', nextStatus:'rechazado',
              reason:`Profit negativo: ${fmt(profit)}` };
   // CTR menor a 1% con gasto suficiente
