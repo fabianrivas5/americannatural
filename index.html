@@ -4889,13 +4889,17 @@ function crSemaforo(m, targets) {
   const ventas   = m.ventas   || 0;
   const leads    = m.leads    || 0;  // addToCart
   const presup   = m.presup   || 0;
-  const profit   = (m.revenue||0) - presup;
+  // Usar purchaseValue (de Meta) como fuente primaria de revenue; fallback a m.revenue (manual)
+  const revenueReal = (m.purchaseValue||0) > 0 ? (m.purchaseValue||0) : (m.revenue||0);
+  const profit   = revenueReal - presup;
+  // Usar purchaseRoas (de Meta) como fuente primaria de ROAS
+  const roasReal = (m.purchaseRoas||0) > 0 ? (m.purchaseRoas||0) : (m.roas||0);
   const enoughSpend = presup >= cpaBE * 0.5;  // gastó al menos la mitad del CPA BE
 
   // ─── 🚀 ESCALAR ─── 10+ compras, CPA rentable, ROAS OK, profit positivo
-  if (ventas >= 10 && m.cpa > 0 && m.cpa <= cpaObj && (m.roas||0) >= roasBE && profit > 0)
+  if (ventas >= 10 && m.cpa > 0 && m.cpa <= cpaObj && roasReal >= roasBE && profit > 0)
     return { color:'green', dot:'🚀', label:'Escalar', rec:'🚀 Escalar ahora', nextStatus:'escalando',
-             reason:`${ventas} compras · CPA ${fmt(m.cpa)} ≤ obj ${fmt(cpaObj)} · ROAS ${(m.roas||0).toFixed(2)}x · Profit ${fmt(profit)}` };
+             reason:`${ventas} compras · CPA ${fmt(m.cpa)} ≤ obj ${fmt(cpaObj)} · ROAS ${roasReal.toFixed(2)}x · Profit ${fmt(profit)}` };
 
   // ─── 🔴 ROJO — parar urgente ───
   // Gasto superó CPA BE sin ninguna compra
@@ -4906,8 +4910,8 @@ function crSemaforo(m, targets) {
   if (m.cpa > 0 && m.cpa > cpaBE)
     return { color:'red', dot:'🔴', label:'No rentable', rec:'Apagar o revisar', nextStatus:'rechazado',
              reason:`CPA ${fmt(m.cpa)} supera breakeven ${fmt(cpaBE)}` };
-  // Profit negativo con ventas — solo cuando hay revenue real de Meta (purchaseValue)
-  if (ventas > 0 && (m.purchaseValue||0) > 0 && profit < 0 && presup > cpaBE * 0.3)
+  // Profit negativo — solo cuando hay revenue real de Meta
+  if (ventas > 0 && revenueReal > 0 && profit < 0 && presup > cpaBE * 0.3)
     return { color:'red', dot:'🔴', label:'Pérdida', rec:'Revisar estructura', nextStatus:'rechazado',
              reason:`Profit negativo: ${fmt(profit)}` };
   // CTR menor a 1% con gasto suficiente
@@ -4915,24 +4919,24 @@ function crSemaforo(m, targets) {
     return { color:'red', dot:'🔴', label:'CTR bajo', rec:'Cambiar hook', nextStatus:'rechazado',
              reason:`CTR ${m.ctr.toFixed(2)}% < 1% — hook no engancha` };
   // ROAS por debajo del breakeven con ventas
-  if (m.roas > 0 && m.roas < roasBE && ventas > 0 && presup > cpaBE * 0.3)
+  if (roasReal > 0 && roasReal < roasBE && ventas > 0 && presup > cpaBE * 0.3)
     return { color:'red', dot:'🔴', label:'ROAS bajo', rec:'No escalar', nextStatus:'rechazado',
-             reason:`ROAS ${m.roas.toFixed(2)}x < BE ${roasBE.toFixed(2)}x` };
+             reason:`ROAS ${roasReal.toFixed(2)}x < BE ${roasBE.toFixed(2)}x` };
   // Muchos clicks, cero conversiones, gasto alto
   if ((m.clicks||0) > 50 && ventas === 0 && leads === 0 && presup >= cpaBE * 0.4)
     return { color:'red', dot:'🔴', label:'Sin conv.', rec:'Revisar landing', nextStatus:'rechazado',
              reason:`${m.clicks} clicks sin carrito ni compras — revisar landing` };
 
   // ─── 🟢 VERDE — va bien ───
-  if (m.cpa > 0 && m.cpa <= cpaObj && ventas >= 5 && profit > 0)
+  if (m.cpa > 0 && m.cpa <= cpaObj && ventas >= 5 && (revenueReal === 0 || profit > 0))
     return { color:'green', dot:'🟢', label:'Validar', rec:'Validar → escalar', nextStatus:'validado',
-             reason:`CPA ${fmt(m.cpa)} ≤ obj · ${ventas} ventas · profit ${fmt(profit)}` };
+             reason:`CPA ${fmt(m.cpa)} ≤ obj · ${ventas} ventas${revenueReal>0?' · profit '+fmt(profit):''}` };
   if (m.cpa > 0 && m.cpa <= cpaObj && ventas >= 2)
     return { color:'green', dot:'🟢', label:'Va bien', rec:'Validar', nextStatus:'validado',
              reason:`CPA ${fmt(m.cpa)} ≤ objetivo ${fmt(cpaObj)} con ${ventas} ventas` };
-  if (m.cpa > 0 && m.cpa <= cpaObj && ventas >= 1 && (m.roas||0) >= roasBE)
+  if (m.cpa > 0 && m.cpa <= cpaObj && ventas >= 1 && roasReal >= roasBE)
     return { color:'green', dot:'🟢', label:'Primera venta', rec:'Dejar correr', nextStatus:'validado',
-             reason:`CPA rentable · ROAS ${(m.roas||0).toFixed(2)}x ≥ BE` };
+             reason:`CPA rentable · ROAS ${roasReal.toFixed(2)}x ≥ BE ${roasBE.toFixed(2)}x` };
   if (m.ctr >= 1.8 && !m.cpa && !enoughSpend)
     return { color:'green', dot:'🟢', label:'Buen CTR', rec:'Dejar correr', nextStatus:'testeo',
              reason:`CTR ${m.ctr.toFixed(2)}% ≥ 1.8% — muy buen hook, esperar CPA` };
@@ -4963,10 +4967,308 @@ function crDecision(m, targets) {
 }
 
 function showCreativoAnalysis(id) {
-  const c = state.creativos.find(x => x.id === id);
+  const c = (state.creativos||[]).find(x => x.id === id);
   if (!c) return;
   const m = c.metrics || {};
   const targets = c.product ? getTrafficCpaTargets(c.product) : { cpaObj:22, cpaBE:28, roasBE:1.5, price:30 };
+  const { cpaObj, cpaBE, roasBE, price } = targets;
+  const sem  = crSemaforo(m, targets);
+  const semBg = {red:'#ef4444',yellow:'#f59e0b',green:'#10b981',gray:'#9ca3af'}[sem.color];
+
+  // ── Fuentes de datos ──
+  const gasto      = m.presup         || 0;
+  const ventas     = m.ventas         || 0;  // compras de Meta
+  const cpa        = m.cpa            || 0;  // costo por compra
+  const purchRoas  = m.purchaseRoas   || 0;  // ROAS compras Meta
+  const purchVal   = m.purchaseValue  || 0;  // valor conversión compras Meta
+  const revenueReal= purchVal > 0 ? purchVal : (m.revenue || 0);
+  const profit     = revenueReal > 0 ? revenueReal - gasto : null;
+  const resultados = m.resultados     || 0;
+  const costoRes   = m.costoResultado || 0;
+  const ctrU       = m.ctrUnico       || 0;
+  const cpm        = m.cpm            || 0;
+  const cpcE       = m.cpcEnlace      || 0;
+  const frec       = m.frecuencia     || 0;
+  const clics      = m.clicsEnlace    || 0;
+  const visitas    = m.visitasPagina  || 0;
+  const costoVis   = m.costoVisitaPagina || 0;
+  const checkouts  = m.checkouts      || 0;
+  const carritos   = m.leads          || 0;
+  const videoT     = m.videoTiempo    || 0;
+  const objetivo   = m.objetivoCampana|| '';
+  const hasData    = gasto > 0 || resultados > 0;
+  const esCOD      = objetivo.toLowerCase().includes('outcome') || objetivo.toLowerCase().includes('sales');
+
+  // ── Helpers visuales ──
+  const fmtN = v => v != null && v > 0 ? fmt(v) : '—';
+  const row = (label, val, color='', note='') =>
+    `<tr><td style="padding:4px 8px;font-size:11px;color:var(--text3);white-space:nowrap">${label}</td>
+     <td style="padding:4px 8px;font-size:12px;font-weight:600;color:${color||'var(--text)'}">${val}</td>
+     ${note?`<td style="padding:4px 8px;font-size:10px;color:var(--text3)">${note}</td>`:'<td></td>'}
+     </tr>`;
+  const kpi = (ico, label, val, cls) =>
+    `<div style="background:var(--surface2);border-radius:6px;padding:8px 10px;min-width:90px;flex:1">
+       <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">${ico} ${label}</div>
+       <div style="font-size:13px;font-weight:700;color:${{ok:'#10b981',warn:'#f59e0b',bad:'#ef4444',gray:'#9ca3af'}[cls]||'var(--text)'}">${val}</div>
+     </div>`;
+
+  // ── 1. EVALUACIÓN DE RENTABILIDAD ──
+  const rentItems = [];
+  let rentDecision = '', rentRiesgo = '';
+
+  if (!hasData) {
+    rentDecision = 'Sin métricas disponibles. El anuncio no ha generado datos aún o la sincronización no trajo resultados.';
+  } else {
+    // CPA vs targets
+    if (cpa > 0) {
+      if (cpa <= cpaObj)       rentItems.push({ico:'✅',txt:`CPA ${fmtN(cpa)} está dentro del objetivo (${fmtN(cpaObj)})`,cls:'ok'});
+      else if (cpa <= cpaBE)   rentItems.push({ico:'⚠️',txt:`CPA ${fmtN(cpa)} supera el objetivo (${fmtN(cpaObj)}) pero sigue por debajo del breakeven (${fmtN(cpaBE)}) — rentable, fuera del objetivo`,cls:'warn'});
+      else                     rentItems.push({ico:'🔴',txt:`CPA ${fmtN(cpa)} supera el breakeven (${fmtN(cpaBE)}) — campaña no rentable con esta estructura`,cls:'bad'});
+    } else if (costoRes > 0) {
+      if (costoRes <= cpaObj)  rentItems.push({ico:'✅',txt:`Costo/resultado ${fmtN(costoRes)} dentro del objetivo (${fmtN(cpaObj)})`,cls:'ok'});
+      else if (costoRes <= cpaBE) rentItems.push({ico:'⚠️',txt:`Costo/resultado ${fmtN(costoRes)} entre objetivo y BE — monitorear`,cls:'warn'});
+      else                     rentItems.push({ico:'🔴',txt:`Costo/resultado ${fmtN(costoRes)} supera el BE (${fmtN(cpaBE)})`,cls:'bad'});
+    }
+    // ROAS
+    if (purchRoas > 0) {
+      if (purchRoas >= roasBE) rentItems.push({ico:'✅',txt:`ROAS de compras ${purchRoas.toFixed(2)}x ≥ breakeven (${roasBE.toFixed(2)}x) — la campaña cubre costos`,cls:'ok'});
+      else                     rentItems.push({ico:'🔴',txt:`ROAS de compras ${purchRoas.toFixed(2)}x < breakeven (${roasBE.toFixed(2)}x) — no cubre estructura de costos`,cls:'bad'});
+    }
+    // Valor conversión y profit
+    if (purchVal > 0) {
+      const profitC = profit > 0 ? 'ok' : 'bad';
+      rentItems.push({ico: profit > 0 ? '💰':'📉', txt:`Valor conversión ${fmtN(purchVal)} · Gasto ${fmtN(gasto)} · Profit estimado ${profit >= 0 ? '+'+fmtN(profit) : fmtN(profit)}`, cls: profitC});
+    } else if (gasto > 0 && ventas === 0 && resultados === 0) {
+      rentItems.push({ico:'⏳',txt:`Gasto ${fmtN(gasto)} sin resultados registrados — puede ser que el pixel no esté reportando o los datos no llegaron aún`,cls:'warn'});
+    }
+    // Gasto vs cpaBE sin compras
+    if (gasto >= cpaBE && ventas === 0 && resultados === 0) {
+      rentDecision = `Alerta crítica: el gasto (${fmtN(gasto)}) superó el CPA breakeven (${fmtN(cpaBE)}) sin ningún resultado. Pausar y revisar antes de continuar.`;
+      rentRiesgo = 'HIGH';
+    } else if (cpa > 0 && cpa <= cpaObj) {
+      rentDecision = `Rentabilidad confirmada: CPA ${fmtN(cpa)} dentro del objetivo. ${ventas > 0 ? ventas+' compra(s) registradas.' : ''}${purchRoas > roasBE ? ' ROAS de compras saludable.' : ''}`;
+      rentRiesgo = 'LOW';
+    } else if (cpa > cpaBE) {
+      rentDecision = `No rentable: el costo por compra (${fmtN(cpa)}) supera el breakeven (${fmtN(cpaBE)}). No escalar con esta estructura.`;
+      rentRiesgo = 'HIGH';
+    } else if (gasto < cpaBE * 0.5) {
+      rentDecision = `Datos insuficientes: gasto (${fmtN(gasto)}) todavía muy bajo para concluir sobre rentabilidad. Mínimo referencial: ${fmtN(cpaBE*0.5)} para empezar a evaluar.`;
+      rentRiesgo = 'LOW';
+    } else {
+      rentDecision = `En proceso: hay gasto pero sin resultados claros aún. Vigilar evolución antes de tomar decisiones.`;
+      rentRiesgo = 'MED';
+    }
+  }
+
+  // ── 2. EVALUACIÓN DE TRÁFICO ──
+  const trafItems = [];
+  let embudo = [], traficoDecision = '';
+
+  if (ctrU > 0) {
+    if (ctrU >= 1.8)      trafItems.push({ico:'✅',txt:`CTR único enlace ${ctrU.toFixed(2)}% — buen gancho inicial, el creativo atrae clics`,cls:'ok'});
+    else if (ctrU >= 1.0) trafItems.push({ico:'⚠️',txt:`CTR único enlace ${ctrU.toFixed(2)}% — aceptable pero optimizable (referencia óptima ≥ 1.8%)`,cls:'warn'});
+    else                  trafItems.push({ico:'🔴',txt:`CTR único enlace ${ctrU.toFixed(2)}% — bajo, el creativo no está generando suficiente impacto`,cls:'bad'});
+  }
+  if (cpm > 0) {
+    const cpmNote = cpm > 15 ? '— audiencia competida o segmentación cara' : cpm > 8 ? '— nivel medio, vigilar' : '— eficiente';
+    const cpmCls  = cpm > 15 ? 'bad' : cpm > 8 ? 'warn' : 'ok';
+    trafItems.push({ico: cpm>15?'🔴':cpm>8?'⚠️':'✅', txt:`CPM ${fmtN(cpm)} ${cpmNote}`, cls:cpmCls});
+    // Contexto: si hay compras y CPA bien aunque CPM caro
+    if (cpm > 10 && cpa > 0 && cpa <= cpaObj)
+      trafItems.push({ico:'ℹ️',txt:`CPM caro (${fmtN(cpm)}) pero el CPA se mantiene dentro del objetivo — el tráfico es caro pero convierte. Prioridad: rentabilidad sobre CPM.`,cls:'ok'});
+  }
+  if (cpcE > 0) {
+    const cpcCls = cpcE > 1 ? 'bad' : cpcE > 0.6 ? 'warn' : 'ok';
+    trafItems.push({ico: cpcE>1?'🔴':cpcE>0.6?'⚠️':'✅', txt:`CPC enlace ${fmtN(cpcE)} — costo por clic en el enlace`, cls:cpcCls});
+    if (cpcE > 0.8 && cpa > 0 && cpa <= cpaObj)
+      trafItems.push({ico:'ℹ️',txt:`CPC enlace elevado pero el embudo convierte: diferencia entre "caro para atraer" y "rentable para vender".`,cls:'warn'});
+  }
+  if (frec > 0) {
+    const frecCls = frec > 3 ? 'bad' : frec > 2 ? 'warn' : 'ok';
+    trafItems.push({ico: frec>3?'🔄':frec>2?'⚠️':'✅', txt:`Frecuencia ${frec.toFixed(2)} — ${frec>3?'fatiga publicitaria: la audiencia ya vio este anuncio demasiadas veces':frec>2?'elevándose, preparar rotación':'nivel saludable'}`, cls:frecCls});
+  }
+
+  // Embudo
+  if (clics > 0 || visitas > 0 || checkouts > 0 || carritos > 0 || ventas > 0) {
+    embudo.push({label:'Clics enlace', val: clics||'—', ok: clics>0});
+    if (visitas > 0 || clics > 0) {
+      const cvLP = clics > 0 && visitas > 0 ? (visitas/clics*100).toFixed(0)+'%' : '—';
+      const lpOk = clics > 0 && visitas >= clics*0.5;
+      embudo.push({label:'Visitas LP', val: visitas||'—', note:`(${cvLP} de clics)`, ok:lpOk, warn:!lpOk&&visitas>0});
+      if (!lpOk && clics > 10 && visitas > 0)
+        trafItems.push({ico:'🐌',txt:`${clics} clics pero solo ${visitas} visitas (${cvLP}) — posible problema de carga, redirección o velocidad de la landing`,cls:'bad'});
+    }
+    if (costoVis > 0) embudo.push({label:'Costo/visita', val:fmtN(costoVis), ok:costoVis<2});
+    embudo.push({label:'Carritos', val:carritos||'—', ok:carritos>0});
+    embudo.push({label:'Pagos inic.', val:checkouts||'—', ok:checkouts>0});
+    embudo.push({label:'Compras', val:ventas||'—', ok:ventas>0});
+
+    // Diagnóstico embudo
+    if (carritos > 3 && ventas === 0)
+      trafItems.push({ico:'🛒',txt:`${carritos} carritos con 0 compras — hay intención de compra pero se rompe el cierre. Revisar checkout, medios de pago y fricción en el proceso.`,cls:'warn'});
+    if (checkouts > 2 && ventas === 0)
+      trafItems.push({ico:'💳',txt:`${checkouts} pagos iniciados con 0 compras — fricción crítica en el checkout. Revisar pasos de pago, precio con envío y garantías.`,cls:'bad'});
+    if (visitas > 20 && checkouts < visitas*0.03)
+      trafItems.push({ico:'🏠',txt:`${visitas} visitas con ${checkouts} pagos iniciados (${(checkouts/visitas*100).toFixed(1)}%) — la landing informa pero no persuade. Mejorar CTA, prueba social y propuesta de valor.`,cls:'warn'});
+  }
+
+  // ── 3. DIAGNÓSTICO CREATIVO ──
+  const creatItems = [];
+  if (videoT > 0) {
+    if (videoT < 5)       creatItems.push({ico:'⏱️',txt:`Video: ${videoT.toFixed(1)}s de reproducción promedio — muy bajo, el hook no retiene. Cambiar primeros 3 segundos.`,cls:'bad'});
+    else if (videoT < 10) creatItems.push({ico:'⚠️',txt:`Video: ${videoT.toFixed(1)}s — moderado. El hook funciona pero la retención cae pronto.`,cls:'warn'});
+    else                  creatItems.push({ico:'✅',txt:`Video: ${videoT.toFixed(1)}s — buena retención inicial.`,cls:'ok'});
+    if (videoT >= 10 && ctrU > 0 && ctrU < 1.5)
+      creatItems.push({ico:'🎬',txt:`El video retiene (${videoT.toFixed(1)}s) pero el CTR es bajo — el contenido entretiene pero no genera acción. Reforzar CTA y oferta en el video.`,cls:'warn'});
+  }
+  if (ctrU >= 1.8 && ventas === 0 && gasto > cpaBE*0.4)
+    creatItems.push({ico:'🎯',txt:`CTR alto (${ctrU.toFixed(2)}%) pero sin compras — el anuncio atrae clics, la oferta o la landing no convierten. El creativo no es el problema principal.`,cls:'warn'});
+
+  // ── 4. MÉTRICAS FALTANTES ──
+  const missing = [];
+  if (!purchRoas && ventas > 0)  missing.push('ROAS de compras — puede no reportarse si el pixel de conversión no está activo o la campaña usa objetivo de alcance/tráfico.');
+  if (!purchVal  && ventas > 0)  missing.push('Valor de conversión de compras — el pixel puede no estar reportando el valor de compra. Verificar configuración en Events Manager.');
+  if (!ctrU && gasto > 0)        missing.push('CTR único en enlace — puede tardar en aparecer en campañas nuevas o con pocos datos.');
+  if (!videoT && gasto > 0)      missing.push('Tiempo de reproducción — solo aplica para anuncios de video. Si es imagen, este campo estará vacío normalmente.');
+  if (!purchRoas && !ventas && objetivo.includes('MESSAGE'))
+    missing.push('ROAS y valor de conversión de compras no aplican para campañas de mensajes — el objetivo es conversación, no compra.');
+
+  // ── 5. RESUMEN EJECUTIVO y ACCIÓN ──
+  let decision = '', accion = '', prioridad = '';
+  if (!hasData) {
+    decision = 'Sin datos suficientes para evaluar.';
+    accion   = 'Esperar que el anuncio acumule al menos 1-2 días de datos o hacer sync manual.';
+    prioridad = 'gray';
+  } else if (rentRiesgo === 'HIGH' && (cpa > cpaBE || (gasto >= cpaBE && ventas === 0))) {
+    decision  = 'PAUSAR — La campaña no es rentable con la estructura actual.';
+    accion    = cpa > cpaBE
+      ? `El CPA (${fmtN(cpa)}) supera el breakeven (${fmtN(cpaBE)}). Pausar, revisar oferta, landing y segmentación antes de reactivar.`
+      : `Gasto (${fmtN(gasto)}) superó el BE sin resultados. Pausa preventiva inmediata.`;
+    prioridad = 'bad';
+  } else if (cpa > 0 && cpa <= cpaObj && ventas >= 2 && (purchRoas >= roasBE || !purchRoas)) {
+    decision  = ventas >= 5 ? 'VALIDAR → ESCALAR con cuidado' : 'MANTENER Y MONITOREAR — señales positivas.';
+    accion    = ventas >= 5
+      ? `CPA rentable con ${ventas} compras. Aumentar presupuesto un 20-30% cada 48h, monitoreando que el CPA no supere ${fmtN(cpaObj)}.`
+      : `CPA dentro del objetivo con ${ventas} compra(s). Mantener activo, esperar llegar a 5+ compras para validar y considerar escalado.`;
+    prioridad = 'ok';
+  } else if (gasto < cpaBE * 0.5) {
+    decision  = 'DEJAR CORRER — muy temprano para decidir.';
+    accion    = `Gasto (${fmtN(gasto)}) es menor al 50% del CPA breakeven (${fmtN(cpaBE)}). Esperar llegar a ${fmtN(cpaBE)} en gasto antes de evaluar.`;
+    prioridad = 'warn';
+  } else if (frec > 3 && ctrU < 1.2) {
+    decision  = 'ROTAR CREATIVO — fatiga publicitaria.';
+    accion    = `Frecuencia ${frec.toFixed(1)} con CTR cayendo. Crear variación del creativo manteniendo la misma oferta.`;
+    prioridad = 'warn';
+  } else {
+    decision  = 'MONITOREAR — datos en proceso.';
+    accion    = 'Continuar observando. Cuando el gasto supere el CPA breakeven habrá suficiente data para decidir.';
+    prioridad = 'warn';
+  }
+
+  const prioColor = {ok:'#10b981',warn:'#f59e0b',bad:'#ef4444',gray:'#9ca3af'}[prioridad];
+  const prioBg    = {ok:'#d1fae5',warn:'#fef3c7',bad:'#fee2e2',gray:'#f3f4f6'}[prioridad];
+  const section = (title, content) =>
+    `<div style="margin-bottom:14px">
+       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+         <span style="display:inline-block;width:16px;height:2px;background:var(--border)"></span>${title}
+       </div>
+       ${content}
+     </div>`;
+  const itemHtml = items => items.length ? items.map(d=>`
+    <div style="display:flex;gap:7px;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--surface2)">
+      <span style="flex-shrink:0;font-size:13px">${d.ico}</span>
+      <span style="font-size:11px;color:${{ok:'#065f46',warn:'#92400e',bad:'#991b1b',gray:'var(--text3)'}[d.cls]||'var(--text)'};line-height:1.4">${d.txt}</span>
+    </div>`).join('') : `<div style="font-size:11px;color:var(--text3);padding:4px 0">Sin alertas en esta sección.</div>`;
+
+  // Render modal
+  const existing = document.getElementById('analisis-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'analisis-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:12px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.3);display:flex;flex-direction:column">
+
+      <!-- HEADER -->
+      <div style="padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;position:sticky;top:0;background:var(--surface);z-index:1">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${semBg};flex-shrink:0"></span>
+            <strong style="font-size:14px">${c.name}</strong>
+            ${c.product?`<span style="font-size:11px;color:var(--text3)">· ${c.product}</span>`:''}
+          </div>
+          <div style="font-size:11px;color:var(--text3)">
+            ${objetivo?`Objetivo: <strong style="color:var(--text2)">${objetivo}</strong> ·`:''}
+            CPA obj <strong>${fmtN(cpaObj)}</strong> · CPA BE <strong>${fmtN(cpaBE)}</strong> · ROAS BE <strong>${roasBE.toFixed(2)}x</strong> · Precio <strong>${fmtN(price)}</strong>
+            ${c.respTesteo?` · 🧪 ${c.respTesteo}`:''}
+          </div>
+        </div>
+        <button onclick="document.getElementById('analisis-modal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3);flex-shrink:0">✕</button>
+      </div>
+
+      <div style="padding:16px 20px;flex:1">
+
+        <!-- KPIs rápidos -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          ${kpi('💸','Gasto', fmtN(gasto)||'—', 'gray')}
+          ${kpi('📦','Resultados', resultados||ventas||'—', resultados>0||ventas>0?'ok':'gray')}
+          ${kpi('🎯','CPA', cpa>0?fmtN(cpa):(costoRes>0?fmtN(costoRes):'—'), cpa>0?(cpa<=cpaObj?'ok':cpa<=cpaBE?'warn':'bad'):'gray')}
+          ${kpi('📈','ROAS Compras', purchRoas>0?purchRoas.toFixed(2)+'x':'—', purchRoas>0?(purchRoas>=roasBE?'ok':'bad'):'gray')}
+          ${kpi('💰','Valor Conv.', purchVal>0?fmtN(purchVal):'—', purchVal>0?'ok':'gray')}
+        </div>
+
+        <!-- Embudo visual -->
+        ${embudo.length?`<div style="margin-bottom:16px;background:var(--surface2);border-radius:8px;padding:10px 14px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:8px">EMBUDO DE CONVERSIÓN</div>
+          <div style="display:flex;gap:0;flex-wrap:wrap;align-items:center">
+            ${embudo.map((s,i)=>`
+              ${i>0?`<span style="color:var(--text3);font-size:12px;margin:0 4px">→</span>`:''}
+              <div style="text-align:center;padding:4px 8px">
+                <div style="font-size:9px;color:var(--text3);margin-bottom:2px">${s.label}</div>
+                <div style="font-size:13px;font-weight:700;color:${s.ok?'#10b981':s.warn?'#f59e0b':'var(--text)'}">${s.val}</div>
+                ${s.note?`<div style="font-size:9px;color:var(--text3)">${s.note}</div>`:''}
+              </div>`).join('')}
+          </div>
+        </div>`:''}
+
+        <!-- Sección 1: Rentabilidad -->
+        ${section('1. Rentabilidad', `
+          ${itemHtml(rentItems)}
+          ${rentDecision?`<div style="margin-top:6px;padding:6px 10px;border-radius:5px;background:var(--surface2);font-size:11px;color:var(--text2)">📋 ${rentDecision}</div>`:''}
+        `)}
+
+        <!-- Sección 2: Tráfico -->
+        ${section('2. Eficiencia de tráfico y embudo', itemHtml(trafItems))}
+
+        <!-- Sección 3: Diagnóstico creativo -->
+        ${creatItems.length?section('3. Diagnóstico creativo', itemHtml(creatItems)):''}
+
+        <!-- Sección 4: Métricas faltantes -->
+        ${missing.length?section('4. Métricas no disponibles', `
+          <div style="font-size:11px;color:var(--text3);line-height:1.6">
+            ${missing.map(m=>`<div style="padding:3px 0;display:flex;gap:6px"><span>ℹ️</span><span>${m}</span></div>`).join('')}
+          </div>
+        `):''}
+
+        <!-- Resumen ejecutivo -->
+        <div style="border-radius:8px;padding:12px 14px;background:${prioBg};border-left:4px solid ${prioColor};margin-top:4px">
+          <div style="font-size:11px;font-weight:700;color:${prioColor};margin-bottom:5px">DECISIÓN: ${decision}</div>
+          <div style="font-size:11px;color:#374151;line-height:1.5"><strong>Acción siguiente:</strong> ${accion}</div>
+        </div>
+
+      </div>
+
+      <!-- FOOTER -->
+      <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;background:var(--surface)">
+        ${sem.nextStatus&&sem.nextStatus!=='testeo'?`<button class="btn sm primary" onclick="moveCard('${c.id}','${sem.nextStatus}');document.getElementById('analisis-modal').remove()" style="font-size:11px">${sem.dot} Mover a ${sem.nextStatus}</button>`:''}
+        <button class="btn sm" onclick="openCreativoModal('${c.id}');document.getElementById('analisis-modal').remove()" style="font-size:11px">✎ Editar</button>
+        <button class="btn sm" onclick="document.getElementById('analisis-modal').remove()" style="font-size:11px">Cerrar</button>
+        <span style="margin-left:auto;font-size:10px;color:var(--text3);align-self:center">🔎 ${new Date().toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
   const { cpaObj, cpaBE, roasBE, price } = targets;
   const sem = crSemaforo(m, targets);
   const semBg = {red:'#ef4444',yellow:'#f59e0b',green:'#10b981',gray:'#9ca3af'}[sem.color];
