@@ -5269,9 +5269,6 @@ function showCreativoAnalysis(id) {
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
   document.body.appendChild(modal);
 }
-  const { cpaObj, cpaBE, roasBE, price } = targets;
-  const sem = crSemaforo(m, targets);
-  const semBg = {red:'#ef4444',yellow:'#f59e0b',green:'#10b981',gray:'#9ca3af'}[sem.color];
 
   // Build diagnostics based on 15 rules
   const diags = [];
