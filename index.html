@@ -471,6 +471,7 @@ tbody tr:hover{background:var(--accent-light)!important}
 
 <!-- NAV -->
 <div class="nav">
+  <button class="nav-tab" onclick="showTab('home')">🏠 Inicio</button>
   <button class="nav-tab active" onclick="showTab('dashboard')">Dashboard</button>
   <button class="nav-tab" onclick="showTab('calc')">Calculadora</button>
   <button class="nav-tab" onclick="showTab('semanal')">Operación Semanal</button>
@@ -481,6 +482,43 @@ tbody tr:hover{background:var(--accent-light)!important}
 </div>
 
 <div class="main">
+
+<!-- ===== HOME / INICIO EJECUTIVO ===== -->
+<div class="panel" id="panel-home">
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-title">🏠 Centro de mando · Pipeline de creativos</span>
+      <span id="home-updated" style="font-size:10px;color:var(--text3);font-weight:400"></span>
+    </div>
+    <div class="kpi-grid" id="home-kpis" style="margin-bottom:0"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-title">⏳ Pendientes por testear</span></div>
+    <div id="home-pendientes"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-title">🎯 Metas del equipo</span>
+      <button class="btn sm primary" id="home-meta-add-btn" onclick="openMetaForm()" style="display:none">+ Nueva meta</button>
+    </div>
+    <div id="home-meta-form" style="display:none;margin-bottom:12px"></div>
+    <div id="home-metas"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-title">👥 Rendimiento por persona</span></div>
+    <div class="tbl-wrap" style="overflow-x:auto">
+      <table class="tbl" style="width:100%;font-size:11px">
+        <thead><tr>
+          <th style="text-align:left">Persona</th><th>Rol</th>
+          <th>Asignados</th><th>Creados</th><th>En producción</th><th>Entregados (listo)</th>
+          <th>Atrasados</th><th>En testeo</th><th>Validados</th><th>Escalados</th>
+        </tr></thead>
+        <tbody id="home-team-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
 <!-- ===== DASHBOARD ===== -->
 <div class="panel active" id="panel-dashboard">
@@ -832,6 +870,12 @@ tbody tr:hover{background:var(--accent-light)!important}
     <div class="sec-hdr">
       <span class="sec-title">Performance por creativo</span>
       <div class="sec-actions" style="gap:6px;flex-wrap:wrap">
+        <input id="cr-filter" placeholder="🔍 Filtrar: nombre, producto, tester, campaña..." style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text);min-width:200px" oninput="renderGroupedView()">
+        <select id="cr-group-by" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text)" onchange="renderGroupedView()">
+          <option value="ad" selected>Ver por: Anuncio</option>
+          <option value="adset">Ver por: Adset</option>
+          <option value="campaign">Ver por: Campaña</option>
+        </select>
         <select id="sync-all-range" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text)">
           <option value="today" selected>Hoy</option>
           <option value="yesterday">Ayer</option>
@@ -870,6 +914,7 @@ tbody tr:hover{background:var(--accent-light)!important}
         <tbody id="creativos-body"></tbody>
       </table>
     </div>
+    <div id="creativos-grouped" style="display:none"></div>
   </div>
   <div class="sec">
     <div class="sec-hdr"><span class="sec-title">KPIs generales</span></div>
@@ -1496,6 +1541,16 @@ tbody tr:hover{background:var(--accent-light)!important}
       <div class="g3 mb10" style="border:1px solid var(--border);border-radius:var(--r);padding:10px;background:var(--surface2)">
         <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:2px">🔗 IDs Meta Ads Manager</div>
         <div style="grid-column:1/-1;font-size:10px;color:var(--text3);margin-bottom:6px">Obtén el Ad ID en <b>Ads Manager → columna "ID del anuncio"</b>. No es el ID del post de Facebook.</div>
+        <div class="field" style="grid-column:1/-1"><label>Tipo de test</label>
+          <select id="cr-test-type" onchange="onTestTypeChange()">
+            <option value="individual">🎯 Test de creativo individual</option>
+            <option value="campana">📦 Test de campaña con varios creativos</option>
+          </select>
+        </div>
+        <div class="field" id="cr-campaign-name-wrap" style="grid-column:1/-1;display:none"><label>Nombre de campaña</label>
+          <input id="cr-meta-campaign-name" placeholder="AN — Test Gomitas — Julio" oninput="calcDirty()">
+          <span class="hint">Los creativos con el mismo Campaign ID se agrupan en la vista por campaña.</span>
+        </div>
         <div class="field"><label>Ad ID <span style="font-size:9px;color:var(--text3)">(obligatorio para sync)</span></label>
           <input id="cr-meta-ad-id" placeholder="120213xxxxxxxxxx" oninput="calcDirty()">
         </div>
@@ -1866,7 +1921,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // Keys where LOCAL is authoritative (deletions must stick — no union merge with cloud)
-const _LOCAL_AUTH_KEYS = ['products','costCaps','versions','adAccounts','pixels','landings','enfoques','team','painPoints'];
+const _LOCAL_AUTH_KEYS = ['products','costCaps','versions','adAccounts','pixels','landings','enfoques','team','painPoints','metas'];
 // Keys where we use union merge (multi-user append-only content)
 const _MERGE_LIST_KEYS = ['creativos','recursos','users'];
 // All array keys (for syncFromCloud score)
@@ -1934,9 +1989,9 @@ const SESSION_KEY = 'an_session_v1';
 
 // ── ROLE PERMISSIONS ──
 const ROLE_TABS = {
-  admin:  ['dashboard','calc','semanal','creativos','costcap','recursos','config'],
-  tester: ['dashboard','semanal','creativos','costcap','recursos'],
-  editor: ['creativos','recursos'],
+  admin:  ['home','dashboard','calc','semanal','creativos','costcap','recursos','config'],
+  tester: ['home','dashboard','semanal','creativos','costcap','recursos'],
+  editor: ['home','creativos','recursos'],
 };
 const ROLE_LABELS = { admin:'Admin', tester:'Tester', editor:'Editor' };
 
@@ -2112,7 +2167,7 @@ function updateUserBadge() {
 
 function applyRoleTabs() {
   const allowed = currentUser ? (ROLE_TABS[currentUser.role] || ROLE_TABS.editor) : [];
-  const allTabs = ['dashboard','calc','semanal','creativos','costcap','recursos','config'];
+  const allTabs = ['home','dashboard','calc','semanal','creativos','costcap','recursos','config'];
   const navTabs = document.querySelectorAll('.nav-tab');
   allTabs.forEach((tab, i) => {
     if (navTabs[i]) navTabs[i].style.display = allowed.includes(tab) ? '' : 'none';
@@ -2349,8 +2404,9 @@ function showTab(name) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
   const tabs = document.querySelectorAll('.nav-tab');
-  const map = {dashboard:0,calc:1,semanal:2,creativos:3,costcap:4,recursos:5,config:6};
+  const map = {home:0,dashboard:1,calc:2,semanal:3,creativos:4,costcap:5,recursos:6,config:7};
   if (map[name] !== undefined) tabs[map[name]].classList.add('active');
+  if (name === 'home') renderHome();
   if (name === 'dashboard') renderDashboard();
   if (name === 'semanal') renderHistory();
   if (name === 'creativos') renderKanban();
@@ -2935,6 +2991,201 @@ function updateFilterSelects() {
 }
 
 // ==================== DASHBOARD ====================
+// ==================== HOME / INICIO EJECUTIVO ====================
+const META_TIPOS = {
+  listos:     { label:'Creativos listos para test', unit:'creativos' },
+  testeados:  { label:'Creativos testeados',        unit:'creativos' },
+  validados:  { label:'Creativos validados',        unit:'creativos' },
+  escalados:  { label:'Creativos escalados',        unit:'creativos' },
+  compras:    { label:'Compras mínimas',            unit:'compras' },
+  cpa:        { label:'CPA objetivo promedio ($)',  unit:'$', invert:true },
+  roas:       { label:'ROAS objetivo',              unit:'x' },
+  creadosEditor: { label:'Creativos por editor',    unit:'creativos' },
+  testsTester:   { label:'Tests por trafficker',    unit:'tests' },
+};
+
+function _metaPeriodStart(periodo) {
+  const now = new Date();
+  if (periodo === 'diaria')  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (periodo === 'semanal') { const d = new Date(now); const day = (d.getDay()+6)%7; d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d; }
+  return new Date(now.getFullYear(), now.getMonth(), 1); // mensual
+}
+
+function _stageAtInPeriod(c, stage, start) {
+  const log = (c.stageLog||{})[stage];
+  if (!log || !log.at) return false;
+  return new Date(log.at) >= start;
+}
+
+function _metaProgress(meta) {
+  const start = _metaPeriodStart(meta.periodo);
+  const all = state.creativos || [];
+  const byResp = meta.responsable ? all.filter(c => c.resp===meta.responsable || c.respTesteo===meta.responsable) : all;
+  let actual = 0;
+  switch (meta.tipo) {
+    case 'listos':    actual = byResp.filter(c => _stageAtInPeriod(c,'listo',start) || (c.status==='listo' && c.listoAt && new Date(c.listoAt)>=start)).length; break;
+    case 'testeados': actual = byResp.filter(c => _stageAtInPeriod(c,'testeo',start)).length; break;
+    case 'validados': actual = byResp.filter(c => _stageAtInPeriod(c,'validado',start)).length; break;
+    case 'escalados': actual = byResp.filter(c => _stageAtInPeriod(c,'escalando',start)).length; break;
+    case 'compras':   actual = byResp.reduce((s,c)=>s+((c.metrics||{}).ventas||0),0); break;
+    case 'cpa': {
+      const withCpa = byResp.filter(c => ((c.metrics||{}).cpa||0) > 0);
+      actual = withCpa.length ? withCpa.reduce((s,c)=>s+c.metrics.cpa,0)/withCpa.length : 0; break;
+    }
+    case 'roas': {
+      const withRoas = byResp.filter(c => ((c.metrics||{}).purchaseRoas||(c.metrics||{}).roas||0) > 0);
+      actual = withRoas.length ? withRoas.reduce((s,c)=>s+(c.metrics.purchaseRoas||c.metrics.roas),0)/withRoas.length : 0; break;
+    }
+    case 'creadosEditor': actual = byResp.filter(c => c.date && new Date(c.date)>=start).length; break;
+    case 'testsTester':   actual = byResp.filter(c => _stageAtInPeriod(c,'testeo',start)).length; break;
+  }
+  const obj = +meta.objetivo || 0;
+  const tipo = META_TIPOS[meta.tipo] || {};
+  let pctDone, estado;
+  if (tipo.invert) { // CPA: menos es mejor
+    pctDone = actual > 0 && obj > 0 ? Math.min(200, obj/actual*100) : 0;
+    estado = actual === 0 ? 'sin datos' : actual <= obj ? 'cumplida' : actual <= obj*1.2 ? 'en riesgo' : 'atrasada';
+  } else {
+    pctDone = obj > 0 ? Math.min(200, actual/obj*100) : 0;
+    estado = pctDone >= 100 ? 'cumplida' : pctDone >= 60 ? 'en riesgo' : 'atrasada';
+  }
+  return { actual, pctDone, estado };
+}
+
+function renderHome() {
+  const all = state.creativos || [];
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  document.getElementById('home-updated').textContent = 'Actualizado ' + new Date().toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+
+  // ── KPIs pipeline
+  const cnt = st => all.filter(c=>c.status===st).length;
+  const sinResp = all.filter(c => (c.status==='listo'||c.status==='testeo') && !c.respTesteo).length;
+  document.getElementById('home-kpis').innerHTML = [
+    { l:'Total creativos', v:all.length, c:'info' },
+    { l:'Ideas / Pendiente', v:cnt('idea'), c:'' },
+    { l:'En producción', v:cnt('produccion'), c:'info' },
+    { l:'Listos para test', v:cnt('listo'), c:cnt('listo')>0?'warn':'' },
+    { l:'En testeo', v:cnt('testeo'), c:'info' },
+    { l:'Validados', v:cnt('validado'), c:'ok' },
+    { l:'Escalando', v:cnt('escalando'), c:'ok' },
+    { l:'Rechazados', v:cnt('rechazado'), c:'' },
+    { l:'Sin responsable de testeo', v:sinResp, c:sinResp>0?'bad':'ok' },
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-label">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+  // ── Pendientes por testear (siempre visibles, sin filtro de fecha)
+  const pend = all.filter(c=>c.status==='listo')
+    .sort((a,b)=>(a.listoAt||'').localeCompare(b.listoAt||''));
+  document.getElementById('home-pendientes').innerHTML = !pend.length
+    ? '<div style="color:var(--text3);font-size:12px">🎉 No hay creativos pendientes por testear.</div>'
+    : pend.map(c=>`
+      <div style="display:flex;gap:10px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:var(--r);padding:8px 12px;margin-bottom:6px;cursor:pointer" onclick="showTab('creativos');setTimeout(()=>openDetailModal('${c.id}'),100)">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:12px">${(c.name||'').replace(/</g,'&lt;')}</div>
+          <div style="font-size:10px;color:var(--text3)">${c.product||'—'}${c.format?` · ${c.format}`:''}${c.listoAt?` · listo ${_daysSince(c.listoAt)}`:''}${c.listoBy?` · por ${c.listoBy}`:''}</div>
+        </div>
+        <span style="font-size:10px;font-weight:600;color:${c.respTesteo?'#7c3aed':'var(--red)'};flex-shrink:0">${c.respTesteo?'🧪 '+c.respTesteo:'⚠ Sin tester'}</span>
+        <button class="btn sm primary" style="font-size:10px;flex-shrink:0" onclick="event.stopPropagation();showTab('creativos');setTimeout(()=>openCreativoModal('${c.id}'),100)">▶ Iniciar testeo</button>
+      </div>`).join('');
+
+  // ── Metas
+  document.getElementById('home-meta-add-btn').style.display = isAdmin ? '' : 'none';
+  const metas = state.metas || [];
+  const estadoStyle = { 'cumplida':'background:#d1fae5;color:#065f46', 'en riesgo':'background:#fef3c7;color:#92400e', 'atrasada':'background:#fee2e2;color:#991b1b', 'sin datos':'background:#f3f4f6;color:#6b7280' };
+  document.getElementById('home-metas').innerHTML = !metas.length
+    ? '<div style="color:var(--text3);font-size:12px">Sin metas configuradas.' + (isAdmin?' Usa "+ Nueva meta" para crear la primera.':'') + '</div>'
+    : metas.map(mt=>{
+      const p = _metaProgress(mt);
+      const tipo = META_TIPOS[mt.tipo]||{label:mt.tipo};
+      const barColor = p.estado==='cumplida'?'#10b981':p.estado==='en riesgo'?'#f59e0b':'#ef4444';
+      const fmtV = v => mt.tipo==='cpa' ? '$'+v.toFixed(2) : mt.tipo==='roas' ? v.toFixed(2)+'x' : Math.round(v);
+      return `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="font-weight:600;font-size:12px">${tipo.label} <span style="font-weight:400;color:var(--text3)">· ${mt.periodo}${mt.responsable?` · ${mt.responsable}`:' · equipo'}</span></div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;${estadoStyle[p.estado]||''}">${p.estado.toUpperCase()}</span>
+            ${isAdmin?`<button class="btn sm danger" style="font-size:9px;padding:1px 5px" onclick="deleteMeta('${mt.id}')">✕</button>`:''}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+          <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${Math.min(100,p.pctDone)}%;background:${barColor};border-radius:4px"></div>
+          </div>
+          <div style="font-size:11px;font-weight:600;white-space:nowrap">${fmtV(p.actual)} / ${fmtV(+mt.objetivo)} · ${Math.round(p.pctDone)}%</div>
+        </div>
+      </div>`;
+    }).join('');
+
+  // ── Rendimiento por persona
+  const users = (state.users||[]).filter(u=>u.active!==false);
+  const now = Date.now();
+  document.getElementById('home-team-body').innerHTML = users.map(u=>{
+    const asEditor = all.filter(c=>c.resp===u.name);
+    const asTester = all.filter(c=>c.respTesteo===u.name);
+    const asign = new Set([...asEditor,...asTester].map(c=>c.id)).size;
+    const atras = asEditor.filter(c=>c.status==='produccion' && c.fechaLimite && new Date(c.fechaLimite).getTime() < now).length;
+    const cells = [
+      asign,
+      asEditor.length,
+      asEditor.filter(c=>c.status==='produccion').length,
+      asEditor.filter(c=>['listo','testeo','validado','escalando'].includes(c.status)).length,
+      atras,
+      asTester.filter(c=>c.status==='testeo').length,
+      asTester.filter(c=>c.status==='validado').length,
+      asTester.filter(c=>c.status==='escalando').length,
+    ];
+    return `<tr>
+      <td style="text-align:left;font-weight:600">${(u.name||u.email).replace(/</g,'&lt;')}</td>
+      <td style="text-align:center"><span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--surface2);border:1px solid var(--border)">${u.role}</span></td>
+      ${cells.map((v,i)=>`<td style="text-align:center;${i===4&&v>0?'color:var(--red);font-weight:700':''}">${v||'—'}</td>`).join('')}
+    </tr>`;
+  }).join('') || '<tr><td colspan="10" style="color:var(--text3);font-size:12px">Sin usuarios.</td></tr>';
+}
+
+// ── Metas CRUD (solo admin)
+function openMetaForm() {
+  const wrap = document.getElementById('home-meta-form');
+  if (wrap.style.display !== 'none') { wrap.style.display='none'; return; }
+  const users = (state.users||[]).filter(u=>u.active!==false);
+  wrap.style.display = '';
+  wrap.innerHTML = `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;align-items:end">
+      <div class="field"><label>Meta</label>
+        <select id="meta-tipo">${Object.entries(META_TIPOS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Período</label>
+        <select id="meta-periodo"><option value="diaria">Diaria</option><option value="semanal" selected>Semanal</option><option value="mensual">Mensual</option></select>
+      </div>
+      <div class="field"><label>Objetivo</label><input type="number" id="meta-objetivo" step="0.01" placeholder="10"></div>
+      <div class="field"><label>Responsable (opcional)</label>
+        <select id="meta-resp"><option value="">Todo el equipo</option>${users.map(u=>`<option value="${u.name}">${u.name}</option>`).join('')}</select>
+      </div>
+      <button class="btn primary" onclick="saveMeta()">Guardar meta</button>
+    </div>`;
+}
+
+function saveMeta() {
+  const objetivo = +document.getElementById('meta-objetivo').value;
+  if (!objetivo || objetivo <= 0) { showToast('Define un objetivo mayor a 0', 'error'); return; }
+  state.metas = state.metas || [];
+  state.metas.push({
+    id: uid(),
+    tipo: document.getElementById('meta-tipo').value,
+    periodo: document.getElementById('meta-periodo').value,
+    objetivo,
+    responsable: document.getElementById('meta-resp').value || '',
+    createdAt: new Date().toISOString(),
+  });
+  document.getElementById('home-meta-form').style.display = 'none';
+  persistState(); renderHome(); showToast('Meta guardada');
+}
+
+function deleteMeta(id) {
+  if (!confirm('¿Eliminar esta meta?')) return;
+  state.metas = (state.metas||[]).filter(m=>m.id!==id);
+  persistState(); renderHome();
+}
+
 function renderDashboard() {
   const hist = getFilteredHistory();
   const total = (key) => hist.reduce((s,h)=>s+(+h[key]||0),0);
@@ -3655,6 +3906,9 @@ function renderKanban() {
           ${c.painPoint ? `<div style="font-size:10px;color:#f97316;margin-bottom:1px">😣 ${c.painPoint}</div>` : ''}
           ${c.resp ? `<div style="font-size:10px;color:var(--text2);margin-bottom:1px">✏️ ${c.resp}</div>` : ''}
           ${c.status==='testeo'||c.status==='validado'||c.status==='escalando' ? `<div style="font-size:10px;font-weight:600;margin-bottom:1px;color:${c.respTesteo?'#7c3aed':'var(--text3)'}">🧪 Tester: ${c.respTesteo||'sin asignar'}</div>` : ''}
+          ${c.status==='listo' ? `<div style="font-size:9px;font-weight:700;display:inline-block;border-radius:4px;padding:2px 6px;margin-bottom:3px;background:#fef3c7;color:#92400e">⏳ Pendiente de testeo${c.listoAt?` · ${_daysSince(c.listoAt)}`:''}</div>
+          <div style="font-size:10px;font-weight:600;margin-bottom:1px;color:${c.respTesteo?'#7c3aed':'var(--red)'}">🧪 ${c.respTesteo?'Tester: '+c.respTesteo:'⚠ Sin responsable asignado'}</div>
+          ${c.listoBy?`<div style="font-size:9px;color:var(--text3);margin-bottom:1px">Listo por: ${c.listoBy}</div>`:''}` : ''}
           ${prodSem ? `<div style="font-size:9px;font-weight:700;display:inline-block;border-radius:4px;padding:1px 6px;margin-bottom:3px;background:${prodSem.bg};color:${prodSem.color}">🚦 ${prodSem.label}</div>` : ''}
           ${c.fechaLimite ? `<div style="font-size:10px;color:var(--amber);margin-bottom:2px">⏰ ${c.fechaLimite}</div>` : ''}
           ${hasMet ? `<div class="kb-card-metrics" style="margin-top:3px">
@@ -3801,16 +4055,161 @@ function moveCard(id, toStatus) {
   } else if (toStatus === 'listo') {
     c.produccionStatus = 'listo';
   }
+  _stampStageChange(c, toStatus);
   c.status = toStatus;
   if (toStatus === 'escalando') sendToCostCap(id);
   else { renderKanban(); calcDirty(); persistState(); }
 }
 
+// "hace X días/horas" desde un ISO timestamp
+function _daysSince(iso) {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (isNaN(ms) || ms < 0) return '';
+  const h = Math.floor(ms/3600000);
+  if (h < 1) return 'hace minutos';
+  if (h < 24) return `hace ${h}h`;
+  const d = Math.floor(h/24);
+  return `hace ${d} día${d>1?'s':''}`;
+}
+
+// Cambia el formulario según tipo de test (individual vs campaña)
+function onTestTypeChange() {
+  const sel = document.getElementById('cr-test-type');
+  const isCamp = sel && sel.value === 'campana';
+  const nameWrap = document.getElementById('cr-campaign-name-wrap');
+  if (nameWrap) nameWrap.style.display = isCamp ? '' : 'none';
+  const campLbl = document.querySelector('#cr-meta-campaign-id')?.closest('.field')?.querySelector('label span');
+  if (campLbl) campLbl.textContent = isCamp ? '(obligatorio en test de campaña)' : '(opcional)';
+}
+
+// Registra fecha/autor cuando un creativo cambia de etapa (para Home y pendientes)
+function _stampStageChange(c, toStatus) {
+  if (c.status === toStatus) return;
+  const now = new Date().toISOString();
+  const who = (currentUser && (currentUser.name || currentUser.email)) || '';
+  c.stageLog = c.stageLog || {};
+  c.stageLog[toStatus] = { at: now, by: who };
+  if (toStatus === 'listo')  { c.listoAt = now; c.listoBy = who; }
+  if (toStatus === 'testeo') { c.testeoAt = now; c.testeoBy = who; }
+}
+
+// ==================== VISTA JERÁRQUICA: CAMPAÑA / ADSET / ANUNCIO ====================
+function renderGroupedView() {
+  const mode = (document.getElementById('cr-group-by')||{}).value || 'ad';
+  const tbl = document.getElementById('creativos-table');
+  const grouped = document.getElementById('creativos-grouped');
+  if (!grouped) return;
+  if (mode === 'ad') { if (tbl) tbl.style.display=''; grouped.style.display='none'; renderCreativosTable(); return; }
+  if (tbl) tbl.style.display='none';
+  grouped.style.display='';
+
+  const keyField  = mode === 'campaign' ? 'metaCampaignId' : 'metaAdsetId';
+  const nameField = mode === 'campaign' ? 'metaCampaignName' : '';
+  const lvlLabel  = mode === 'campaign' ? 'Campaña' : 'Adset';
+  const inTest = (state.creativos||[]).filter(c => ['testeo','validado','escalando'].includes(c.status) && _crFilterMatch(c));
+
+  const groups = {};
+  for (const c of inTest) {
+    const k = (c[keyField]||'').trim() || '_sin';
+    (groups[k] = groups[k] || []).push(c);
+  }
+
+  const rows = Object.entries(groups).map(([k, list]) => {
+    let gasto=0, ventas=0, revenue=0, clicks=0, impresiones=0, visitas=0, carritos=0, checkouts=0;
+    for (const c of list) {
+      const m = c.metrics||{};
+      gasto       += m.presup||m.gasto||0;
+      ventas      += m.ventas||0;
+      revenue     += (m.purchaseValue||0) > 0 ? m.purchaseValue : (m.revenue||0);
+      clicks      += m.clicsEnlace||m.clicks||0;
+      impresiones += m.impresiones||0;
+      visitas     += m.visitasPagina||0;
+      carritos    += m.addToCart||0;
+      checkouts   += m.checkouts||m.initCheckout||0;
+    }
+    const cpa  = ventas>0 ? gasto/ventas : 0;
+    const roas = gasto>0 ? revenue/gasto : 0;
+    const ctr  = impresiones>0 ? clicks/impresiones*100 : 0;
+    const cpc  = clicks>0 ? gasto/clicks : 0;
+    const cpm  = impresiones>0 ? gasto/impresiones*1000 : 0;
+    // Targets del producto dominante del grupo
+    const prodCount = {};
+    list.forEach(c=>{ if(c.product) prodCount[c.product]=(prodCount[c.product]||0)+1; });
+    const domProd = Object.keys(prodCount).sort((a,b)=>prodCount[b]-prodCount[a])[0];
+    const targets = domProd ? getTrafficCpaTargets(domProd) : { cpaObj:22, cpaBE:28, roasBE:1.5 };
+    const rec = _groupRecommendation({gasto, ventas, cpa, roas, ctr}, targets, lvlLabel.toLowerCase());
+    const name = k==='_sin' ? `⚠ Sin ${lvlLabel} asignado` : ((list.find(c=>c[nameField])||{})[nameField] || `${lvlLabel} ${k}`);
+    return { k, name, list, gasto, ventas, revenue, cpa, roas, ctr, cpc, cpm, visitas, carritos, checkouts, rec, profit: revenue-gasto };
+  }).sort((a,b)=>b.profit-a.profit);
+
+  const winner = rows.find(r=>r.k!=='_sin' && r.ventas>0);
+  grouped.innerHTML = !rows.length
+    ? '<div style="color:var(--text3);font-size:12px;padding:12px">Sin creativos en testeo con métricas para agrupar.</div>'
+    : rows.map(r=>`
+    <div style="border:1px solid var(--border);border-left:4px solid ${r.rec.color};border-radius:var(--r);margin-bottom:8px;background:var(--surface2)">
+      <div style="display:flex;gap:12px;align-items:center;padding:10px 14px;cursor:pointer;flex-wrap:wrap" onclick="const d=this.nextElementSibling;d.style.display=d.style.display==='none'?'':'none'">
+        <div style="flex:1;min-width:180px">
+          <div style="font-weight:700;font-size:12px">${winner===r?'🏆 ':''}${r.name.replace(/</g,'&lt;')} <span style="font-weight:400;color:var(--text3);font-size:10px">· ${r.list.length} anuncio${r.list.length>1?'s':''}${r.k!=='_sin'?` · ID ${r.k}`:''}</span></div>
+          <div style="font-size:10px;color:${r.rec.color};font-weight:600;margin-top:2px">${r.rec.icon} ${r.rec.text}</div>
+        </div>
+        ${[
+          ['Gasto', fmt(r.gasto)], ['Compras', r.ventas||'—'],
+          ['CPA', r.cpa>0?fmt(r.cpa):'—'], ['ROAS', r.roas>0?r.roas.toFixed(2)+'x':'—'],
+          ['CTR', r.ctr>0?r.ctr.toFixed(2)+'%':'—'], ['CPM', r.cpm>0?fmt(r.cpm):'—'],
+          ['Profit', fmt(r.profit)],
+        ].map(([l,v])=>`<div style="text-align:center;min-width:60px"><div style="font-size:9px;color:var(--text3)">${l}</div><div style="font-size:12px;font-weight:700">${v}</div></div>`).join('')}
+        <span style="color:var(--text3);font-size:11px">▾</span>
+      </div>
+      <div style="display:none;border-top:1px solid var(--border);padding:8px 14px">
+        ${r.list.map(c=>{
+          const m=c.metrics||{}; const t=c.product?getTrafficCpaTargets(c.product):null; const s=crSemaforo(m,t);
+          const sBg={red:'#ef4444',yellow:'#f59e0b',green:'#10b981',gray:'#9ca3af'}[s.color]||'#9ca3af';
+          return `<div style="display:flex;gap:10px;align-items:center;padding:5px 0;border-bottom:1px dashed var(--border);font-size:11px">
+            <span style="width:8px;height:8px;border-radius:50%;background:${sBg};flex-shrink:0"></span>
+            <span style="flex:1;font-weight:600;cursor:pointer" onclick="openDetailModal('${c.id}')">${(c.name||'').replace(/</g,'&lt;')}</span>
+            <span>Gasto ${fmt(m.presup||0)}</span><span>Compras ${m.ventas||0}</span>
+            <span>CPA ${m.cpa>0?fmt(m.cpa):'—'}</span>
+            <span>ROAS ${(m.purchaseRoas||m.roas||0)>0?(m.purchaseRoas||m.roas).toFixed(2)+'x':'—'}</span>
+            <button class="btn sm" style="font-size:9px" onclick="showCreativoAnalysis('${c.id}')">🔎</button>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// Recomendación agregada por nivel (campaña/adset), usando targets de la calculadora
+function _groupRecommendation(g, t, nivel) {
+  if (g.gasto <= 0) return { icon:'⏳', text:'Sin gasto registrado — esperar data.', color:'#9ca3af' };
+  if (g.ventas === 0 && g.gasto >= t.cpaBE)
+    return { icon:'🔴', text:`Gasto ${fmt(g.gasto)} sin compras (supera CPA breakeven ${fmt(t.cpaBE)}). Apagar ${nivel} o rotar creativos.`, color:'#ef4444' };
+  if (g.ventas === 0)
+    return { icon:'🟡', text:`Sin compras aún, gasto bajo control. Dejar correr hasta ${fmt(t.cpaBE)}.`, color:'#f59e0b' };
+  if (g.cpa <= t.cpaObj && g.ventas >= 10)
+    return { icon:'🚀', text:`CPA ${fmt(g.cpa)} ≤ objetivo con ${g.ventas} compras. Escalar: duplicar ganador o subir presupuesto 20-30%.`, color:'#7c3aed' };
+  if (g.cpa <= t.cpaObj)
+    return { icon:'🟢', text:`CPA ${fmt(g.cpa)} dentro de objetivo (${fmt(t.cpaObj)}). Dejar correr y juntar más data.`, color:'#10b981' };
+  if (g.cpa <= t.cpaBE)
+    return { icon:'🟡', text:`CPA ${fmt(g.cpa)} entre objetivo y breakeven. Optimizar: revisar públicos y creativos débiles dentro del ${nivel}.`, color:'#f59e0b' };
+  return { icon:'🔴', text:`CPA ${fmt(g.cpa)} supera breakeven ${fmt(t.cpaBE)}. Apagar ${nivel} o reestructurar con los mejores anuncios.`, color:'#ef4444' };
+}
+
+// Filtro de texto libre sobre nombre, producto, tester, editor, campaña, adset, estado y semáforo
+function _crFilterMatch(c) {
+  const q = ((document.getElementById('cr-filter')||{}).value||'').trim().toLowerCase();
+  if (!q) return true;
+  const hay = [c.name, c.product, c.respTesteo, c.resp, c.metaCampaignName, c.metaCampaignId, c.metaAdsetId, c.metaAdId, c.status, c.decision, c.hook, c.angle]
+    .filter(Boolean).join(' ').toLowerCase();
+  return hay.includes(q);
+}
+
 function renderCreativosTable() {
   const tbody = document.getElementById('creativos-body');
   if (!tbody) return;
+  // Si la vista agrupada está activa, mantenerla actualizada también
+  const _gm = (document.getElementById('cr-group-by')||{}).value;
+  if (_gm && _gm !== 'ad') renderGroupedView();
   const sortKey = (document.getElementById('cr-sort')||{}).value || 'cpa';
-  const list = [...state.creativos].sort((a,b) => {
+  const list = state.creativos.filter(_crFilterMatch).sort((a,b) => {
     const ma = a.metrics||{}, mb = b.metrics||{};
     const profitA = (ma.revenue||0)-(ma.presup||0), profitB = (mb.revenue||0)-(mb.presup||0);
     if (sortKey==='cpa_desc') return (ma.cpa||0)-(mb.cpa||0); // worst CPA first (highest)
@@ -4247,7 +4646,7 @@ function previewCreativoLink() {
 const STAGE_SECTIONS = {
   idea:      ['s-idea-meta','s-hook','s-brief','s-referencias','s-fecha','s-responsables','s-comments'],
   produccion:['s-prod-status','s-creative','s-referencias','s-brief','s-fecha','s-responsables','s-comments'],
-  listo:     ['s-hook','s-formato','s-creative','s-fecha','s-responsables','s-testeo-setup','s-metrics','s-comments'],
+  listo:     ['s-hook','s-formato','s-creative','s-fecha','s-responsables','s-comments'],
   testeo:    ['s-hook','s-formato','s-creative','s-fecha','s-responsables','s-testeo-setup','s-metrics','s-resultado','s-comments'],
   revision:  ['s-hook','s-formato','s-fecha','s-responsables','s-metrics','s-resultado','s-comments'],
   validado:  ['s-hook','s-formato','s-metrics','s-resultado','s-aprendizaje','s-comments'],
@@ -4379,6 +4778,11 @@ function moveThenClose(toStatus) {
   if (!v.ok) {
     const col = (KANBAN_COLS.find(x=>x.id===toStatus)||{}).label || toStatus;
     showValidationBanner(v.missing, col);
+    // Al iniciar testeo desde "Listo", mostrar la config de testeo para completarla
+    if (toStatus === 'testeo') {
+      const sec = document.querySelector('[data-sec="s-testeo-setup"]');
+      if (sec) { sec.style.display = ''; sec.scrollIntoView({behavior:'smooth', block:'center'}); }
+    }
     return;
   }
   // Confirm + auto-set produccionStatus when advancing to listo
@@ -4524,6 +4928,7 @@ function openCreativoModal(id) {
     sv('cr-fecha-entrega-real', c.fechaEntregaReal||'');
     sv('cr-launch-date', c.launchDate); sv('cr-publico', c.publico);
     sv('cr-meta-ad-id', c.metaAdId||''); sv('cr-meta-campaign-id', c.metaCampaignId||''); sv('cr-meta-adset-id', c.metaAdsetId||'');
+    sv('cr-test-type', c.testType||'individual'); sv('cr-meta-campaign-name', c.metaCampaignName||''); onTestTypeChange();
     const lastSync = c.metaSyncHistory?.[c.metaSyncHistory.length-1];
     const statusEl = document.getElementById('cr-meta-sync-status');
     if (statusEl) statusEl.textContent = lastSync ? `Última sync: ${new Date(lastSync.ts).toLocaleString('es')} · ${lastSync.range}` : '';
@@ -4554,7 +4959,8 @@ function openCreativoModal(id) {
     sv('cr-prod-status','pendiente'); sv('cr-resp-escalado','');
     ['cr-name','cr-hook','cr-angle','cr-link','cr-ad-link','cr-link-ref','cr-landing','cr-comments','cr-resp','cr-resp-testeo',
      'cr-launch-date','cr-publico','cr-guion','cr-aprendizaje','cr-motivo','cr-adset-escalado',
-     'cr-fecha-limite','cr-fecha-entrega-real','cr-pain'].forEach(i=>sv(i,''));
+     'cr-fecha-limite','cr-fecha-entrega-real','cr-pain','cr-meta-campaign-name'].forEach(i=>sv(i,''));
+    sv('cr-test-type','individual'); onTestTypeChange();
     ['cr-presup','cr-cpm','cr-cpc','cr-cpc-enlace','cr-ctr','cr-ctr-unico','cr-ctr-enlace','cr-leads','cr-mensajes','cr-cpa','cr-ventas','cr-resultados','cr-costo-resultado','cr-roas','cr-impresiones','cr-alcance','cr-frecuencia','cr-clicks','cr-revenue'].forEach(i=>sn(i,0));
     sv('cr-objetivo-campana',''); sv('cr-fecha-meta-lanzamiento','');
     ['cr-fallo-hook','cr-fallo-creativo','cr-fallo-publico','cr-fallo-oferta','cr-fallo-landing','cr-fallo-cpa','cr-fallo-pedidos'].forEach(i=>sc(i,false));
@@ -5420,6 +5826,8 @@ function saveCreativo() {
     metaAdId:          gv('cr-meta-ad-id').trim(),
     metaCampaignId:    gv('cr-meta-campaign-id').trim(),
     metaAdsetId:       gv('cr-meta-adset-id').trim(),
+    testType:          gv('cr-test-type') || 'individual',
+    metaCampaignName:  gv('cr-meta-campaign-name').trim(),
     metaSyncHistory:   existing?.metaSyncHistory || [],
     comments:          gv('cr-comments'),
     guion:             gv('cr-guion'),
@@ -5446,6 +5854,12 @@ function saveCreativo() {
   };
   // Validate stage transition — if it fails, save with previous status so no data is lost
   const prevStatus = existing ? existing.status : 'idea';
+  // Conservar sellos de etapa existentes (fecha/autor de cada transición)
+  if (existing) {
+    cr.stageLog  = existing.stageLog || {};
+    cr.listoAt   = existing.listoAt;  cr.listoBy  = existing.listoBy;
+    cr.testeoAt  = existing.testeoAt; cr.testeoBy = existing.testeoBy;
+  }
   let stageBlocked = false;
   if (cr.status !== prevStatus) {
     const v = validateStageTransition(cr, cr.status);
@@ -5453,6 +5867,11 @@ function saveCreativo() {
       stageBlocked = true;
       cr.status = prevStatus; // revert status, keep all other data
       showToast(`Datos guardados. Para pasar a esa etapa falta: ${v.missing.join(', ')}.`, 'error', 6000);
+    } else {
+      const tmp = { ...cr, status: prevStatus };
+      _stampStageChange(tmp, cr.status);
+      cr.stageLog = tmp.stageLog; cr.listoAt = tmp.listoAt; cr.listoBy = tmp.listoBy;
+      cr.testeoAt = tmp.testeoAt; cr.testeoBy = tmp.testeoBy;
     }
   }
 
