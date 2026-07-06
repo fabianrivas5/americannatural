@@ -1908,7 +1908,8 @@ function startAutoSync() {
     if (!currentUser) return;
     if (document.visibilityState !== 'visible') return;
     if (document.querySelector('.modal.open')) return;
-    const hasAdIds = (state.creativos || []).some(c => c.metaAdId && c.metaAdId.trim());
+    const _syncId = c => (c.testType==='campana' ? (c.metaCampaignId||'') : (c.metaAdId||'')).trim();
+    const hasAdIds = (state.creativos || []).some(c => _syncId(c));
     if (!hasAdIds) return;
     console.log('[AutoSync Meta] Sincronizando métricas…');
     const rangeEl = document.getElementById('sync-all-range');
@@ -1916,13 +1917,13 @@ function startAutoSync() {
     // Silent sync — update state without UI disruption
     sb.auth.getSession().then(({ data: { session } }) => {
       if (!session) return;
-      const targets = (state.creativos || []).filter(c => c.metaAdId && c.metaAdId.trim());
+      const targets = (state.creativos || []).filter(c => _syncId(c));
       targets.forEach(async cr => {
         try {
           const res = await fetch(`${SUPABASE_URL}/functions/v1/meta-sync`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-            body: JSON.stringify({ adId: cr.metaAdId.trim(), dateRange })
+            body: JSON.stringify({ adId: _syncId(cr), dateRange, objectType: cr.testType==='campana' ? 'campaign' : 'ad' })
           });
           const json = await res.json();
           if (!res.ok || !json.metrics) return;
@@ -1954,6 +1955,8 @@ function startAutoSync() {
           if (m.videoTiempo       != null) metrics.videoTiempo       = m.videoTiempo;
           if (m.purchaseRoas      != null) metrics.purchaseRoas      = m.purchaseRoas;
           if (m.purchaseValue     != null) metrics.purchaseValue     = m.purchaseValue;
+      if (m.campaignName) cr.metaCampaignName = m.campaignName;
+          if (m.campaignName) cr.metaCampaignName = m.campaignName;
           if (m.objetivo)             metrics.objetivoCampana  = m.objetivo;
           if (m.fechaLanzamiento)     metrics.fechaMetaLanzamiento = m.fechaLanzamiento;
           state.creativos[idx].metrics = metrics;
@@ -4218,14 +4221,19 @@ function validateStageTransition(c, toStatus) {
     if (!c.landing && !c.landingId) missing.push('landing o URL landing');
     if (!c.publico)    missing.push('público objetivo');
     if (!c.launchDate) missing.push('fecha de lanzamiento');
-    // Validate FB link if FB account
-    const acc = (state.adAccounts||[]).find(a=>a.id===c.adAccount);
-    const platform = acc ? acc.platform : '';
-    const isFb = !platform || platform === 'Facebook';
-    if (!c.adLink) {
-      missing.push(isFb ? 'link del anuncio publicado en Facebook' : 'link del anuncio publicado');
-    } else if (isFb && !/facebook\.com|fb\.watch|fb\.me/i.test(c.adLink)) {
-      missing.push('link válido de Facebook (facebook.com o fb.watch)');
+    if (c.testType === 'campana') {
+      // Test de campaña: NO exigir link de anuncio ni Ad ID — la campaña tiene varios anuncios.
+      if (!c.metaCampaignId) missing.push('Campaign ID (obligatorio en test de campaña)');
+    } else {
+      // Test individual: validar link del anuncio publicado
+      const acc = (state.adAccounts||[]).find(a=>a.id===c.adAccount);
+      const platform = acc ? acc.platform : '';
+      const isFb = !platform || platform === 'Facebook';
+      if (!c.adLink) {
+        missing.push(isFb ? 'link del anuncio publicado en Facebook' : 'link del anuncio publicado');
+      } else if (isFb && !/facebook\.com|fb\.watch|fb\.me/i.test(c.adLink)) {
+        missing.push('link válido de Facebook (facebook.com o fb.watch)');
+      }
     }
   }
 
@@ -5062,6 +5070,8 @@ function moveThenClose(toStatus) {
     landing: gv('cr-landing'), landingId: gv('cr-landing-sel'),
     publico: gv('cr-publico'), launchDate: gv('cr-launch-date'),
     status: gv('cr-status'),
+    testType: gv('cr-test-type') || 'individual',
+    metaCampaignId: gv('cr-meta-campaign-id').trim(),
     metrics: { presup: gn('cr-presup'), gasto: gn('cr-presup'), ventas: gn('cr-ventas'),
                cpa: gn('cr-cpa'), revenue: gn('cr-revenue') }
   };
@@ -5365,7 +5375,8 @@ async function syncAllMetrics() {
   const btn = document.getElementById('sync-all-btn');
   const statusEl = document.getElementById('sync-all-status');
 
-  const targets = state.creativos.filter(c => c.metaAdId && c.metaAdId.trim());
+  const _syncId2 = c => (c.testType==='campana' ? (c.metaCampaignId||'') : (c.metaAdId||'')).trim();
+  const targets = state.creativos.filter(c => _syncId2(c));
   if (!targets.length) { showToast('Ningún creativo tiene Ad ID configurado', 'error'); return; }
 
   const { data: { session } } = await sb.auth.getSession();
@@ -5383,7 +5394,7 @@ async function syncAllMetrics() {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/meta-sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-        body: JSON.stringify({ adId: cr.metaAdId.trim(), dateRange })
+        body: JSON.stringify({ adId: _syncId2(cr), dateRange, objectType: cr.testType==='campana' ? 'campaign' : 'ad' })
       });
       const json = await res.json();
       if (!res.ok || !json.metrics) { fail++; continue; }
@@ -5417,6 +5428,7 @@ async function syncAllMetrics() {
       if (m.videoTiempo       != null) metrics.videoTiempo       = m.videoTiempo;
       if (m.purchaseRoas      != null) metrics.purchaseRoas      = m.purchaseRoas;
       if (m.purchaseValue     != null) metrics.purchaseValue     = m.purchaseValue;
+      if (m.campaignName) cr.metaCampaignName = m.campaignName;
       if (m.objetivo)             metrics.objetivoCampana  = m.objetivo;
       if (m.fechaLanzamiento)     metrics.fechaMetaLanzamiento = m.fechaLanzamiento;
       state.creativos[idx].metrics = metrics;
@@ -5446,8 +5458,15 @@ async function syncAllMetrics() {
 }
 
 async function syncMetaMetrics() {
-  const adId = document.getElementById('cr-meta-ad-id').value.trim();
-  if (!adId) { showToast('Ingresa un Ad ID primero', 'error'); return; }
+  // En modo campaña se sincroniza con el Campaign ID; en individual con el Ad ID
+  const isCampana = (document.getElementById('cr-test-type')||{}).value === 'campana';
+  const campaignId = (document.getElementById('cr-meta-campaign-id')||{value:''}).value.trim();
+  const adIdRaw = document.getElementById('cr-meta-ad-id').value.trim();
+  const adId = isCampana ? campaignId : adIdRaw;
+  if (!adId) {
+    showToast(isCampana ? 'Ingresa un Campaign ID para sincronizar la campaña' : 'Ingresa un Ad ID o link del anuncio para sincronizar el creativo', 'error');
+    return;
+  }
 
   const dateRange = document.getElementById('cr-meta-date-range').value || 'last_7_days';
   const statusEl  = document.getElementById('cr-meta-sync-status');
@@ -5467,7 +5486,7 @@ async function syncMetaMetrics() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
       },
-      body: JSON.stringify({ adId, dateRange })
+      body: JSON.stringify({ adId, dateRange, objectType: isCampana ? 'campaign' : 'ad' })
     });
 
     const json = await res.json();
@@ -5475,7 +5494,9 @@ async function syncMetaMetrics() {
     if (!res.ok) {
       let msg = json?.error || `Error ${res.status}`;
       if (msg.includes('Ad ID inválido') || msg.includes('not found')) {
-        msg = 'Ad ID no encontrado. Ve a Ads Manager → columna "ID del anuncio" y copia el número correcto.';
+        msg = isCampana
+          ? 'Campaign ID no encontrado. Ve a Ads Manager → columna "ID de la campaña" y copia el número correcto.'
+          : 'Ad ID no encontrado. Ve a Ads Manager → columna "ID del anuncio" y copia el número correcto.';
       } else if (msg.includes('ads_read') || msg.includes('permiso')) {
         msg = 'Sin permiso. El token necesita acceso a la cuenta publicitaria que tiene este anuncio.';
       }
@@ -5489,6 +5510,8 @@ async function syncMetaMetrics() {
 
     // Mapear campos de métricas al formulario
     const sv2 = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+    // En modo campaña, Meta trae el nombre real — no hace falta escribirlo a mano
+    if (m.campaignName) sv2('cr-meta-campaign-name', m.campaignName);
     sv2('cr-presup',            m.spend?.toFixed(2));
     sv2('cr-impresiones',       m.impressions);
     sv2('cr-alcance',           m.reach);
