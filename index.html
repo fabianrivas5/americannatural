@@ -3974,7 +3974,9 @@ const KANBAN_COLS = [
 
 let _activeDatePreset = 'hoy';
 
+let _userChangedDatePreset = false; // la tabla de performance ignora la fecha hasta que el usuario elija un período
 function setDatePreset(preset) {
+  _userChangedDatePreset = true;
   _activeDatePreset = preset;
   document.querySelectorAll('.date-preset').forEach(b => b.classList.toggle('active', b.dataset.preset === preset));
   const rangeWrap = document.getElementById('date-range-wrap');
@@ -4000,14 +4002,14 @@ function getDateRange() {
   return null;
 }
 
-function getFilteredCreativos() {
+function getFilteredCreativos(opts) {
   const txt  = (document.getElementById('cr-filter-text')||{}).value||'';
   const prod = (document.getElementById('cr-filter-product')||{}).value||'';
   const fmt2 = (document.getElementById('cr-filter-format')||{}).value||'';
   const sem  = (document.getElementById('cr-filter-sem')||{}).value||'';
   const resp = (document.getElementById('cr-filter-resp')||{}).value||'';
   const pain = (document.getElementById('cr-filter-pain')||{}).value||'';
-  const dateRange = getDateRange();
+  const dateRange = (opts && opts.ignoreDate) ? null : getDateRange();
   return state.creativos.filter(c => {
     if (txt && !c.name.toLowerCase().includes(txt.toLowerCase()) && !(c.hook||'').toLowerCase().includes(txt.toLowerCase())) return false;
     if (prod && c.product !== prod) return false;
@@ -4461,7 +4463,11 @@ function renderCreativosTable() {
   const _gm = (document.getElementById('cr-group-by')||{}).value;
   if (_gm && _gm !== 'ad') renderGroupedView();
   const sortKey = (document.getElementById('cr-sort')||{}).value || 'cpa';
-  const list = getFilteredCreativos().filter(_crFilterMatch).sort((a,b) => {
+  // Solo creativos que ya llegaron a testeo (o pausados que sí tuvieron testeo/métricas).
+  // Por defecto se muestran TODOS los testeados; la fecha solo aplica si el usuario eligió un período.
+  const _tested = c => ['testeo','validado','escalando'].includes(c.status)
+    || (c.status==='rechazado' && (c.testeoAt || (c.stageLog||{}).testeo || ((c.metrics||{}).presup||0) > 0));
+  const list = getFilteredCreativos({ ignoreDate: !_userChangedDatePreset }).filter(_tested).filter(_crFilterMatch).sort((a,b) => {
     const ma = a.metrics||{}, mb = b.metrics||{};
     const profitA = (ma.revenue||0)-(ma.presup||0), profitB = (mb.revenue||0)-(mb.presup||0);
     if (sortKey==='cpa_desc') return (ma.cpa||0)-(mb.cpa||0); // worst CPA first (highest)
@@ -4524,7 +4530,7 @@ function renderCreativosTable() {
         <button class="btn sm danger" onclick="deleteCreativo('${c.id}')">✕</button>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="22" style="text-align:center;padding:20px;color:var(--text3)">Sin creativos registrados</td></tr>`;
+  }).join('') || `<tr><td colspan="22" style="text-align:center;padding:20px;color:var(--text3)">No hay creativos testeados todavía.</td></tr>`;
 }
 
 function renderCreativosSummary() {
