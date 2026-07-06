@@ -4020,9 +4020,16 @@ function getFilteredCreativos() {
       if (s.color !== sem) return false;
     }
     if (dateRange) {
-      // Pendientes operativos (listo para test / en testeo) siempre visibles pese al filtro de fecha.
+      // "Listo para test" es la ÚNICA etapa siempre visible pese al filtro de fecha.
       // Los filtros de producto/responsable/dolor/texto/semáforo ya se aplicaron arriba.
-      if (['listo','testeo'].includes(c.status)) return true;
+      if (c.status === 'listo') return true;
+      // En testeo se filtra por la fecha en que ENTRÓ a testeo (no por fecha de creación)
+      if (c.status === 'testeo' && c.testeoAt) {
+        const dt = new Date(c.testeoAt);
+        if (dateRange[0] && dt < dateRange[0]) return false;
+        if (dateRange[1] && dt > dateRange[1]) return false;
+        return true;
+      }
       // Parse date as local time to avoid UTC offset issues (new Date("YYYY-MM-DD") is UTC midnight)
       const dateStr = c.date || '';
       if (!dateStr) return false;
