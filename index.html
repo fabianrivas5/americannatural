@@ -417,7 +417,12 @@ tbody tr:hover{background:var(--accent-light)!important}
     <!-- Login form -->
     <div id="login-form-area">
       <div class="field"><label>Email</label><input id="login-email" type="email" placeholder="tu@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')doLogin()"></div>
-      <div class="field"><label>Contraseña</label><input id="login-pw" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="field"><label>Contraseña</label>
+        <div style="position:relative">
+          <input id="login-pw" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:40px;width:100%;box-sizing:border-box">
+          <button type="button" id="login-pw-toggle" onclick="const i=document.getElementById('login-pw');const show=i.type==='password';i.type=show?'text':'password';this.textContent=show?'🙈':'👁️';this.title=show?'Ocultar contraseña':'Mostrar contraseña'" title="Mostrar contraseña" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:4px;line-height:1">👁️</button>
+        </div>
+      </div>
       <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
       <div class="login-err" id="login-err"></div>
       <div style="text-align:center;margin-top:12px">
@@ -933,7 +938,7 @@ tbody tr:hover{background:var(--accent-light)!important}
         <thead><tr>
           <th>Creativo</th><th>Estado</th><th>Tester</th>
           <th style="white-space:nowrap">Semáforo <span onclick="showSemaforoTooltip(event)" style="cursor:pointer;font-size:10px;background:var(--surface2);border:1px solid var(--border);border-radius:50%;padding:0 4px;font-weight:700" title="¿Cómo se calcula?">?</span></th>
-          <th>Obj. Campaña</th><th>Resultados</th><th>Costo/Res.</th><th>Gasto</th><th title="ROAS de compras (Meta)">ROAS Compras</th><th title="Valor de conversión de compras (Meta)">Valor Conv. Compras</th>
+          <th>Obj. Campaña</th><th>Resultados</th><th>Costo/Res.</th><th>Gasto</th><th title="ROAS de compras (Meta)">ROAS Compras</th><th title="Valor de conversión de compras (Meta)">Valor Conv. Compras</th><th title="Profit = Valor de conversión (o revenue manual) − Gasto">Profit</th>
           <th title="CTR único en enlace">CTR✱Enlace</th><th>CPM</th><th title="Clics en el enlace">Clics Enlace</th><th title="CPC en el enlace">CPC Enlace</th>
           <th>Frecuencia</th><th>Visitas LP</th><th>Costo/Visita</th><th>Pagos Inic.</th><th>Carritos</th><th title="Tiempo promedio de reproducción (segundos)">Video (s)</th>
           <th></th>
@@ -1557,6 +1562,19 @@ tbody tr:hover{background:var(--accent-light)!important}
       </div>
     </div>
 
+    <!-- ═══ s-landing: todas las etapas ═══ -->
+    <div class="stage-sec" data-sec="s-landing">
+      <div class="msec-title">🌐 Landing</div>
+      <div class="g2 mb10">
+        <div class="field"><label>Landing (de Recursos)</label>
+          <select id="cr-landing-sel" onchange="document.getElementById('cr-landing').value=this.options[this.selectedIndex].dataset.url||''">
+            <option value="">— Seleccionar landing —</option>
+          </select>
+        </div>
+        <div class="field"><label>URL landing (manual)</label><input id="cr-landing" placeholder="https://mi-tienda.com/..."></div>
+      </div>
+    </div>
+
     <!-- ═══ s-testeo-setup: Listo, Testeo, Revisión, Escalando ═══ -->
     <div class="stage-sec" data-sec="s-testeo-setup">
       <div class="msec-title">🎯 Configuración del testeo</div>
@@ -1571,14 +1589,6 @@ tbody tr:hover{background:var(--accent-light)!important}
           <select id="cr-pixel" onchange="onCrPixelChange()"><option value="">— Sin pixel —</option></select>
         </div>
         <div class="field"><label>Público objetivo</label><input id="cr-publico" placeholder="Mujeres 25-45, Quito, salud"></div>
-      </div>
-      <div class="g3 mb10">
-        <div class="field"><label>Landing usada</label>
-          <select id="cr-landing-sel" onchange="document.getElementById('cr-landing').value=this.options[this.selectedIndex].dataset.url||''">
-            <option value="">— Seleccionar landing —</option>
-          </select>
-        </div>
-        <div class="field"><label>URL landing (manual)</label><input id="cr-landing" placeholder="https://mi-tienda.com/..."></div>
       </div>
       <div class="g1 mb10">
         <div class="field"><label>Link del anuncio publicado</label>
@@ -3134,7 +3144,7 @@ const HOME_RANGE_LABELS = { hoy:'Hoy', ayer:'Ayer', semana:'Esta semana', mes:'E
 // ── Estrategia de escalado: candidatos según reglas configuradas
 function _escaladoDefaults() {
   return { minCreativos:3, maxCreativos:5, cpaCapMode:'cpaBE', cpaCapManual:0, ctrMin:1, roasMode:'roasBE', roasManual:0,
-           comprasMin:3, profitMin:0, cuentaDestino:'', tipoEscalado:'costcap', bidMode:'cpaObj', bidManual:0, bidMult:1 };
+           comprasMin:3, profitMin:0, cuentaDestino:'', tipoEscalado:'costcap', bidMode:'cpaObj', bidManual:0, bidMult:1, manualRec:'' };
 }
 function getEscaladoStrategy() { return { ..._escaladoDefaults(), ...(state.escaladoStrategy||{}) }; }
 function getEscaladoCandidates() {
@@ -3270,7 +3280,11 @@ function renderHome() {
   if (sinResp > 0) alerts.push({icon:'⚠️', txt:`${sinResp} creativo(s) en listo/testeo sin responsable asignado`});
   if (cnt('testeo') >= 3 && cnt('validado')===0) alerts.push({icon:'📉', txt:`${cnt('testeo')} creativos en testeo y ninguno validado — revisar calidad de tests`});
   const candidatos = getEscaladoCandidates();
-  if (candidatos.length) alerts.push({icon:'🚀', txt:`${candidatos.length} creativo(s) listos para escalar según la estrategia configurada: ${candidatos.map(x=>x.c.name).join(', ')}`});
+  if (candidatos.length) {
+    alerts.push({icon:'🚀', txt:`${candidatos.length} creativo(s) listos para escalar según la estrategia configurada: ${candidatos.map(x=>x.c.name).join(', ')}`});
+    const mRec = getEscaladoStrategy().manualRec;
+    if (mRec) alerts.push({icon:'📋', txt:`Recomendación del admin: ${mRec}`});
+  }
   document.getElementById('home-alertas').innerHTML = !alerts.length
     ? '<div style="color:var(--text3);font-size:12px">✅ Sin alertas activas.</div>'
     : alerts.map(a=>`<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 10px;border-bottom:1px dashed var(--border);font-size:12px"><span>${a.icon}</span><span>${a.txt.replace(/</g,'&lt;')}</span></div>`).join('');
@@ -3386,6 +3400,10 @@ function renderEscaladoStrategyForm() {
       <div class="field"><label>Bid manual ($)</label><input type="number" id="esc-bid-manual" step=".01" value="${st.bidManual}"></div>
       <div class="field"><label>Multiplicador</label><input type="number" id="esc-bid-mult" step=".05" value="${st.bidMult}"></div>
     </div>
+    <div class="field" style="margin-top:10px"><label>Recomendación manual de escalado</label>
+      <textarea id="esc-manual-rec" rows="3" style="width:100%;box-sizing:border-box;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text);resize:vertical" placeholder="Ej: Cuando haya 3 a 5 creativos con CPA dentro del objetivo y CTR mayor a 1.8%, duplicar en cuenta nueva y probar Cost Cap con bid igual al CPA BE.">${(st.manualRec||'').replace(/</g,'&lt;')}</textarea>
+      <span class="hint">Se mostrará en Cost Cap/Escalado, en Inicio cuando haya candidatos, y en el detalle del creativo que califique.</span>
+    </div>
     <button class="btn primary" style="margin-top:10px" onclick="saveEscaladoStrategy()">Guardar estrategia</button>
     <span id="esc-candidates-info" style="font-size:11px;color:var(--text3);margin-left:10px"></span>`;
   const info = document.getElementById('esc-candidates-info');
@@ -3403,6 +3421,7 @@ function saveEscaladoStrategy() {
     comprasMin: gn('esc-compras'), profitMin: gn('esc-profit'),
     cuentaDestino: gv('esc-cuenta').trim(), tipoEscalado: gv('esc-tipo'),
     bidMode: gv('esc-bid-mode'), bidManual: gn('esc-bid-manual'), bidMult: gn('esc-bid-mult')||1,
+    manualRec: gv('esc-manual-rec').trim(),
   };
   persistState(); renderEscaladoStrategyForm(); showToast('Estrategia de escalado guardada');
 }
@@ -4001,8 +4020,9 @@ function getFilteredCreativos() {
       if (s.color !== sem) return false;
     }
     if (dateRange) {
-      // Trabajo pendiente activo SIEMPRE visible, sin importar el filtro de fecha
-      if (['idea','produccion','listo','testeo'].includes(c.status)) return true;
+      // Pendientes operativos (listo para test / en testeo) siempre visibles pese al filtro de fecha.
+      // Los filtros de producto/responsable/dolor/texto/semáforo ya se aplicaron arriba.
+      if (['listo','testeo'].includes(c.status)) return true;
       // Parse date as local time to avoid UTC offset issues (new Date("YYYY-MM-DD") is UTC midnight)
       const dateStr = c.date || '';
       if (!dateStr) return false;
@@ -4434,7 +4454,7 @@ function renderCreativosTable() {
   const _gm = (document.getElementById('cr-group-by')||{}).value;
   if (_gm && _gm !== 'ad') renderGroupedView();
   const sortKey = (document.getElementById('cr-sort')||{}).value || 'cpa';
-  const list = state.creativos.filter(_crFilterMatch).sort((a,b) => {
+  const list = getFilteredCreativos().filter(_crFilterMatch).sort((a,b) => {
     const ma = a.metrics||{}, mb = b.metrics||{};
     const profitA = (ma.revenue||0)-(ma.presup||0), profitB = (mb.revenue||0)-(mb.presup||0);
     if (sortKey==='cpa_desc') return (ma.cpa||0)-(mb.cpa||0); // worst CPA first (highest)
@@ -4481,6 +4501,7 @@ function renderCreativosTable() {
       <td style="font-size:11px">${m.presup>0?fmt(m.presup):'—'}</td>
       <td><span class="badge ${(m.purchaseRoas||0)>0?((m.purchaseRoas>=roasBE)?'ok':(m.purchaseRoas>=roasBE*0.7?'warn':'bad')):'gray'}">${m.purchaseRoas>0?m.purchaseRoas.toFixed(2)+'x':'—'}</span></td>
       <td style="font-size:11px;font-weight:600;color:${m.purchaseValue>0?(m.purchaseValue>m.presup?'var(--ok)':'var(--bad)'):'var(--text3)'}">${m.purchaseValue>0?fmt(m.purchaseValue):'—'}</td>
+      <td style="font-size:11px;font-weight:700;color:${(()=>{const rv=(m.purchaseValue||0)>0?m.purchaseValue:(m.revenue||0);return rv>0?(rv-(m.presup||0)>=0?'var(--ok)':'var(--bad)'):'var(--text3)';})()}">${(()=>{const rv=(m.purchaseValue||0)>0?m.purchaseValue:(m.revenue||0);return rv>0?fmt(rv-(m.presup||0)):'—';})()}</td>
       <td style="font-size:11px">${m.ctrUnico>0?pct(m.ctrUnico):'—'}</td>
       <td><span class="badge ${m.cpm>15?'bad':m.cpm>8?'warn':'gray'}">${m.cpm>0?fmt(m.cpm):'—'}</span></td>
       <td style="font-size:11px">${m.clicsEnlace>0?m.clicsEnlace.toLocaleString():'—'}</td>
@@ -4496,7 +4517,7 @@ function renderCreativosTable() {
         <button class="btn sm danger" onclick="deleteCreativo('${c.id}')">✕</button>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="21" style="text-align:center;padding:20px;color:var(--text3)">Sin creativos registrados</td></tr>`;
+  }).join('') || `<tr><td colspan="22" style="text-align:center;padding:20px;color:var(--text3)">Sin creativos registrados</td></tr>`;
 }
 
 function renderCreativosSummary() {
@@ -4869,14 +4890,14 @@ function previewCreativoLink() {
 
 // ==================== STAGE LOGIC ====================
 const STAGE_SECTIONS = {
-  idea:      ['s-idea-meta','s-hook','s-brief','s-referencias','s-fecha','s-responsables','s-comments'],
-  produccion:['s-prod-status','s-creative','s-referencias','s-brief','s-fecha','s-responsables','s-comments'],
-  listo:     ['s-hook','s-formato','s-creative','s-fecha','s-responsables','s-comments'],
-  testeo:    ['s-hook','s-formato','s-creative','s-fecha','s-responsables','s-testeo-setup','s-metrics','s-resultado','s-comments'],
-  revision:  ['s-hook','s-formato','s-fecha','s-responsables','s-metrics','s-resultado','s-comments'],
-  validado:  ['s-hook','s-formato','s-metrics','s-resultado','s-aprendizaje','s-comments'],
-  escalando: ['s-hook','s-formato','s-creative','s-testeo-setup','s-metrics','s-resultado','s-escalado','s-comments'],
-  rechazado: ['s-hook','s-formato','s-metrics','s-rechazo','s-aprendizaje','s-comments'],
+  idea:      ['s-idea-meta','s-hook','s-brief','s-referencias','s-fecha','s-responsables','s-landing','s-comments'],
+  produccion:['s-prod-status','s-creative','s-referencias','s-brief','s-fecha','s-responsables','s-landing','s-comments'],
+  listo:     ['s-hook','s-formato','s-creative','s-fecha','s-responsables','s-landing','s-comments'],
+  testeo:    ['s-hook','s-formato','s-creative','s-fecha','s-responsables','s-landing','s-testeo-setup','s-metrics','s-resultado','s-comments'],
+  revision:  ['s-hook','s-formato','s-fecha','s-responsables','s-landing','s-metrics','s-resultado','s-comments'],
+  validado:  ['s-hook','s-formato','s-landing','s-metrics','s-resultado','s-aprendizaje','s-comments'],
+  escalando: ['s-hook','s-formato','s-creative','s-landing','s-testeo-setup','s-metrics','s-resultado','s-escalado','s-comments'],
+  rechazado: ['s-hook','s-formato','s-landing','s-metrics','s-rechazo','s-aprendizaje','s-comments'],
 };
 const STAGE_INFO = {
   idea:      { color:'#6366f1', hint:'💡 Define el hook y el ángulo. Asigna a un creador.' },
@@ -5031,6 +5052,13 @@ function openDetailModal(id) {
   const semBg = {red:'#ef4444',yellow:'#f59e0b',green:'#10b981',gray:'#9ca3af'}[sem.color];
   const prodSemLabel = c.produccionStatus==='listo'?'🟢 Finalizado':c.produccionStatus==='bloqueado'?'🔴 Bloqueado':'🟡 En proceso';
   const accName = c.adAccount ? ((state.adAccounts||[]).find(a=>a.id===c.adAccount)||{}).name||c.adAccount : '—';
+  const _cand = getEscaladoCandidates().find(x=>x.c.id===id);
+  const _candHtml = _cand ? `<div style="background:#ede9fe;border:1px solid #ddd6fe;border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-size:12px;color:#5b21b6">
+    <b>🚀 Candidato a escalado</b> — cumple todas las reglas de la estrategia.
+    <div style="margin-top:4px;color:#6d28d9;font-size:11px">${_cand.checks.map(ch=>`✓ ${ch.txt}`).join('<br>')}</div>
+    ${_cand.bid>0?`<div style="margin-top:4px"><b>Bid sugerido:</b> ${fmt(_cand.bid)}</div>`:''}
+    ${getEscaladoStrategy().manualRec?`<div style="margin-top:4px"><b>📋 Recomendación del admin:</b> ${getEscaladoStrategy().manualRec.replace(/</g,'&lt;')}</div>`:''}
+  </div>` : '';
 
   const sec = (title, content) => content ? `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${title}</div>${content}</div>` : '';
   const row = (label, val) => val ? `<div style="display:flex;gap:8px;margin-bottom:4px;font-size:12px"><span style="color:var(--text3);min-width:130px;flex-shrink:0">${label}</span><span style="color:var(--text)">${val}</span></div>` : '';
@@ -5063,6 +5091,7 @@ function openDetailModal(id) {
       <span style="font-size:12px;font-weight:600;color:${semBg}">${sem.dot} ${sem.rec}${sem.reason?' — '+sem.reason:''}</span>
       <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--surface2);color:var(--text3);margin-left:auto">${(()=>{const sl={idea:'💡 Idea',produccion:'🎬 Producción',listo:'✅ Listo',testeo:'🧪 Testeo',validado:'🏆 Validado',escalando:'🚀 Escalando',rechazado:'⏸ Pausado'};return sl[c.status]||c.status;})()} </span>
     </div>
+    ${_candHtml}
     ${sec('📋 Resumen',
       row('Producto', c.product) +
       row('Tipo de creativo', c.tipoCreativo) +
@@ -6625,9 +6654,10 @@ function renderEscaladoSugeridos() {
   const el = document.getElementById('escalado-sugeridos-list');
   if (!sec || !el) return;
   const cands = getEscaladoCandidates();
-  sec.style.display = cands.length ? '' : 'none';
-  if (!cands.length) return;
-  el.innerHTML = cands.map(x=>`
+  const manualRec = getEscaladoStrategy().manualRec;
+  sec.style.display = (cands.length || manualRec) ? '' : 'none';
+  if (!cands.length && !manualRec) return;
+  el.innerHTML = (manualRec ? `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--r);padding:10px 14px;margin-bottom:8px;font-size:12px;color:#1e40af"><b>📋 Recomendación del admin:</b> ${manualRec.replace(/</g,'&lt;')}</div>` : '') + cands.map(x=>`
     <div style="background:var(--surface2);border:1px solid var(--border);border-left:4px solid #7c3aed;border-radius:var(--r);padding:10px 14px;margin-bottom:8px">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span style="font-weight:700;font-size:12px">${(x.c.name||'').replace(/</g,'&lt;')}</span>
