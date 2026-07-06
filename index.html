@@ -4304,7 +4304,16 @@ function moveCard(id, toStatus) {
   if (!v.ok) {
     const col = (KANBAN_COLS.find(x=>x.id===toStatus)||{}).label || toStatus;
     openCreativoModal(id);
-    setTimeout(() => showValidationBanner(v.missing, col), 300);
+    setTimeout(() => {
+      // Si el destino es testeo, mostrar el formulario de la etapa En testeo completo
+      if (toStatus === 'testeo') {
+        const st = document.getElementById('cr-status');
+        if (st) { st.value = 'testeo'; onStageChange(); }
+        const sec = document.querySelector('[data-sec="s-testeo-setup"]');
+        if (sec) sec.scrollIntoView({behavior:'smooth', block:'center'});
+      }
+      showValidationBanner(v.missing, col);
+    }, 300);
     return;
   }
   if (toStatus === 'listo' && c.produccionStatus !== 'listo') {
@@ -5059,12 +5068,18 @@ function moveThenClose(toStatus) {
   const v = validateStageTransition(temp, toStatus);
   if (!v.ok) {
     const col = (KANBAN_COLS.find(x=>x.id===toStatus)||{}).label || toStatus;
-    showValidationBanner(v.missing, col);
-    // Al iniciar testeo desde "Listo", mostrar la config de testeo para completarla
+    // Al iniciar testeo: cambiar el formulario a la etapa "En testeo" para que aparezcan
+    // TODOS los campos de configuración (cuenta, pixel, landing, tipo de test, IDs Meta, etc.)
     if (toStatus === 'testeo') {
+      const st = document.getElementById('cr-status');
+      if (st) { st.value = 'testeo'; onStageChange(); }
+      showValidationBanner(v.missing, col);
       const sec = document.querySelector('[data-sec="s-testeo-setup"]');
-      if (sec) { sec.style.display = ''; sec.scrollIntoView({behavior:'smooth', block:'center'}); }
+      if (sec) sec.scrollIntoView({behavior:'smooth', block:'center'});
+      showToast('Completa la configuración de testeo y pulsa Guardar', 'error', 5000);
+      return;
     }
+    showValidationBanner(v.missing, col);
     return;
   }
   // Confirm + auto-set produccionStatus when advancing to listo
