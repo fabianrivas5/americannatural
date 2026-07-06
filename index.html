@@ -1956,7 +1956,9 @@ function startAutoSync() {
           if (m.purchaseRoas      != null) metrics.purchaseRoas      = m.purchaseRoas;
           if (m.purchaseValue     != null) metrics.purchaseValue     = m.purchaseValue;
       if (m.campaignName) cr.metaCampaignName = m.campaignName;
+      if (json.adsets?.length || json.ads?.length) cr.metaBreakdown = { adsets: json.adsets||[], ads: json.ads||[], syncedAt: new Date().toISOString() };
           if (m.campaignName) cr.metaCampaignName = m.campaignName;
+          if (json.adsets?.length || json.ads?.length) state.creativos[idx].metaBreakdown = { adsets: json.adsets||[], ads: json.ads||[], syncedAt: new Date().toISOString() };
           if (m.objetivo)             metrics.objetivoCampana  = m.objetivo;
           if (m.fechaLanzamiento)     metrics.fechaMetaLanzamiento = m.fechaLanzamiento;
           state.creativos[idx].metrics = metrics;
@@ -4238,10 +4240,11 @@ function validateStageTransition(c, toStatus) {
   }
 
   if (toStatus === 'validado') {
-    if (!m.gasto || m.gasto <= 0) missing.push('gasto registrado');
+    // El gasto viene de Meta sync (spend) — NO es requisito manual bloqueante.
+    // Revenue acepta el valor de conversión de Meta (purchaseValue) o el revenue manual.
     if (!m.ventas || m.ventas <= 0) missing.push('ventas/pedidos');
     if (!m.cpa || m.cpa <= 0) missing.push('CPA registrado');
-    if (!m.revenue || m.revenue <= 0) missing.push('revenue');
+    if (!((m.purchaseValue||0) > 0 || (m.revenue||0) > 0)) missing.push('revenue o valor de conversión (sincroniza Meta o ingrésalo manual)');
     if (!c.product) missing.push('producto asociado');
     if (missing.length === 0) {
       const targets = getTrafficCpaTargets(c.product);
@@ -4329,6 +4332,12 @@ function moveCard(id, toStatus) {
     c.produccionStatus = 'listo';
   } else if (toStatus === 'listo') {
     c.produccionStatus = 'listo';
+  }
+  // Validación manual sin gasto de Meta: advertencia suave, no bloqueo
+  if (toStatus === 'validado' && !((c.metrics||{}).presup > 0)) {
+    if (!confirm('⚠ No hay gasto sincronizado desde Meta.\n\nPuedes validar manualmente, pero la recomendación automática será menos precisa.\n\n¿Validar de todas formas?')) return;
+    const motivo = prompt('Motivo de validación manual (opcional):');
+    if (motivo && motivo.trim()) c.comments = `✅ VALIDACIÓN MANUAL (${new Date().toLocaleDateString('es')}): ${motivo.trim()}\n${c.comments||''}`.trim();
   }
   // Regreso a producción para correcciones: pedir la nota para el editor
   if (toStatus === 'produccion' && ['listo','testeo','validado','escalando','rechazado'].includes(c.status)) {
@@ -4535,6 +4544,8 @@ function renderCreativosTable() {
           </div>
         </div>
         <button onclick="showCreativoAnalysis('${c.id}')" style="margin-top:5px;font-size:10px;border:none;background:none;cursor:pointer;color:var(--blue);padding:0;display:flex;align-items:center;gap:3px;font-weight:600">🔎 Ver análisis completo</button>
+        ${c.testType==='campana' ? `<span style="display:inline-block;font-size:9px;font-weight:700;background:#fef3c7;color:#92400e;border-radius:4px;padding:1px 6px;margin-top:3px">📦 Test de campaña</span>
+        <button onclick="showCampaignDrilldown('${c.id}')" style="margin-top:3px;font-size:10px;border:none;background:none;cursor:pointer;color:#7c3aed;padding:0;display:flex;align-items:center;gap:3px;font-weight:600">📦 Ver campaña (conjuntos y anuncios)</button>` : ''}
       </td>
       <td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)" title="${m.objetivoCampana||''}">${m.objetivoCampana||'—'}</td>
       <td style="font-size:12px;font-weight:600;color:${m.resultados>0?'var(--text)':'var(--text3)'}">${m.resultados>0?m.resultados:'—'}</td>
@@ -5073,8 +5084,18 @@ function moveThenClose(toStatus) {
     testType: gv('cr-test-type') || 'individual',
     metaCampaignId: gv('cr-meta-campaign-id').trim(),
     metrics: { presup: gn('cr-presup'), gasto: gn('cr-presup'), ventas: gn('cr-ventas'),
-               cpa: gn('cr-cpa'), revenue: gn('cr-revenue') }
+               cpa: gn('cr-cpa'), revenue: gn('cr-revenue'),
+               purchaseValue: ((state.creativos.find(x=>x.id===editingCreativoId)||{}).metrics||{}).purchaseValue||0 }
   };
+  // Validación manual sin gasto de Meta: advertencia suave, no bloqueo
+  if (toStatus === 'validado' && gn('cr-presup') <= 0) {
+    if (!confirm('⚠ No hay gasto sincronizado desde Meta.\n\nPuedes validar manualmente, pero la recomendación automática será menos precisa.\n\n¿Validar de todas formas?')) return;
+    const motivo = prompt('Motivo de validación manual (opcional):');
+    if (motivo && motivo.trim()) {
+      const cEl = document.getElementById('cr-comments');
+      if (cEl) cEl.value = `✅ VALIDACIÓN MANUAL (${new Date().toLocaleDateString('es')}): ${motivo.trim()}\n${cEl.value||''}`.trim();
+    }
+  }
   const v = validateStageTransition(temp, toStatus);
   if (!v.ok) {
     const col = (KANBAN_COLS.find(x=>x.id===toStatus)||{}).label || toStatus;
@@ -5512,6 +5533,11 @@ async function syncMetaMetrics() {
     const sv2 = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
     // En modo campaña, Meta trae el nombre real — no hace falta escribirlo a mano
     if (m.campaignName) sv2('cr-meta-campaign-name', m.campaignName);
+    // Guardar desglose por conjunto/anuncio para la vista de campaña
+    if ((json.adsets?.length || json.ads?.length) && editingCreativoId) {
+      const _cr = state.creativos.find(x=>x.id===editingCreativoId);
+      if (_cr) { _cr.metaBreakdown = { adsets: json.adsets||[], ads: json.ads||[], syncedAt: new Date().toISOString() }; persistState(); }
+    }
     sv2('cr-presup',            m.spend?.toFixed(2));
     sv2('cr-impresiones',       m.impressions);
     sv2('cr-alcance',           m.reach);
@@ -5933,7 +5959,9 @@ function showCreativoAnalysis(id) {
           </div>
           <div style="font-size:11px;color:var(--text3)">
             ${objetivo?`Objetivo: <strong style="color:var(--text2)">${objetivo}</strong> ·`:''}
+            <span style="font-weight:700;padding:1px 7px;border-radius:4px;background:${c.testType==='campana'?'#fef3c7':'#e0e7ff'};color:${c.testType==='campana'?'#92400e':'#3730a3'}">${c.testType==='campana'?'📦 Test de campaña':'🎯 Test individual'}</span> ·
             CPA obj <strong>${fmtN(cpaObj)}</strong> · CPA BE <strong>${fmtN(cpaBE)}</strong> · ROAS BE <strong>${roasBE.toFixed(2)}x</strong> · Precio <strong>${fmtN(price)}</strong>
+            ${c.testType==='campana'?`· <a href="#" onclick="event.preventDefault();document.getElementById('analisis-modal').remove();showCampaignDrilldown('${c.id}')" style="color:#7c3aed;font-weight:700">📦 Ver conjuntos y anuncios</a>`:''}
             ${c.respTesteo?` · 🧪 ${c.respTesteo}`:''}
           </div>
         </div>
@@ -5998,6 +6026,110 @@ function showCreativoAnalysis(id) {
         <button class="btn sm" onclick="openCreativoModal('${c.id}');document.getElementById('analisis-modal').remove()" style="font-size:11px">✎ Editar</button>
         <button class="btn sm" onclick="document.getElementById('analisis-modal').remove()" style="font-size:11px">Cerrar</button>
         <span style="margin-left:auto;font-size:10px;color:var(--text3);align-self:center">🔎 ${new Date().toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+// ==================== VISTA DE CAMPAÑA: CAMPAÑA → CONJUNTOS → ANUNCIOS ====================
+// Convierte una fila del desglose de Meta al formato de métricas de crSemaforo
+function _rowToMetrics(r) {
+  return { presup:r.spend||0, gasto:r.spend||0, ventas:r.purchases||0, cpa:r.costPerPurchase||0,
+           ctr:r.ctr||0, ctrUnico:r.ctrUnico||0, cpm:r.cpm||0, cpcEnlace:r.cpcEnlace||0,
+           impresiones:r.impressions||0, clicks:r.clicks||0, frecuencia:r.frequency||0,
+           purchaseRoas:r.purchaseRoas||0, purchaseValue:r.purchaseValue||0, revenue:r.purchaseValue||0,
+           addToCart:r.addToCart||0, checkouts:r.checkouts||0, visitasPagina:r.visitasPagina||0,
+           clicsEnlace:r.clicsEnlace||0, leads:r.addToCart||0, resultados:r.resultados||0 };
+}
+
+function _rowStats(r) {
+  const gasto = r.spend||0, ventas = r.purchases||0;
+  const revenue = (r.purchaseValue||0);
+  return { gasto, ventas, cpa: r.costPerPurchase || (ventas>0?gasto/ventas:0),
+           roas: r.purchaseRoas || (gasto>0?revenue/gasto:0), ctr: r.ctrUnico||r.ctr||0, revenue, profit: revenue-gasto };
+}
+
+function _miniMetricsRow(g) {
+  return [['Gasto',fmt(g.gasto)],['Compras',g.ventas||'—'],['CPA',g.cpa>0?fmt(g.cpa):'—'],
+          ['ROAS',g.roas>0?g.roas.toFixed(2)+'x':'—'],['CTR',g.ctr>0?g.ctr.toFixed(2)+'%':'—'],['Profit',fmt(g.profit)]]
+    .map(([l,v])=>`<div style="text-align:center;min-width:52px"><div style="font-size:9px;color:var(--text3)">${l}</div><div style="font-size:12px;font-weight:700">${v}</div></div>`).join('');
+}
+
+function showCampaignDrilldown(id) {
+  const c = state.creativos.find(x=>x.id===id); if (!c) return;
+  const existing = document.getElementById('campaign-drill-modal');
+  if (existing) existing.remove();
+  const targets = c.product ? getTrafficCpaTargets(c.product) : { cpaObj:22, cpaBE:28, roasBE:1.5 };
+  const bd = c.metaBreakdown || { adsets:[], ads:[] };
+  const m = c.metrics||{};
+  const campStats = { gasto:m.presup||0, ventas:m.ventas||0, cpa:m.cpa||0,
+                      roas:m.purchaseRoas||m.roas||0, ctr:m.ctrUnico||m.ctr||0,
+                      revenue:(m.purchaseValue||0)>0?m.purchaseValue:(m.revenue||0) };
+  campStats.profit = campStats.revenue - campStats.gasto;
+  const campRec = _groupRecommendation(campStats, targets, 'campaña');
+
+  // Ganadores
+  const adStats = (bd.ads||[]).map(a=>({ a, s:_rowStats(a) }));
+  const winner = [...adStats].filter(x=>x.s.ventas>0).sort((x,y)=>y.s.profit-x.s.profit)[0];
+
+  const adsetsHtml = !(bd.adsets||[]).length
+    ? `<div style="font-size:12px;color:var(--text3);padding:10px">Sin desglose todavía. Pulsa <b>↻ Meta</b> en el creativo (modo campaña) para traer conjuntos y anuncios desde Meta.</div>`
+    : bd.adsets.map(as=>{
+      const s = _rowStats(as);
+      const rec = _groupRecommendation(s, targets, 'conjunto');
+      const adsOfSet = adStats.filter(x=>x.a.adsetId===as.adsetId);
+      const adsHtml = !adsOfSet.length
+        ? `<div style="font-size:11px;color:var(--text3);padding:6px 0">Sin anuncios reportados en este conjunto para el rango sincronizado.</div>`
+        : adsOfSet.map(({a, s:st})=>{
+            const sem = crSemaforo(_rowToMetrics(a), targets);
+            const sBg = {red:'#ef4444',yellow:'#f59e0b',green:'#10b981',gray:'#9ca3af'}[sem.color]||'#9ca3af';
+            return `<div style="border:1px solid var(--border);border-left:3px solid ${sBg};border-radius:6px;padding:8px 10px;margin-bottom:6px;background:var(--surface)">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <span style="width:8px;height:8px;border-radius:50%;background:${sBg};flex-shrink:0"></span>
+                <span style="flex:1;min-width:140px;font-weight:600;font-size:11px">${winner&&winner.a===a?'🏆 ':''}${(a.adName||a.adId||'').toString().replace(/</g,'&lt;')}</span>
+                ${_miniMetricsRow(st)}
+              </div>
+              <div style="font-size:10px;color:${sBg};font-weight:600;margin-top:4px">${sem.dot} ${sem.rec}${sem.reason?' — '+sem.reason:''}</div>
+            </div>`;
+          }).join('');
+      return `<div style="border:1px solid var(--border);border-left:4px solid ${rec.color};border-radius:8px;margin-bottom:8px;background:var(--surface2)">
+        <div style="display:flex;gap:10px;align-items:center;padding:9px 12px;cursor:pointer;flex-wrap:wrap" onclick="const d=this.nextElementSibling;d.style.display=d.style.display==='none'?'':'none'">
+          <div style="flex:1;min-width:160px">
+            <div style="font-weight:700;font-size:12px">🗂 ${(as.adsetName||as.adsetId||'').toString().replace(/</g,'&lt;')} <span style="font-weight:400;font-size:10px;color:var(--text3)">· ${adsOfSet.length} anuncio${adsOfSet.length!==1?'s':''}</span></div>
+            <div style="font-size:10px;color:${rec.color};font-weight:600;margin-top:2px">${rec.icon} ${rec.text}</div>
+          </div>
+          ${_miniMetricsRow(s)}
+          <span style="color:var(--text3);font-size:11px">▾</span>
+        </div>
+        <div style="display:none;border-top:1px solid var(--border);padding:8px 12px">${adsHtml}</div>
+      </div>`;
+    }).join('');
+
+  const modal = document.createElement('div');
+  modal.id = 'campaign-drill-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:12px;max-width:860px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.3)">
+      <div style="position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;gap:10px;align-items:flex-start;z-index:1">
+        <div style="flex:1">
+          <div style="font-weight:800;font-size:15px">📦 ${(c.metaCampaignName||c.name||'').replace(/</g,'&lt;')}</div>
+          <div style="font-size:11px;color:var(--text3)">Test de campaña con varios creativos · ${c.product||''} · CPA obj <b>${fmt(targets.cpaObj)}</b> · CPA BE <b>${fmt(targets.cpaBE)}</b> · ROAS BE <b>${targets.roasBE.toFixed(2)}x</b>${bd.syncedAt?` · sync ${_daysSince(bd.syncedAt)||'reciente'}`:''}</div>
+        </div>
+        <button onclick="document.getElementById('campaign-drill-modal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3)">✕</button>
+      </div>
+      <div style="padding:14px 20px">
+        <div style="border:1px solid var(--border);border-left:4px solid ${campRec.color};border-radius:8px;padding:10px 14px;margin-bottom:12px;background:var(--surface2)">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <div style="flex:1;min-width:160px">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)">Nivel 1 · Campaña</div>
+              <div style="font-size:11px;color:${campRec.color};font-weight:600;margin-top:2px">${campRec.icon} ${campRec.text}</div>
+            </div>
+            ${_miniMetricsRow(campStats)}
+          </div>
+        </div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:6px">Nivel 2 · Conjuntos (toca uno para ver sus anuncios · Nivel 3)</div>
+        ${adsetsHtml}
       </div>
     </div>`;
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
@@ -6119,6 +6251,13 @@ function saveCreativo() {
     objetivoCampana:  gv('cr-objetivo-campana'),
     fechaMetaLanzamiento: gv('cr-fecha-meta-lanzamiento'),
   };
+  // Conservar métricas que solo vienen del sync de Meta (no tienen campo en el formulario)
+  {
+    const prevM = (existing && existing.metrics) || {};
+    for (const k of ['purchaseRoas','purchaseValue','visitasPagina','costoVisitaPagina','checkouts','clicsEnlace','videoTiempo','addToCart','initCheckout']) {
+      if (prevM[k] != null && metrics[k] == null) metrics[k] = prevM[k];
+    }
+  }
   const productName = gv('cr-product');
   const targets = productName ? getTrafficCpaTargets(productName) : null;
   const sem = crSemaforo(metrics, targets);
@@ -6157,6 +6296,7 @@ function saveCreativo() {
     testType:          gv('cr-test-type') || 'individual',
     metaCampaignName:  gv('cr-meta-campaign-name').trim(),
     metaSyncHistory:   existing?.metaSyncHistory || [],
+    metaBreakdown:     existing?.metaBreakdown || null,
     comments:          gv('cr-comments'),
     guion:             gv('cr-guion'),
     tipoSolicitud:     gv('cr-tipo-solicitud'),
