@@ -4195,13 +4195,17 @@ function validateStageTransition(c, toStatus) {
   const missing = [];
 
   if (toStatus === 'produccion') {
-    if (!c.product)      missing.push('producto');
-    if (!c.tipoCreativo) missing.push('tipo de creativo');
-    if (!c.format)       missing.push('formato / tamaño');
-    if (!c.angle)        missing.push('enfoque del creativo');
-    if (!c.guion || c.guion.trim().length < 10) missing.push('brief para el creador (mín. 10 caracteres)');
-    if (!c.resp)         missing.push('responsable de creación / edición');
-    if (!c.fechaLimite)  missing.push('fecha límite de entrega');
+    // Si viene de una etapa POSTERIOR (listo/testeo/validado/etc.) es un regreso para correcciones — no validar requisitos de avance
+    const _backwards = ['listo','testeo','validado','escalando','rechazado','revision'].includes(c.status);
+    if (!_backwards) {
+      if (!c.product)      missing.push('producto');
+      if (!c.tipoCreativo) missing.push('tipo de creativo');
+      if (!c.format)       missing.push('formato / tamaño');
+      if (!c.angle)        missing.push('enfoque del creativo');
+      if (!c.guion || c.guion.trim().length < 10) missing.push('brief para el creador (mín. 10 caracteres)');
+      if (!c.resp)         missing.push('responsable de creación / edición');
+      if (!c.fechaLimite)  missing.push('fecha límite de entrega');
+    }
   }
 
   if (toStatus === 'listo') {
@@ -4308,6 +4312,13 @@ function moveCard(id, toStatus) {
     c.produccionStatus = 'listo';
   } else if (toStatus === 'listo') {
     c.produccionStatus = 'listo';
+  }
+  // Regreso a producción para correcciones: pedir la nota para el editor
+  if (toStatus === 'produccion' && ['listo','testeo','validado','escalando','rechazado'].includes(c.status)) {
+    const nota = prompt('🛠 ¿Qué cambios o correcciones debe hacer el editor?\n\nEsta nota quedará en los comentarios del creativo.');
+    if (nota === null) return;
+    if (nota.trim()) c.comments = `🛠 CORRECCIÓN (${new Date().toLocaleDateString('es')} · ${(currentUser&&(currentUser.name||currentUser.email))||''}): ${nota.trim()}\n${c.comments||''}`.trim();
+    c.produccionStatus = 'proceso';
   }
   _stampStageChange(c, toStatus);
   c.status = toStatus;
@@ -4989,7 +5000,10 @@ function renderModalFlowActions() {
   const FLOW = {
     idea:      [{ label:'→ En producción', to:'produccion', style:'primary' }],
     produccion:[{ label:'→ Listo para test', to:'listo', style:'primary' }],
-    listo:     [{ label:'▶ Iniciar testeo', to:'testeo', style:'primary' }],
+    listo:     [
+      { label:'▶ Iniciar testeo', to:'testeo', style:'primary' },
+      { label:'↩ En producción (corregir)', to:'produccion', style:'' },
+    ],
     testeo:    [
       { label:'✅ Validar', to:'validado', style:'primary' },
       { label:'⏸ Pausar', to:'rechazado', style:'danger' },
@@ -5018,6 +5032,15 @@ function renderModalFlowActions() {
 function moveThenClose(toStatus) {
   // Build a temp object from current form values to validate
   const gv = id => { const el=document.getElementById(id); return el?el.value:''; };
+  // Regreso a producción desde una etapa posterior: pedir la corrección para el editor
+  if (toStatus === 'produccion' && ['listo','testeo','validado','escalando','rechazado'].includes(gv('cr-status'))) {
+    const nota = prompt('🛠 ¿Qué cambios o correcciones debe hacer el editor?\n\nEsta nota quedará en los comentarios del creativo.');
+    if (nota === null) return; // canceló
+    if (nota.trim()) {
+      const cEl = document.getElementById('cr-comments');
+      if (cEl) cEl.value = `🛠 CORRECCIÓN (${new Date().toLocaleDateString('es')} · ${(currentUser&&(currentUser.name||currentUser.email))||''}): ${nota.trim()}\n${cEl.value||''}`.trim();
+    }
+  }
   const gn = id => { const el=document.getElementById(id); return el?+el.value||0:0; };
   const temp = {
     product: gv('cr-product'), format: gv('cr-format')||gv('cr-format-listo'),
