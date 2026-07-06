@@ -485,38 +485,65 @@ tbody tr:hover{background:var(--accent-light)!important}
 
 <!-- ===== HOME / INICIO EJECUTIVO ===== -->
 <div class="panel" id="panel-home">
-  <div class="sec">
-    <div class="sec-hdr"><span class="sec-title">🏠 Centro de mando · Pipeline de creativos</span>
-      <span id="home-updated" style="font-size:10px;color:var(--text3);font-weight:400"></span>
+  <div class="sec" style="padding:12px 24px">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span class="sec-title">🏠 Centro de mando</span>
+      <select id="home-date-filter" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text)" onchange="onHomeDateChange()">
+        <option value="hoy" selected>Hoy</option>
+        <option value="ayer">Ayer</option>
+        <option value="semana">Esta semana</option>
+        <option value="mes">Este mes</option>
+        <option value="custom">Rango personalizado</option>
+      </select>
+      <span id="home-date-custom" style="display:none;gap:4px;align-items:center">
+        <input type="date" id="home-date-from" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r)" onchange="renderHome()">
+        <span style="font-size:11px;color:var(--text3)">→</span>
+        <input type="date" id="home-date-to" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r)" onchange="renderHome()">
+      </span>
+      <span id="home-updated" style="font-size:10px;color:var(--text3);font-weight:400;margin-left:auto"></span>
     </div>
-    <div class="kpi-grid" id="home-kpis" style="margin-bottom:0"></div>
   </div>
 
   <div class="sec">
-    <div class="sec-hdr"><span class="sec-title">⏳ Pendientes por testear</span></div>
-    <div id="home-pendientes"></div>
-  </div>
-
-  <div class="sec">
-    <div class="sec-hdr"><span class="sec-title">🎯 Metas del equipo</span>
-      <button class="btn sm primary" id="home-meta-add-btn" onclick="openMetaForm()" style="display:none">+ Nueva meta</button>
-    </div>
-    <div id="home-meta-form" style="display:none;margin-bottom:12px"></div>
-    <div id="home-metas"></div>
-  </div>
-
-  <div class="sec">
-    <div class="sec-hdr"><span class="sec-title">👥 Rendimiento por persona</span></div>
+    <div class="sec-hdr"><span class="sec-title">👥 Rendimiento por persona</span><span id="home-team-period" style="font-size:10px;color:var(--text3);font-weight:400"></span></div>
     <div class="tbl-wrap" style="overflow-x:auto">
       <table class="tbl" style="width:100%;font-size:11px">
         <thead><tr>
           <th style="text-align:left">Persona</th><th>Rol</th>
-          <th>Asignados</th><th>Creados</th><th>En producción</th><th>Entregados (listo)</th>
-          <th>Atrasados</th><th>En testeo</th><th>Validados</th><th>Escalados</th>
+          <th>Asignados</th><th>Creados</th><th>En producción</th><th>Pasaron a listo</th>
+          <th>Atrasados</th><th>Tests iniciados</th><th>Validados</th><th>Escalados</th>
         </tr></thead>
         <tbody id="home-team-body"></tbody>
       </table>
     </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-title">📊 Métricas generales</span></div>
+    <div class="kpi-grid" id="home-kpis" style="margin-bottom:0"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-title">📌 Mis pendientes</span></div>
+    <div id="home-mis-pendientes"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-title">⏳ Pendientes por testear</span><span style="font-size:10px;color:var(--text3);font-weight:400">siempre visibles, no dependen del filtro de fecha</span></div>
+    <div id="home-pendientes"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-title">🚨 Alertas</span></div>
+    <div id="home-alertas"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-title">🎯 Metas del equipo</span>
+      <span style="font-size:10px;color:var(--text3);font-weight:400" id="home-metas-hint"></span>
+    </div>
+    <div id="home-meta-form" style="display:none;margin-bottom:12px"></div>
+    <div id="home-metas"></div>
   </div>
 </div>
 
@@ -948,6 +975,12 @@ tbody tr:hover{background:var(--accent-light)!important}
 <!-- ===== COST CAP / ESCALADO ===== -->
 <div class="panel" id="panel-costcap">
 
+  <!-- Sugeridos por estrategia de escalado -->
+  <div class="sec" id="sec-escalado-sugeridos" style="display:none">
+    <div class="sec-hdr"><span class="sec-title">🚀 Sugeridos por estrategia</span><span style="font-size:10px;color:var(--text3);font-weight:400">según Config → Estrategia de escalado</span></div>
+    <div id="escalado-sugeridos-list"></div>
+  </div>
+
   <!-- Calculadora budget -->
   <div class="sec">
     <div class="sec-hdr"><span class="sec-title">Calculadora de presupuesto — Regla Jhon Black</span></div>
@@ -1228,6 +1261,24 @@ tbody tr:hover{background:var(--accent-light)!important}
     </div>
     <div id="users-list"></div>
     <div id="users-warn-box" style="font-size:12px;margin-top:12px;padding:8px 12px;background:var(--surface2);border-radius:8px;color:var(--text2)">Los usuarios deben tener cuenta activa en Supabase Auth. Crea o invita usuarios desde el panel de Supabase → Authentication → Users.</div>
+  </div>
+
+  <!-- Metas — solo admin -->
+  <div class="sec" id="sec-metas" style="margin-bottom:16px;display:none">
+    <div class="sec-hdr">
+      <span class="sec-title">🎯 Metas</span>
+      <div class="sec-actions"><button class="btn sm primary" onclick="openMetaForm()">+ Nueva meta</button></div>
+    </div>
+    <div id="config-meta-form" style="display:none;margin-bottom:12px"></div>
+    <div id="config-metas-list"></div>
+    <div style="font-size:11px;color:var(--text3);margin-top:8px">El avance de las metas se muestra en la pestaña 🏠 Inicio.</div>
+  </div>
+
+  <!-- Estrategia de escalado — solo admin -->
+  <div class="sec" id="sec-escalado-strategy" style="margin-bottom:16px;display:none">
+    <div class="sec-hdr"><span class="sec-title">🚀 Estrategia de escalado</span></div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Cuando un creativo <b>Validado</b> cumpla todas las reglas, se marcará como candidato a escalado en Inicio, Control de Creativos y Cost Cap.</div>
+    <div id="escalado-strategy-form"></div>
   </div>
 
   <div class="g2">
@@ -3052,27 +3103,146 @@ function _metaProgress(meta) {
   return { actual, pctDone, estado };
 }
 
+// ── Rango de fechas del Home (por defecto: Hoy)
+function _homeRange() {
+  const sel = (document.getElementById('home-date-filter')||{}).value || 'hoy';
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (sel === 'hoy')  return [today, null];
+  if (sel === 'ayer') { const s = new Date(today); s.setDate(s.getDate()-1); return [s, today]; }
+  if (sel === 'semana') { const s = new Date(today); s.setDate(s.getDate()-((s.getDay()+6)%7)); return [s, null]; }
+  if (sel === 'mes') return [new Date(now.getFullYear(), now.getMonth(), 1), null];
+  const f = (document.getElementById('home-date-from')||{}).value;
+  const t = (document.getElementById('home-date-to')||{}).value;
+  return [f?new Date(f+'T00:00:00'):null, t?new Date(t+'T23:59:59.999'):null];
+}
+function _inHomeRange(iso, r) {
+  if (!iso) return false;
+  const d = new Date(iso.length===10 ? iso+'T00:00:00' : iso);
+  if (r[0] && d < r[0]) return false;
+  if (r[1] && d >= r[1]) return false;
+  return true;
+}
+function onHomeDateChange() {
+  const custom = document.getElementById('home-date-custom');
+  if (custom) custom.style.display = (document.getElementById('home-date-filter').value==='custom') ? 'inline-flex' : 'none';
+  renderHome();
+}
+
+const HOME_RANGE_LABELS = { hoy:'Hoy', ayer:'Ayer', semana:'Esta semana', mes:'Este mes', custom:'Rango personalizado' };
+
+// ── Estrategia de escalado: candidatos según reglas configuradas
+function _escaladoDefaults() {
+  return { minCreativos:3, maxCreativos:5, cpaCapMode:'cpaBE', cpaCapManual:0, ctrMin:1, roasMode:'roasBE', roasManual:0,
+           comprasMin:3, profitMin:0, cuentaDestino:'', tipoEscalado:'costcap', bidMode:'cpaObj', bidManual:0, bidMult:1 };
+}
+function getEscaladoStrategy() { return { ..._escaladoDefaults(), ...(state.escaladoStrategy||{}) }; }
+function getEscaladoCandidates() {
+  const st = getEscaladoStrategy();
+  const out = [];
+  for (const c of (state.creativos||[])) {
+    if (c.status !== 'validado') continue;
+    const m = c.metrics||{};
+    const t = c.product ? getTrafficCpaTargets(c.product) : { cpaObj:22, cpaBE:28, roasBE:1.5 };
+    const cpaCap = st.cpaCapMode==='cpaObj' ? t.cpaObj : st.cpaCapMode==='manual' ? (+st.cpaCapManual||999) : t.cpaBE;
+    const roasMin = st.roasMode==='manual' ? (+st.roasManual||0) : t.roasBE;
+    const cpa = m.cpa||0, ctr = m.ctrUnico||m.ctr||0, roas = m.purchaseRoas||m.roas||0, ventas = m.ventas||0;
+    const revenueReal = (m.purchaseValue||0)>0 ? m.purchaseValue : (m.revenue||0);
+    const profit = revenueReal - (m.presup||0);
+    const checks = [
+      { ok: cpa>0 && cpa<=cpaCap,      txt:`CPA ${fmt(cpa)} vs tope ${fmt(cpaCap)} (obj ${fmt(t.cpaObj)} / BE ${fmt(t.cpaBE)})` },
+      { ok: ctr>=st.ctrMin,            txt:`CTR ${ctr.toFixed(2)}% vs mínimo ${st.ctrMin}%` },
+      { ok: roas>=roasMin,             txt:`ROAS ${roas.toFixed(2)}x vs mínimo ${roasMin.toFixed(2)}x (ROAS BE ${t.roasBE.toFixed(2)}x)` },
+      { ok: ventas>=st.comprasMin,     txt:`${ventas} compras vs mínimo ${st.comprasMin}` },
+      { ok: profit>=(+st.profitMin||0),txt:`Profit ${fmt(profit)} vs mínimo ${fmt(+st.profitMin||0)}` },
+    ];
+    if (checks.every(x=>x.ok)) {
+      const bid = st.bidMode==='cpaObj' ? t.cpaObj : st.bidMode==='cpaBE' ? t.cpaBE : st.bidMode==='manual' ? (+st.bidManual||0) : t.cpaObj*(+st.bidMult||1);
+      out.push({ c, checks, bid, tipoEscalado: st.tipoEscalado, cuentaDestino: st.cuentaDestino });
+    }
+  }
+  return out;
+}
+
 function renderHome() {
   const all = state.creativos || [];
-  const isAdmin = currentUser && currentUser.role === 'admin';
+  const role = currentUser ? currentUser.role : 'editor';
+  const isAdmin = role === 'admin';
+  const myName = currentUser ? (currentUser.name || currentUser.email) : '';
+  const r = _homeRange();
+  const rangeLbl = HOME_RANGE_LABELS[(document.getElementById('home-date-filter')||{}).value||'hoy'] || 'Hoy';
   document.getElementById('home-updated').textContent = 'Actualizado ' + new Date().toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('home-team-period').textContent = 'actividad: ' + rangeLbl.toLowerCase();
 
-  // ── KPIs pipeline
+  const stageIn = (c, stage) => _inHomeRange(((c.stageLog||{})[stage]||{}).at, r);
+
+  // ── 1. Rendimiento por persona (actividad del período + carga actual)
+  const users = (state.users||[]).filter(u=>u.active!==false);
+  const now = Date.now();
+  document.getElementById('home-team-body').innerHTML = users.map(u=>{
+    const asEditor = all.filter(c=>c.resp===u.name);
+    const asTester = all.filter(c=>c.respTesteo===u.name);
+    const asign = new Set([...asEditor,...asTester].map(c=>c.id)).size;
+    const atras = asEditor.filter(c=>c.status==='produccion' && c.fechaLimite && new Date(c.fechaLimite+'T23:59:59').getTime() < now).length;
+    const cells = [
+      asign,
+      asEditor.filter(c=>_inHomeRange(c.date, r)).length,
+      asEditor.filter(c=>c.status==='produccion').length,
+      asEditor.filter(c=>stageIn(c,'listo')).length,
+      atras,
+      asTester.filter(c=>stageIn(c,'testeo')).length,
+      asTester.filter(c=>stageIn(c,'validado')).length,
+      asTester.filter(c=>stageIn(c,'escalando')).length,
+    ];
+    return `<tr>
+      <td style="text-align:left;font-weight:600">${(u.name||u.email).replace(/</g,'&lt;')}${(u.name===myName)?' <span style="font-size:9px;color:var(--accent)">(tú)</span>':''}</td>
+      <td style="text-align:center"><span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--surface2);border:1px solid var(--border)">${u.role}</span></td>
+      ${cells.map((v,i)=>`<td style="text-align:center;${i===4&&v>0?'color:var(--red);font-weight:700':''}">${v||'—'}</td>`).join('')}
+    </tr>`;
+  }).join('') || '<tr><td colspan="10" style="color:var(--text3);font-size:12px">Sin usuarios.</td></tr>';
+
+  // ── 2. Métricas generales: estado actual + actividad del período
   const cnt = st => all.filter(c=>c.status===st).length;
   const sinResp = all.filter(c => (c.status==='listo'||c.status==='testeo') && !c.respTesteo).length;
-  document.getElementById('home-kpis').innerHTML = [
-    { l:'Total creativos', v:all.length, c:'info' },
-    { l:'Ideas / Pendiente', v:cnt('idea'), c:'' },
-    { l:'En producción', v:cnt('produccion'), c:'info' },
-    { l:'Listos para test', v:cnt('listo'), c:cnt('listo')>0?'warn':'' },
-    { l:'En testeo', v:cnt('testeo'), c:'info' },
-    { l:'Validados', v:cnt('validado'), c:'ok' },
-    { l:'Escalando', v:cnt('escalando'), c:'ok' },
-    { l:'Rechazados', v:cnt('rechazado'), c:'' },
+  const kpis = [
+    { l:'Listos para test (actual)', v:cnt('listo'), c:cnt('listo')>0?'warn':'' },
+    { l:'En testeo (actual)', v:cnt('testeo'), c:'info' },
+    { l:'En producción (actual)', v:cnt('produccion'), c:'info' },
     { l:'Sin responsable de testeo', v:sinResp, c:sinResp>0?'bad':'ok' },
-  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-label">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+    { l:`Creados (${rangeLbl})`, v:all.filter(c=>_inHomeRange(c.date,r)).length, c:'' },
+    { l:`Pasaron a listo (${rangeLbl})`, v:all.filter(c=>stageIn(c,'listo')).length, c:'' },
+    { l:`Tests iniciados (${rangeLbl})`, v:all.filter(c=>stageIn(c,'testeo')).length, c:'info' },
+    { l:`Validados (${rangeLbl})`, v:all.filter(c=>stageIn(c,'validado')).length, c:'ok' },
+    { l:`Escalados (${rangeLbl})`, v:all.filter(c=>stageIn(c,'escalando')).length, c:'ok' },
+  ];
+  document.getElementById('home-kpis').innerHTML = kpis.map(k=>`<div class="kpi ${k.c}"><div class="kpi-label">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
 
-  // ── Pendientes por testear (siempre visibles, sin filtro de fecha)
+  // ── 3. Mis pendientes (según rol)
+  const mine = [];
+  const item = (icon, txt, cid) => mine.push({icon, txt, cid});
+  if (role==='editor' || isAdmin) {
+    all.filter(c=>c.resp===myName && c.status==='produccion').forEach(c=>{
+      const late = c.fechaLimite && new Date(c.fechaLimite+'T23:59:59').getTime() < now;
+      item(late?'🔴':'✏️', `${late?'ATRASADO: ':''}${c.name} — en producción${c.fechaLimite?` · límite ${c.fechaLimite}`:''}`, c.id);
+    });
+    all.filter(c=>c.resp===myName && c.status==='idea').forEach(c=> item('💡', `${c.name} — idea asignada, pendiente de producción`, c.id));
+  }
+  if (role==='tester' || isAdmin) {
+    all.filter(c=>c.status==='listo' && c.respTesteo===myName).forEach(c=> item('🧪', `${c.name} — listo para test asignado a ti${c.listoAt?` · ${_daysSince(c.listoAt)}`:''}`, c.id));
+    all.filter(c=>c.status==='testeo' && c.respTesteo===myName && !((c.metrics||{}).presup>0)).forEach(c=> item('📊', `${c.name} — en testeo sin métricas cargadas`, c.id));
+    all.filter(c=>c.status==='testeo' && c.respTesteo===myName).forEach(c=>{
+      const t = c.product?getTrafficCpaTargets(c.product):null; const s = crSemaforo(c.metrics||{}, t);
+      if (s.color==='red') item('🚨', `${c.name} — alerta roja: ${s.label}`, c.id);
+    });
+  }
+  if (isAdmin) {
+    all.filter(c=>c.status==='listo' && !c.respTesteo).forEach(c=> item('⚠️', `${c.name} — listo para test SIN tester asignado`, c.id));
+  }
+  document.getElementById('home-mis-pendientes').innerHTML = !mine.length
+    ? '<div style="color:var(--text3);font-size:12px">✅ Sin pendientes personales.</div>'
+    : mine.slice(0,15).map(p=>`<div style="display:flex;gap:8px;align-items:center;padding:5px 10px;border-bottom:1px dashed var(--border);font-size:12px;cursor:pointer" onclick="showTab('creativos');setTimeout(()=>openDetailModal('${p.cid}'),100)"><span>${p.icon}</span><span>${p.txt.replace(/</g,'&lt;')}</span></div>`).join('');
+
+  // ── 4. Pendientes por testear (SIEMPRE visibles, sin filtro de fecha)
   const pend = all.filter(c=>c.status==='listo')
     .sort((a,b)=>(a.listoAt||'').localeCompare(b.listoAt||''));
   document.getElementById('home-pendientes').innerHTML = !pend.length
@@ -3087,13 +3257,31 @@ function renderHome() {
         <button class="btn sm primary" style="font-size:10px;flex-shrink:0" onclick="event.stopPropagation();showTab('creativos');setTimeout(()=>openCreativoModal('${c.id}'),100)">▶ Iniciar testeo</button>
       </div>`).join('');
 
-  // ── Metas
-  document.getElementById('home-meta-add-btn').style.display = isAdmin ? '' : 'none';
+  // ── 5. Alertas
+  const alerts = [];
   const metas = state.metas || [];
+  for (const mt of metas) {
+    const p = _metaProgress(mt);
+    const tipo = META_TIPOS[mt.tipo]||{label:mt.tipo};
+    if (p.estado==='atrasada') alerts.push({icon:'🔴', txt:`Meta ${mt.periodo} "${tipo.label}" no se está cumpliendo (${Math.round(p.pctDone)}%)`});
+    else if (p.estado==='en riesgo' && mt.periodo==='diaria') alerts.push({icon:'🟡', txt:`Meta diaria "${tipo.label}" en riesgo (${Math.round(p.pctDone)}%)`});
+  }
+  if (pend.length >= 5) alerts.push({icon:'⏳', txt:`Hay ${pend.length} creativos pendientes por testear — el cuello de botella está en testeo`});
+  if (sinResp > 0) alerts.push({icon:'⚠️', txt:`${sinResp} creativo(s) en listo/testeo sin responsable asignado`});
+  if (cnt('testeo') >= 3 && cnt('validado')===0) alerts.push({icon:'📉', txt:`${cnt('testeo')} creativos en testeo y ninguno validado — revisar calidad de tests`});
+  const candidatos = getEscaladoCandidates();
+  if (candidatos.length) alerts.push({icon:'🚀', txt:`${candidatos.length} creativo(s) listos para escalar según la estrategia configurada: ${candidatos.map(x=>x.c.name).join(', ')}`});
+  document.getElementById('home-alertas').innerHTML = !alerts.length
+    ? '<div style="color:var(--text3);font-size:12px">✅ Sin alertas activas.</div>'
+    : alerts.map(a=>`<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 10px;border-bottom:1px dashed var(--border);font-size:12px"><span>${a.icon}</span><span>${a.txt.replace(/</g,'&lt;')}</span></div>`).join('');
+
+  // ── 6. Metas (solo avance visual; se configuran en Config → Metas)
+  document.getElementById('home-metas-hint').textContent = isAdmin ? 'se configuran en Config → Metas' : '';
+  const visMetas = metas.filter(mt => (role!=='editor') || !['cpa','roas'].includes(mt.tipo));
   const estadoStyle = { 'cumplida':'background:#d1fae5;color:#065f46', 'en riesgo':'background:#fef3c7;color:#92400e', 'atrasada':'background:#fee2e2;color:#991b1b', 'sin datos':'background:#f3f4f6;color:#6b7280' };
-  document.getElementById('home-metas').innerHTML = !metas.length
-    ? '<div style="color:var(--text3);font-size:12px">Sin metas configuradas.' + (isAdmin?' Usa "+ Nueva meta" para crear la primera.':'') + '</div>'
-    : metas.map(mt=>{
+  document.getElementById('home-metas').innerHTML = !visMetas.length
+    ? '<div style="color:var(--text3);font-size:12px">Sin metas configuradas.' + (isAdmin?' Créalas en Config → Metas.':'') + '</div>'
+    : visMetas.map(mt=>{
       const p = _metaProgress(mt);
       const tipo = META_TIPOS[mt.tipo]||{label:mt.tipo};
       const barColor = p.estado==='cumplida'?'#10b981':p.estado==='en riesgo'?'#f59e0b':'#ef4444';
@@ -3102,10 +3290,7 @@ function renderHome() {
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:6px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
           <div style="font-weight:600;font-size:12px">${tipo.label} <span style="font-weight:400;color:var(--text3)">· ${mt.periodo}${mt.responsable?` · ${mt.responsable}`:' · equipo'}</span></div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;${estadoStyle[p.estado]||''}">${p.estado.toUpperCase()}</span>
-            ${isAdmin?`<button class="btn sm danger" style="font-size:9px;padding:1px 5px" onclick="deleteMeta('${mt.id}')">✕</button>`:''}
-          </div>
+          <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;${estadoStyle[p.estado]||''}">${p.estado.toUpperCase()}</span>
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
           <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden">
@@ -3115,36 +3300,12 @@ function renderHome() {
         </div>
       </div>`;
     }).join('');
-
-  // ── Rendimiento por persona
-  const users = (state.users||[]).filter(u=>u.active!==false);
-  const now = Date.now();
-  document.getElementById('home-team-body').innerHTML = users.map(u=>{
-    const asEditor = all.filter(c=>c.resp===u.name);
-    const asTester = all.filter(c=>c.respTesteo===u.name);
-    const asign = new Set([...asEditor,...asTester].map(c=>c.id)).size;
-    const atras = asEditor.filter(c=>c.status==='produccion' && c.fechaLimite && new Date(c.fechaLimite).getTime() < now).length;
-    const cells = [
-      asign,
-      asEditor.length,
-      asEditor.filter(c=>c.status==='produccion').length,
-      asEditor.filter(c=>['listo','testeo','validado','escalando'].includes(c.status)).length,
-      atras,
-      asTester.filter(c=>c.status==='testeo').length,
-      asTester.filter(c=>c.status==='validado').length,
-      asTester.filter(c=>c.status==='escalando').length,
-    ];
-    return `<tr>
-      <td style="text-align:left;font-weight:600">${(u.name||u.email).replace(/</g,'&lt;')}</td>
-      <td style="text-align:center"><span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--surface2);border:1px solid var(--border)">${u.role}</span></td>
-      ${cells.map((v,i)=>`<td style="text-align:center;${i===4&&v>0?'color:var(--red);font-weight:700':''}">${v||'—'}</td>`).join('')}
-    </tr>`;
-  }).join('') || '<tr><td colspan="10" style="color:var(--text3);font-size:12px">Sin usuarios.</td></tr>';
 }
 
-// ── Metas CRUD (solo admin)
+// ── Metas CRUD (Config → Metas, solo admin)
 function openMetaForm() {
-  const wrap = document.getElementById('home-meta-form');
+  const wrap = document.getElementById('config-meta-form');
+  if (!wrap) return;
   if (wrap.style.display !== 'none') { wrap.style.display='none'; return; }
   const users = (state.users||[]).filter(u=>u.active!==false);
   wrap.style.display = '';
@@ -3158,7 +3319,7 @@ function openMetaForm() {
       </div>
       <div class="field"><label>Objetivo</label><input type="number" id="meta-objetivo" step="0.01" placeholder="10"></div>
       <div class="field"><label>Responsable (opcional)</label>
-        <select id="meta-resp"><option value="">Todo el equipo</option>${users.map(u=>`<option value="${u.name}">${u.name}</option>`).join('')}</select>
+        <select id="meta-resp"><option value="">Todo el equipo</option>${users.map(u=>`<option value="${u.name}">${u.name} (${u.role})</option>`).join('')}</select>
       </div>
       <button class="btn primary" onclick="saveMeta()">Guardar meta</button>
     </div>`;
@@ -3176,14 +3337,74 @@ function saveMeta() {
     responsable: document.getElementById('meta-resp').value || '',
     createdAt: new Date().toISOString(),
   });
-  document.getElementById('home-meta-form').style.display = 'none';
-  persistState(); renderHome(); showToast('Meta guardada');
+  const wrap = document.getElementById('config-meta-form');
+  if (wrap) wrap.style.display = 'none';
+  persistState(); renderConfigMetas(); showToast('Meta guardada');
 }
 
 function deleteMeta(id) {
   if (!confirm('¿Eliminar esta meta?')) return;
   state.metas = (state.metas||[]).filter(m=>m.id!==id);
-  persistState(); renderHome();
+  persistState(); renderConfigMetas();
+}
+
+function renderConfigMetas() {
+  const el = document.getElementById('config-metas-list');
+  if (!el) return;
+  const metas = state.metas || [];
+  el.innerHTML = !metas.length
+    ? '<div style="color:var(--text3);font-size:12px">Sin metas. Crea la primera con "+ Nueva meta".</div>'
+    : metas.map(mt=>{
+      const tipo = META_TIPOS[mt.tipo]||{label:mt.tipo};
+      return `<div style="display:flex;gap:10px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;margin-bottom:6px">
+        <div style="flex:1;font-size:12px"><b>${tipo.label}</b> <span style="color:var(--text3)">· ${mt.periodo} · objetivo ${mt.objetivo}${mt.responsable?` · ${mt.responsable}`:' · todo el equipo'}</span></div>
+        <button class="btn sm danger" onclick="deleteMeta('${mt.id}')">✕</button>
+      </div>`;
+    }).join('');
+}
+
+// ── Estrategia de escalado (Config, solo admin)
+function renderEscaladoStrategyForm() {
+  const el = document.getElementById('escalado-strategy-form');
+  if (!el) return;
+  const st = getEscaladoStrategy();
+  const sel = (id, opts, cur) => `<select id="${id}">${opts.map(([v,l])=>`<option value="${v}"${v===cur?' selected':''}>${l}</option>`).join('')}</select>`;
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+      <div class="field"><label>Mín. creativos validados</label><input type="number" id="esc-min" value="${st.minCreativos}"></div>
+      <div class="field"><label>Máx. creativos validados</label><input type="number" id="esc-max" value="${st.maxCreativos}"></div>
+      <div class="field"><label>CPA máximo permitido</label>${sel('esc-cpa-mode',[['cpaObj','CPA objetivo'],['cpaBE','CPA breakeven'],['manual','Manual']],st.cpaCapMode)}</div>
+      <div class="field"><label>CPA manual ($)</label><input type="number" id="esc-cpa-manual" step=".01" value="${st.cpaCapManual}"></div>
+      <div class="field"><label>CTR mínimo (%)</label><input type="number" id="esc-ctr" step=".1" value="${st.ctrMin}"></div>
+      <div class="field"><label>ROAS mínimo</label>${sel('esc-roas-mode',[['roasBE','ROAS breakeven'],['manual','Manual']],st.roasMode)}</div>
+      <div class="field"><label>ROAS manual</label><input type="number" id="esc-roas-manual" step=".01" value="${st.roasManual}"></div>
+      <div class="field"><label>Compras mínimas</label><input type="number" id="esc-compras" value="${st.comprasMin}"></div>
+      <div class="field"><label>Profit mínimo ($)</label><input type="number" id="esc-profit" step=".01" value="${st.profitMin}"></div>
+      <div class="field"><label>Cuenta destino sugerida</label><input id="esc-cuenta" value="${(st.cuentaDestino||'').replace(/"/g,'&quot;')}" placeholder="Cuenta nueva AN-02"></div>
+      <div class="field"><label>Tipo de escalado</label>${sel('esc-tipo',[['costcap','Cost Cap'],['nueva_cuenta','Nueva cuenta'],['duplicar','Duplicar campaña'],['horizontal','Horizontal'],['vertical','Vertical']],st.tipoEscalado)}</div>
+      <div class="field"><label>Bid recomendado</label>${sel('esc-bid-mode',[['cpaObj','CPA objetivo'],['cpaBE','CPA breakeven'],['manual','Manual'],['mult','Multiplicador × CPA obj']],st.bidMode)}</div>
+      <div class="field"><label>Bid manual ($)</label><input type="number" id="esc-bid-manual" step=".01" value="${st.bidManual}"></div>
+      <div class="field"><label>Multiplicador</label><input type="number" id="esc-bid-mult" step=".05" value="${st.bidMult}"></div>
+    </div>
+    <button class="btn primary" style="margin-top:10px" onclick="saveEscaladoStrategy()">Guardar estrategia</button>
+    <span id="esc-candidates-info" style="font-size:11px;color:var(--text3);margin-left:10px"></span>`;
+  const info = document.getElementById('esc-candidates-info');
+  const cands = getEscaladoCandidates();
+  if (info) info.textContent = cands.length ? `Con estas reglas hay ${cands.length} candidato(s) ahora: ${cands.map(x=>x.c.name).join(', ')}` : 'Con estas reglas no hay candidatos actualmente.';
+}
+
+function saveEscaladoStrategy() {
+  const gn = id => +(document.getElementById(id)||{}).value || 0;
+  const gv = id => (document.getElementById(id)||{}).value || '';
+  state.escaladoStrategy = {
+    minCreativos: gn('esc-min')||3, maxCreativos: gn('esc-max')||5,
+    cpaCapMode: gv('esc-cpa-mode'), cpaCapManual: gn('esc-cpa-manual'),
+    ctrMin: gn('esc-ctr'), roasMode: gv('esc-roas-mode'), roasManual: gn('esc-roas-manual'),
+    comprasMin: gn('esc-compras'), profitMin: gn('esc-profit'),
+    cuentaDestino: gv('esc-cuenta').trim(), tipoEscalado: gv('esc-tipo'),
+    bidMode: gv('esc-bid-mode'), bidManual: gn('esc-bid-manual'), bidMult: gn('esc-bid-mult')||1,
+  };
+  persistState(); renderEscaladoStrategyForm(); showToast('Estrategia de escalado guardada');
 }
 
 function renderDashboard() {
@@ -3780,6 +4001,8 @@ function getFilteredCreativos() {
       if (s.color !== sem) return false;
     }
     if (dateRange) {
+      // Trabajo pendiente activo SIEMPRE visible, sin importar el filtro de fecha
+      if (['idea','produccion','listo','testeo'].includes(c.status)) return true;
       // Parse date as local time to avoid UTC offset issues (new Date("YYYY-MM-DD") is UTC midnight)
       const dateStr = c.date || '';
       if (!dateStr) return false;
@@ -3815,6 +4038,7 @@ function populateCreativoFilterProduct() {
 function renderKanban() {
   populateCreativoFilterProduct();
   const filtered = getFilteredCreativos();
+  const _candIds = new Set(getEscaladoCandidates().map(x=>x.c.id));
   const board = document.getElementById('kanban-board');
   if (!board) return;
 
@@ -3910,6 +4134,7 @@ function renderKanban() {
           <div style="font-size:10px;font-weight:600;margin-bottom:1px;color:${c.respTesteo?'#7c3aed':'var(--red)'}">🧪 ${c.respTesteo?'Tester: '+c.respTesteo:'⚠ Sin responsable asignado'}</div>
           ${c.listoBy?`<div style="font-size:9px;color:var(--text3);margin-bottom:1px">Listo por: ${c.listoBy}</div>`:''}` : ''}
           ${prodSem ? `<div style="font-size:9px;font-weight:700;display:inline-block;border-radius:4px;padding:1px 6px;margin-bottom:3px;background:${prodSem.bg};color:${prodSem.color}">🚦 ${prodSem.label}</div>` : ''}
+          ${_candIds.has(c.id) ? `<div style="font-size:9px;font-weight:700;display:inline-block;border-radius:4px;padding:2px 6px;margin-bottom:3px;background:#ede9fe;color:#5b21b6">🚀 Candidato a escalado</div>` : ''}
           ${c.fechaLimite ? `<div style="font-size:10px;color:var(--amber);margin-bottom:2px">⏰ ${c.fechaLimite}</div>` : ''}
           ${hasMet ? `<div class="kb-card-metrics" style="margin-top:3px">
             ${m.cpa>0?`<span class="kb-metric" style="color:${cpaOk}">CPA: ${fmt(m.cpa)}</span>`:''}
@@ -6392,7 +6617,31 @@ function ccDecision(r, be) {
   return { label:'⏳ Sin datos sufic.', color:'var(--text3)', cls:'gray' };
 }
 
+const ESCALADO_TIPO_LABELS = { costcap:'Cost Cap', nueva_cuenta:'Nueva cuenta', duplicar:'Duplicar campaña', horizontal:'Escalado horizontal', vertical:'Escalado vertical' };
+
+// Bloque "Sugeridos por estrategia" en Cost Cap
+function renderEscaladoSugeridos() {
+  const sec = document.getElementById('sec-escalado-sugeridos');
+  const el = document.getElementById('escalado-sugeridos-list');
+  if (!sec || !el) return;
+  const cands = getEscaladoCandidates();
+  sec.style.display = cands.length ? '' : 'none';
+  if (!cands.length) return;
+  el.innerHTML = cands.map(x=>`
+    <div style="background:var(--surface2);border:1px solid var(--border);border-left:4px solid #7c3aed;border-radius:var(--r);padding:10px 14px;margin-bottom:8px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-weight:700;font-size:12px">${(x.c.name||'').replace(/</g,'&lt;')}</span>
+        <span style="font-size:10px;color:var(--text3)">${x.c.product||''}</span>
+        <span style="font-size:10px;font-weight:700;background:#ede9fe;color:#5b21b6;border-radius:4px;padding:2px 7px">${ESCALADO_TIPO_LABELS[x.tipoEscalado]||x.tipoEscalado}${x.cuentaDestino?` → ${x.cuentaDestino}`:''}</span>
+        ${x.bid>0?`<span style="font-size:10px;font-weight:700;background:#dbeafe;color:#1e40af;border-radius:4px;padding:2px 7px">Bid sugerido: ${fmt(x.bid)}</span>`:''}
+        <button class="btn sm primary" style="font-size:10px;margin-left:auto" onclick="moveCard('${x.c.id}','escalando')">🚀 Escalar ahora</button>
+      </div>
+      <div style="font-size:10px;color:var(--text2);margin-top:6px">${x.checks.map(ch=>`<div>✓ ${ch.txt}</div>`).join('')}</div>
+    </div>`).join('');
+}
+
 function renderCostCaps() {
+  renderEscaladoSugeridos();
   renderLinkedCreativos();
   const tbody = document.getElementById('costcap-body');
   if (!tbody) return;
@@ -6598,6 +6847,13 @@ function renderConfig() {
   applyLoginLogo();
   // Usuarios — solo admin
   const secU = document.getElementById('sec-usuarios');
+  {
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    const secM = document.getElementById('sec-metas');
+    if (secM) { secM.style.display = isAdmin ? '' : 'none'; if (isAdmin) renderConfigMetas(); }
+    const secE = document.getElementById('sec-escalado-strategy');
+    if (secE) { secE.style.display = isAdmin ? '' : 'none'; if (isAdmin) renderEscaladoStrategyForm(); }
+  }
   if (secU) {
     const isAdmin = currentUser && currentUser.role === 'admin';
     secU.style.display = isAdmin ? '' : 'none';
