@@ -4374,20 +4374,30 @@ function _daysSince(iso) {
   return `hace ${d} día${d>1?'s':''}`;
 }
 
-// Crear un creativo tipo "campaña completa": link de Drive + Campaign ID, listo para testear
+// Crear una campaña completa: abre el mismo modal en "modo campaña" —
+// directo en En testeo, sin métricas ni link de referencia, Ad ID opcional, Campaign ID obligatorio.
 function openCampaignCreativoModal() {
   openCreativoModal();
   setTimeout(() => {
     const st = document.getElementById('cr-status');
-    if (st) { st.value = 'listo'; onStageChange(); }
+    if (st) { st.value = 'testeo'; onStageChange(); }
     const tt = document.getElementById('cr-test-type');
     if (tt) { tt.value = 'campana'; onTestTypeChange(); }
-    // Mostrar la config de testeo (tiene el Campaign ID) aunque la etapa sea "listo"
-    const sec = document.querySelector('[data-sec="s-testeo-setup"]');
-    if (sec) sec.style.display = '';
+    // Apariencia de formulario de campaña
+    const title = document.getElementById('modal-creativo-title');
+    if (title) title.textContent = '📦 Creación de campaña';
+    // Ocultar lo que no aplica: métricas (los KPI se ven en Performance) y link de referencia
+    const secMet = document.querySelector('[data-sec="s-metrics"]');
+    if (secMet) secMet.style.display = 'none';
+    const refWrap = document.getElementById('cr-link-ref-wrap');
+    if (refWrap) refWrap.style.display = 'none';
+    const linkLbl = document.getElementById('cr-link-label');
+    if (linkLbl) linkLbl.textContent = 'Link de Drive con todos los creativos de la campaña';
     const name = document.getElementById('cr-name');
     if (name && !name.value) name.placeholder = 'Nombre de la campaña (ej: RMKTG American Fit EC)';
-    showToast('📦 Campaña: pega el link de Drive con los creativos y el Campaign ID de Meta');
+    const sol = document.getElementById('cr-tipo-solicitud');
+    if (sol) sol.value = 'Nuevo creativo';
+    showToast('📦 Pega el Campaign ID de Meta y el link de Drive — las métricas se verán en Performance');
   }, 100);
 }
 
@@ -4399,6 +4409,8 @@ function onTestTypeChange() {
   if (nameWrap) nameWrap.style.display = isCamp ? '' : 'none';
   const campLbl = document.querySelector('#cr-meta-campaign-id')?.closest('.field')?.querySelector('label span');
   if (campLbl) campLbl.textContent = isCamp ? '(obligatorio en test de campaña)' : '(opcional)';
+  const adLbl = document.querySelector('#cr-meta-ad-id')?.closest('.field')?.querySelector('label span');
+  if (adLbl) adLbl.textContent = isCamp ? '(opcional — campaña general)' : '(obligatorio para sync)';
 }
 
 // Registra fecha/autor cuando un creativo cambia de etapa (para Home y pendientes)
