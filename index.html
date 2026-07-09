@@ -1611,9 +1611,12 @@ tbody tr:hover{background:var(--accent-light)!important}
             <option value="campana">📦 Test de campaña con varios creativos</option>
           </select>
         </div>
-        <div class="field" id="cr-campaign-name-wrap" style="grid-column:1/-1;display:none"><label>Nombre de campaña</label>
-          <input id="cr-meta-campaign-name" placeholder="AN — Test Gomitas — Julio" oninput="calcDirty()">
-          <span class="hint">Los creativos con el mismo Campaign ID se agrupan en la vista por campaña.</span>
+        <div class="field" id="cr-campaign-name-wrap" style="grid-column:1/-1;display:none"><label>Nombre de campaña <span style="font-size:9px;color:var(--text3)">(lo trae Meta — no editable)</span></label>
+          <div style="display:flex;gap:6px">
+            <input id="cr-meta-campaign-name" placeholder="Se llena al sincronizar con Meta" readonly style="flex:1;background:var(--surface2);opacity:.8;cursor:default">
+            <button class="btn sm primary" type="button" style="white-space:nowrap;flex-shrink:0" onclick="syncMetaMetrics()" title="Trae nombre real, métricas, conjuntos y anuncios desde Meta">↻ Sincronizar campaña</button>
+          </div>
+          <span class="hint">Pega el Campaign ID y pulsa sincronizar: Meta trae el nombre real, las métricas y el desglose de conjuntos y anuncios.</span>
         </div>
         <div class="field"><label>Ad ID <span style="font-size:9px;color:var(--text3)">(obligatorio para sync)</span></label>
           <input id="cr-meta-ad-id" placeholder="120213xxxxxxxxxx" oninput="calcDirty()">
@@ -4192,6 +4195,7 @@ function renderKanban() {
           </div>
           <div style="margin-top:6px;display:flex;gap:3px;flex-wrap:wrap;align-items:center">
             <button class="btn sm" style="font-size:10px;padding:2px 7px" onclick="event.stopPropagation();openCreativoModal('${c.id}')">✏ Editar</button>
+            <button class="btn sm" style="font-size:10px;padding:2px 7px" title="Duplicar creativo" onclick="event.stopPropagation();duplicateCreativo('${c.id}')">⧉ Duplicar</button>
             ${flowBtns}
             <button class="btn sm danger" style="font-size:10px;padding:2px 4px;margin-left:auto" onclick="event.stopPropagation();deleteCreativo('${c.id}')">✕</button>
           </div>
@@ -5338,6 +5342,7 @@ function openCreativoModal(id) {
      'cr-launch-date','cr-publico','cr-guion','cr-aprendizaje','cr-motivo','cr-adset-escalado',
      'cr-fecha-limite','cr-fecha-entrega-real','cr-pain','cr-meta-campaign-name'].forEach(i=>sv(i,''));
     sv('cr-test-type','individual'); onTestTypeChange();
+    window._crPendingBreakdown = null;
     ['cr-presup','cr-cpm','cr-cpc','cr-cpc-enlace','cr-ctr','cr-ctr-unico','cr-ctr-enlace','cr-leads','cr-mensajes','cr-cpa','cr-ventas','cr-resultados','cr-costo-resultado','cr-roas','cr-impresiones','cr-alcance','cr-frecuencia','cr-clicks','cr-revenue'].forEach(i=>sn(i,0));
     sv('cr-objetivo-campana',''); sv('cr-fecha-meta-lanzamiento','');
     ['cr-fallo-hook','cr-fallo-creativo','cr-fallo-publico','cr-fallo-oferta','cr-fallo-landing','cr-fallo-cpa','cr-fallo-pedidos'].forEach(i=>sc(i,false));
@@ -5575,9 +5580,11 @@ async function syncMetaMetrics() {
     // En modo campaña, Meta trae el nombre real — no hace falta escribirlo a mano
     if (m.campaignName) sv2('cr-meta-campaign-name', m.campaignName);
     // Guardar desglose por conjunto/anuncio para la vista de campaña
-    if ((json.adsets?.length || json.ads?.length) && editingCreativoId) {
-      const _cr = state.creativos.find(x=>x.id===editingCreativoId);
-      if (_cr) { _cr.metaBreakdown = { adsets: json.adsets||[], ads: json.ads||[], syncedAt: new Date().toISOString() }; persistState(); }
+    if (json.adsets?.length || json.ads?.length) {
+      const _bd = { adsets: json.adsets||[], ads: json.ads||[], syncedAt: new Date().toISOString() };
+      const _cr = editingCreativoId ? state.creativos.find(x=>x.id===editingCreativoId) : null;
+      if (_cr) { _cr.metaBreakdown = _bd; persistState(); }
+      else window._crPendingBreakdown = _bd; // campaña nueva sin guardar: se adjunta al guardar
     }
     sv2('cr-presup',            m.spend?.toFixed(2));
     sv2('cr-impresiones',       m.impressions);
@@ -6337,7 +6344,7 @@ function saveCreativo() {
     testType:          gv('cr-test-type') || 'individual',
     metaCampaignName:  gv('cr-meta-campaign-name').trim(),
     metaSyncHistory:   existing?.metaSyncHistory || [],
-    metaBreakdown:     existing?.metaBreakdown || null,
+    metaBreakdown:     existing?.metaBreakdown || window._crPendingBreakdown || null,
     comments:          gv('cr-comments'),
     guion:             gv('cr-guion'),
     tipoSolicitud:     gv('cr-tipo-solicitud'),
@@ -6391,6 +6398,35 @@ function saveCreativo() {
   closeModal('modal-creativo');
   if (!stageBlocked) showToast('Creativo guardado');
   renderKanban(); calcDirty(); persistState();
+}
+
+// Duplica un creativo completo en la misma etapa y abre la copia para editar
+function duplicateCreativo(id) {
+  const c = state.creativos.find(x=>x.id===id); if (!c) return;
+  const copy = _stripForClone(c);
+  copy.id = uid();
+  // Nombre: "X — copia 1", "X — copia 2", ...
+  const baseName = (c.name||'Sin nombre').replace(/ — copia \d+$/,'');
+  let n = 1;
+  while (state.creativos.some(x=>x.name===`${baseName} — copia ${n}`)) n++;
+  copy.name = `${baseName} — copia ${n}`;
+  // La copia empieza sin sellos de etapa propios ni historial de sync
+  copy.stageLog = {}; delete copy.listoAt; delete copy.listoBy; delete copy.testeoAt; delete copy.testeoBy;
+  copy.metaSyncHistory = [];
+  copy.date = (d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)(new Date());
+  state.creativos.push(copy);
+  renderKanban(); calcDirty(); persistState();
+  showToast(`⧉ Duplicado como "${copy.name}"`);
+  setTimeout(() => openCreativoModal(copy.id), 150);
+}
+function _stripForClone(c) {
+  // Clon profundo excepto blobs pesados que se comparten por referencia
+  const { files, refs, thumb, ...rest } = c;
+  const copy = JSON.parse(JSON.stringify(rest));
+  copy.files = files ? [...files] : [];
+  copy.refs = refs ? [...refs] : [];
+  copy.thumb = thumb || null;
+  return copy;
 }
 
 function deleteCreativo(id) {
