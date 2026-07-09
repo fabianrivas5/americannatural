@@ -130,6 +130,7 @@ tfoot td{background:var(--surface2);font-weight:600;padding:9px 10px;border-top:
 .kb-metric{font-size:10px;color:var(--text3);background:var(--surface2);padding:1px 5px;border-radius:3px}
 .kb-metric span{color:var(--text);font-weight:600}
 .kb-card-actions{display:flex;gap:4px;margin-top:8px}
+#creativos-table thead th{position:sticky;top:0;background:var(--surface);z-index:5;box-shadow:0 1px 0 var(--border)}
 
 /* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
@@ -903,7 +904,7 @@ tbody tr:hover{background:var(--accent-light)!important}
   </div>
   <div class="sec">
     <div class="sec-hdr">
-      <span class="sec-title">Performance por creativo</span>
+      <span class="sec-title">Performance de creativos y campañas</span>
       <div class="sec-actions" style="gap:6px;flex-wrap:wrap">
         <input id="cr-filter" placeholder="🔍 Filtrar: nombre, producto, tester, campaña..." style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text);min-width:200px" oninput="renderGroupedView()">
         <select id="cr-group-by" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text)" onchange="renderGroupedView()">
@@ -936,15 +937,15 @@ tbody tr:hover{background:var(--accent-light)!important}
         </select>
       </div>
     </div>
-    <div class="tbl-wrap">
+    <div class="tbl-wrap" style="max-height:72vh;overflow:auto">
       <table id="creativos-table">
         <thead><tr>
+          <th></th>
           <th>Creativo</th><th>Estado</th><th>Tester</th>
           <th style="white-space:nowrap">Semáforo <span onclick="showSemaforoTooltip(event)" style="cursor:pointer;font-size:10px;background:var(--surface2);border:1px solid var(--border);border-radius:50%;padding:0 4px;font-weight:700" title="¿Cómo se calcula?">?</span></th>
           <th>Obj. Campaña</th><th>Resultados</th><th>Costo/Res.</th><th>Gasto</th><th title="ROAS de compras (Meta)">ROAS Compras</th><th title="Valor de conversión de compras (Meta)">Valor Conv. Compras</th><th title="Profit = Valor de conversión (o revenue manual) − Gasto">Profit</th>
           <th title="CTR único en enlace">CTR✱Enlace</th><th>CPM</th><th title="Clics en el enlace">Clics Enlace</th><th title="CPC en el enlace">CPC Enlace</th>
           <th>Frecuencia</th><th>Visitas LP</th><th>Costo/Visita</th><th>Pagos Inic.</th><th>Carritos</th><th title="Tiempo promedio de reproducción (segundos)">Video (s)</th>
-          <th></th>
         </tr></thead>
         <tbody id="creativos-body"></tbody>
       </table>
@@ -4096,9 +4097,11 @@ function renderKanban() {
       </div>
       ${cards.map(c => {
         const m = c.metrics||{};
-        const hasMet = m.cpa > 0 || m.ctr > 0 || m.presup > 0;
+        const isTestStage = ['testeo','validado','escalando','rechazado'].includes(c.status);
+        const hasMet = isTestStage && (m.cpa > 0 || m.ctr > 0 || m.presup > 0);
         const targets = c.product ? getTrafficCpaTargets(c.product) : null;
-        const sem = crSemaforo(m, targets);
+        // El semáforo solo aplica desde testeo: en idea/producción/listo no hay métricas que evaluar
+        const sem = isTestStage ? crSemaforo(m, targets) : { color:'gray', dot:'⚪', label:'', rec:'', reason:'', nextStatus:null };
         const semBg = {red:'#ef4444',yellow:'#f59e0b',green:'#10b981',gray:'#9ca3af'}[sem.color];
         const _firstFile = (c.files&&c.files.length) ? c.files[0] : (c.thumb ? {data:c.thumb,type:c.thumbType||'image'} : null);
         const _extraCount = (c.files&&c.files.length>1) ? c.files.length-1 : 0;
@@ -4111,6 +4114,8 @@ function renderKanban() {
         const linkIcon = c.link ? `<a href="${c.link}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:var(--blue);text-decoration:none" title="${c.link}">🔗 Ver</a>` : '';
 
         // Smart flow buttons based on semáforo
+        // Aviso de escalar: mínimo 5 ventas y CPA dentro del rango de la calculadora
+        const canEscalar = (m.ventas||0) >= 5 && m.cpa > 0 && targets && m.cpa <= targets.cpaBE;
         let flowBtns = '';
         if (c.status === 'idea') {
           flowBtns = `<button class="btn sm primary" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();moveCard('${c.id}','produccion')" title="Mover a En producción">→ Producción</button>`;
@@ -4121,7 +4126,7 @@ function renderKanban() {
           flowBtns = `<button class="btn sm primary" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();moveCard('${c.id}','testeo')" title="Iniciar testeo">▶ Testeo</button>
                       <button class="btn sm" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();moveCard('${c.id}','produccion')" title="Regresar a producción para correcciones">↩ Producción</button>`;
         } else if (c.status === 'validado') {
-          flowBtns = `<button class="btn sm primary" style="font-size:10px;padding:2px 6px;background:#0891b2" onclick="event.stopPropagation();moveCard('${c.id}','escalando')" title="Mover a Escalando">🚀 Escalar</button>
+          flowBtns = `${canEscalar?`<button class="btn sm primary" style="font-size:10px;padding:2px 6px;background:#0891b2" onclick="event.stopPropagation();moveCard('${c.id}','escalando')" title="Mover a Escalando">🚀 Escalar</button>`:`<span style="font-size:9px;color:var(--text3)" title="Para escalar: mínimo 5 ventas y CPA dentro del rango de la calculadora">🔒 Escalar (${m.ventas||0}/5 ventas)</span>`}
                       <button class="btn sm primary" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();sendToCostCap('${c.id}')" title="Crear registro en Cost Cap">📊 → Cost Cap</button>`;
         } else if (c.status === 'escalando') {
           flowBtns = `<button class="btn sm primary" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();sendToCostCap('${c.id}')" title="Crear registro en Cost Cap">📊 → Cost Cap</button>
@@ -4134,7 +4139,7 @@ function renderKanban() {
                       <button class="btn sm danger" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();moveCard('${c.id}','rechazado')" title="Pausar">⏸ Pausar</button>`;
         } else if (sem.color === 'green') {
           flowBtns = `<button class="btn sm primary" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();moveCard('${c.id}','validado')" title="Mover a Validado">✅ Validar</button>
-                      <button class="btn sm primary" style="font-size:10px;padding:2px 6px;background:#0891b2" onclick="event.stopPropagation();moveCard('${c.id}','escalando')" title="Mover a Escalando">🚀 Escalar</button>`;
+                      ${canEscalar?`<button class="btn sm primary" style="font-size:10px;padding:2px 6px;background:#0891b2" onclick="event.stopPropagation();moveCard('${c.id}','escalando')" title="Mover a Escalando">🚀 Escalar</button>`:''}`;
         } else {
           // gray — generic prev/next nav
           flowBtns = (prevCol ? `<button class="btn sm" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();moveCard('${c.id}','${prevCol.id}')">← ${prevCol.label.split('/')[0].trim()}</button>` : '')
@@ -4273,6 +4278,13 @@ function validateStageTransition(c, toStatus) {
     if (!c.pixelId)   missing.push('pixel');
     if (!c.landing && !c.landingId) missing.push('landing definida');
     if (!c.publico)   missing.push('público objetivo');
+    // Requisitos de performance: mínimo 5 ventas y CPA dentro del rango de la calculadora del producto
+    if ((m.ventas||0) < 5) missing.push(`mínimo 5 ventas para escalar (lleva ${m.ventas||0})`);
+    if (c.product) {
+      const _t = getTrafficCpaTargets(c.product);
+      if (!(m.cpa > 0)) missing.push('CPA registrado');
+      else if (m.cpa > _t.cpaBE) missing.push(`CPA ($${m.cpa.toFixed(2)}) fuera del rango de la calculadora (máx BE $${_t.cpaBE.toFixed(2)})`);
+    }
   }
 
   return { ok: missing.length === 0, missing };
@@ -4568,6 +4580,10 @@ function renderCreativosTable() {
     const sem   = crSemaforo(m, targets);
     const semBg = {red:'#ef4444',yellow:'#f59e0b',green:'#10b981',gray:'#9ca3af'}[sem.color];
     return `<tr style="border-left:3px solid ${semBg}">
+      <td style="white-space:nowrap">
+        <button class="btn sm" onclick="openCreativoModal('${c.id}')" title="Editar">✎</button>
+        <button class="btn sm danger" style="font-size:9px;padding:2px 4px" onclick="deleteCreativo('${c.id}')" title="Eliminar">✕</button>
+      </td>
       <td style="min-width:160px">
         <div style="display:flex;align-items:center;gap:5px">
           <strong style="font-size:12px">${c.name}</strong>
@@ -4609,10 +4625,6 @@ function renderCreativosTable() {
       <td style="font-size:11px">${m.checkouts>0?m.checkouts:'—'}</td>
       <td style="font-size:11px">${m.leads>0?m.leads:'—'}</td>
       <td style="font-size:11px">${m.videoTiempo>0?m.videoTiempo.toFixed(1)+'s':'—'}</td>
-      <td style="white-space:nowrap">
-        <button class="btn sm" onclick="openCreativoModal('${c.id}')" title="Editar">✎</button>
-        <button class="btn sm danger" onclick="deleteCreativo('${c.id}')">✕</button>
-      </td>
     </tr>`;
   }).join('') || `<tr><td colspan="22" style="text-align:center;padding:20px;color:var(--text3)">No hay creativos testeados todavía.</td></tr>`;
 }
@@ -5175,7 +5187,9 @@ function openDetailModal(id) {
   const c = state.creativos.find(x=>x.id===id); if (!c) return;
   const m = c.metrics||{};
   const targets = c.product ? getTrafficCpaTargets(c.product) : null;
-  const sem = crSemaforo(m, targets);
+  // Recomendaciones solo desde testeo — en idea/producción/listo no hay data que evaluar
+  const _isTestStage = ['testeo','validado','escalando','rechazado'].includes(c.status);
+  const sem = _isTestStage ? crSemaforo(m, targets) : { color:'gray', dot:'⚪', label:'', rec: c.status==='listo' ? 'Pendiente de testeo' : c.status==='produccion' ? 'En producción' : 'Idea — sin testear', reason:'', nextStatus:null };
   const semBg = {red:'#ef4444',yellow:'#f59e0b',green:'#10b981',gray:'#9ca3af'}[sem.color];
   const prodSemLabel = c.produccionStatus==='listo'?'🟢 Finalizado':c.produccionStatus==='bloqueado'?'🔴 Bloqueado':'🟡 En proceso';
   const accName = c.adAccount ? ((state.adAccounts||[]).find(a=>a.id===c.adAccount)||{}).name||c.adAccount : '—';
@@ -6104,6 +6118,67 @@ function _miniMetricsRow(g) {
     .map(([l,v])=>`<div style="text-align:center;min-width:52px"><div style="font-size:9px;color:var(--text3)">${l}</div><div style="font-size:12px;font-weight:700">${v}</div></div>`).join('');
 }
 
+// Sincroniza una campaña completa (métricas + conjuntos + anuncios) directo desde el drilldown
+async function syncCampaignFromDrill(id, btnEl) {
+  const c = state.creativos.find(x=>x.id===id); if (!c) return;
+  const campId = (c.metaCampaignId||'').trim();
+  if (!campId) { showToast('Este creativo no tiene Campaign ID — edítalo y agrégalo', 'error'); return; }
+  if (!sb) { showToast('Sin conexión a la nube', 'error'); return; }
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳ Sincronizando…'; }
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { showToast('Sesión expirada, inicia sesión de nuevo', 'error'); return; }
+    const dateRange = (document.getElementById('sync-all-range')||{}).value || 'today';
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/meta-sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ adId: campId, dateRange, objectType: 'campaign' })
+    });
+    const json = await res.json();
+    if (!res.ok || !json.metrics) { showToast('Error Meta: ' + (json?.error||res.status), 'error'); return; }
+    const m = json.metrics;
+    const metrics = c.metrics || {};
+    if (m.spend        != null) metrics.presup          = m.spend;
+    if (m.impressions  != null) metrics.impresiones      = m.impressions;
+    if (m.reach        != null) metrics.alcance          = m.reach;
+    if (m.frequency    != null) metrics.frecuencia       = m.frequency;
+    if (m.clicks       != null) metrics.clicks           = m.clicks;
+    if (m.cpm          != null) metrics.cpm              = m.cpm;
+    if (m.cpc          != null) metrics.cpc              = m.cpc;
+    if (m.cpcEnlace    != null) metrics.cpcEnlace        = m.cpcEnlace;
+    if (m.ctr          != null) metrics.ctr              = m.ctr;
+    if (m.ctrUnico     != null) metrics.ctrUnico         = m.ctrUnico;
+    if (m.ctrEnlace    != null) metrics.ctrEnlace        = m.ctrEnlace;
+    if (m.addToCart    != null) metrics.leads            = m.addToCart;
+    if (m.purchases    != null) metrics.ventas           = m.purchases;
+    if (m.costPerPurchase != null) metrics.cpa           = m.costPerPurchase;
+    if (m.mensajes          != null) metrics.mensajes          = m.mensajes;
+    if (m.resultados        != null) metrics.resultados        = m.resultados;
+    if (m.costoResultado    != null) metrics.costoResultado    = m.costoResultado;
+    if (m.visitasPagina     != null) metrics.visitasPagina     = m.visitasPagina;
+    if (m.costoVisitaPagina != null) metrics.costoVisitaPagina = m.costoVisitaPagina;
+    if (m.checkouts         != null) metrics.checkouts         = m.checkouts;
+    if (m.clicsEnlace       != null) metrics.clicsEnlace       = m.clicsEnlace;
+    if (m.videoTiempo       != null) metrics.videoTiempo       = m.videoTiempo;
+    if (m.purchaseRoas      != null) metrics.purchaseRoas      = m.purchaseRoas;
+    if (m.purchaseValue     != null) metrics.purchaseValue     = m.purchaseValue;
+    if (m.campaignName) c.metaCampaignName = m.campaignName;
+    if (m.objetivo)         metrics.objetivoCampana      = m.objetivo;
+    if (m.fechaLanzamiento) metrics.fechaMetaLanzamiento = m.fechaLanzamiento;
+    c.metrics = metrics;
+    if (json.adsets?.length || json.ads?.length) {
+      c.metaBreakdown = { adsets: json.adsets||[], ads: json.ads||[], syncedAt: new Date().toISOString() };
+    }
+    persistState(); renderCreativosTable();
+    showToast(`✓ Campaña sincronizada · ${(json.adsets||[]).length} conjunto(s) · ${(json.ads||[]).length} anuncio(s)`);
+    showCampaignDrilldown(id); // re-render con la data fresca
+  } catch(e) {
+    console.error(e); showToast('Error al sincronizar la campaña', 'error');
+  } finally {
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = '↻ Sincronizar campaña'; }
+  }
+}
+
 function showCampaignDrilldown(id) {
   const c = state.creativos.find(x=>x.id===id); if (!c) return;
   const existing = document.getElementById('campaign-drill-modal');
@@ -6122,7 +6197,7 @@ function showCampaignDrilldown(id) {
   const winner = [...adStats].filter(x=>x.s.ventas>0).sort((x,y)=>y.s.profit-x.s.profit)[0];
 
   const adsetsHtml = !(bd.adsets||[]).length
-    ? `<div style="font-size:12px;color:var(--text3);padding:10px">Sin desglose todavía. Pulsa <b>↻ Meta</b> en el creativo (modo campaña) para traer conjuntos y anuncios desde Meta.</div>`
+    ? `<div style="font-size:12px;color:var(--text3);padding:10px">Sin desglose todavía. Pulsa <b>↻ Sincronizar campaña</b> (arriba) para traer conjuntos y anuncios desde Meta.</div>`
     : bd.adsets.map(as=>{
       const s = _rowStats(as);
       const rec = _groupRecommendation(s, targets, 'conjunto');
@@ -6164,6 +6239,7 @@ function showCampaignDrilldown(id) {
           <div style="font-weight:800;font-size:15px">📦 ${(c.metaCampaignName||c.name||'').replace(/</g,'&lt;')}</div>
           <div style="font-size:11px;color:var(--text3)">Test de campaña con varios creativos · ${c.product||''} · CPA obj <b>${fmt(targets.cpaObj)}</b> · CPA BE <b>${fmt(targets.cpaBE)}</b> · ROAS BE <b>${targets.roasBE.toFixed(2)}x</b>${bd.syncedAt?` · sync ${_daysSince(bd.syncedAt)||'reciente'}`:''}</div>
         </div>
+        <button class="btn sm primary" style="white-space:nowrap;flex-shrink:0" onclick="syncCampaignFromDrill('${c.id}', this)">↻ Sincronizar campaña</button>
         <button onclick="document.getElementById('campaign-drill-modal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3)">✕</button>
       </div>
       <div style="padding:14px 20px">
