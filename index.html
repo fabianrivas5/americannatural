@@ -851,7 +851,10 @@ tbody tr:hover{background:var(--accent-light)!important}
   <div class="sec">
     <div class="sec-hdr">
       <span class="sec-title">Control de Creativos — Operación Trafficker</span>
-      <button class="btn sm primary" onclick="openCreativoModal()">+ Creativo</button>
+      <div class="sec-actions" style="gap:6px">
+        <button class="btn sm primary" onclick="openCreativoModal()">+ Creativo</button>
+        <button class="btn sm primary" style="background:#7c3aed;border-color:#7c3aed" onclick="openCampaignCreativoModal()">📦 + Campaña</button>
+      </div>
     </div>
     <!-- Date filter bar -->
     <div id="date-filter-bar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
@@ -4106,7 +4109,15 @@ function renderKanban() {
 
         // Smart flow buttons based on semáforo
         let flowBtns = '';
-        if (c.status === 'validado') {
+        if (c.status === 'idea') {
+          flowBtns = `<button class="btn sm primary" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();moveCard('${c.id}','produccion')" title="Mover a En producción">→ Producción</button>`;
+        } else if (c.status === 'produccion') {
+          flowBtns = `<button class="btn sm primary" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();moveCard('${c.id}','listo')" title="Mover a Listo para test">→ Listo p/ test</button>
+                      <button class="btn sm" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();moveCard('${c.id}','idea')" title="Regresar a Ideas">↩ Ideas</button>`;
+        } else if (c.status === 'listo') {
+          flowBtns = `<button class="btn sm primary" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();moveCard('${c.id}','testeo')" title="Iniciar testeo">▶ Testeo</button>
+                      <button class="btn sm" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();moveCard('${c.id}','produccion')" title="Regresar a producción para correcciones">↩ Producción</button>`;
+        } else if (c.status === 'validado') {
           flowBtns = `<button class="btn sm primary" style="font-size:10px;padding:2px 6px;background:#0891b2" onclick="event.stopPropagation();moveCard('${c.id}','escalando')" title="Mover a Escalando">🚀 Escalar</button>
                       <button class="btn sm primary" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();sendToCostCap('${c.id}')" title="Crear registro en Cost Cap">📊 → Cost Cap</button>`;
         } else if (c.status === 'escalando') {
@@ -4363,6 +4374,23 @@ function _daysSince(iso) {
   return `hace ${d} día${d>1?'s':''}`;
 }
 
+// Crear un creativo tipo "campaña completa": link de Drive + Campaign ID, listo para testear
+function openCampaignCreativoModal() {
+  openCreativoModal();
+  setTimeout(() => {
+    const st = document.getElementById('cr-status');
+    if (st) { st.value = 'listo'; onStageChange(); }
+    const tt = document.getElementById('cr-test-type');
+    if (tt) { tt.value = 'campana'; onTestTypeChange(); }
+    // Mostrar la config de testeo (tiene el Campaign ID) aunque la etapa sea "listo"
+    const sec = document.querySelector('[data-sec="s-testeo-setup"]');
+    if (sec) sec.style.display = '';
+    const name = document.getElementById('cr-name');
+    if (name && !name.value) name.placeholder = 'Nombre de la campaña (ej: RMKTG American Fit EC)';
+    showToast('📦 Campaña: pega el link de Drive con los creativos y el Campaign ID de Meta');
+  }, 100);
+}
+
 // Cambia el formulario según tipo de test (individual vs campaña)
 function onTestTypeChange() {
   const sel = document.getElementById('cr-test-type');
@@ -4529,6 +4557,7 @@ function renderCreativosTable() {
           <strong style="font-size:12px">${c.name}</strong>
           ${c.link?`<a href="${c.link}" target="_blank" style="font-size:10px;color:var(--blue)" title="Ver creativo">🔗</a>`:''}
         </div>
+        ${c.adLink?`<a href="${c.adLink}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#1877f2;font-weight:600;margin-top:2px" title="Abrir anuncio publicado">${/facebook|fb\./i.test(c.adLink)?'📘':'🔗'} Abrir anuncio ↗</a>`:''}
         <div style="font-size:10px;color:var(--text3);margin-top:1px">${c.product||''}${c.format?' · '+c.format:''}</div>
         ${c.hook?`<div style="font-size:10px;color:var(--text2);margin-top:1px;font-style:italic">"${c.hook.slice(0,50)}${c.hook.length>50?'…':''}"</div>`:''}
       </td>
