@@ -131,6 +131,9 @@ tfoot td{background:var(--surface2);font-weight:600;padding:9px 10px;border-top:
 .kb-metric span{color:var(--text);font-weight:600}
 .kb-card-actions{display:flex;gap:4px;margin-top:8px}
 #creativos-table thead th{position:sticky;top:0;background:var(--surface);z-index:5;box-shadow:0 1px 0 var(--border)}
+#creativos-table thead th.col-sort{cursor:pointer;user-select:none}
+#creativos-table thead th.col-sort:hover{color:var(--accent)}
+#creativos-table thead th.col-sort.active{color:var(--accent)}
 
 /* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
@@ -922,7 +925,8 @@ tbody tr:hover{background:var(--accent-light)!important}
         </select>
         <button id="sync-all-btn" onclick="syncAllMetrics()" style="font-size:12px;padding:4px 10px;border-radius:var(--r);border:1px solid var(--accent);background:var(--accent-light);color:var(--accent);cursor:pointer;font-weight:600;white-space:nowrap">↻ Sync All Meta</button>
         <span id="sync-all-status" style="font-size:11px;color:var(--text3);align-self:center"></span>
-        <select id="cr-sort" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text)" onchange="renderCreativosTable()">
+        <select id="cr-sort" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text)" onchange="window._colSort=null;renderCreativosTable()">
+          <option value="rendimiento" selected>Ordenar: Mejor rendimiento</option>
           <option value="cpa">Ordenar: Mejor CPA</option>
           <option value="cpa_desc">Ordenar: Peor CPA</option>
           <option value="ctr">Ordenar: Mayor CTR</option>
@@ -943,9 +947,9 @@ tbody tr:hover{background:var(--accent-light)!important}
           <th></th>
           <th>Creativo</th><th>Estado</th><th>Tester</th>
           <th style="white-space:nowrap">Semáforo <span onclick="showSemaforoTooltip(event)" style="cursor:pointer;font-size:10px;background:var(--surface2);border:1px solid var(--border);border-radius:50%;padding:0 4px;font-weight:700" title="¿Cómo se calcula?">?</span></th>
-          <th>Obj. Campaña</th><th>Resultados</th><th>Costo/Res.</th><th>Gasto</th><th title="ROAS de compras (Meta)">ROAS Compras</th><th title="Valor de conversión de compras (Meta)">Valor Conv. Compras</th><th title="Profit = Valor de conversión (o revenue manual) − Gasto">Profit</th>
-          <th title="CTR único en enlace">CTR✱Enlace</th><th>CPM</th><th title="Clics en el enlace">Clics Enlace</th><th title="CPC en el enlace">CPC Enlace</th>
-          <th>Frecuencia</th><th>Visitas LP</th><th>Costo/Visita</th><th>Pagos Inic.</th><th>Carritos</th><th title="Tiempo promedio de reproducción (segundos)">Video (s)</th>
+          <th>Obj. Campaña</th><th class="col-sort" data-key="resultados" onclick="setColSort('resultados')">Resultados</th><th class="col-sort" data-key="costoResultado" onclick="setColSort('costoResultado')">Costo/Res.</th><th class="col-sort" data-key="presup" onclick="setColSort('presup')">Gasto</th><th class="col-sort" data-key="purchaseRoas" onclick="setColSort('purchaseRoas')" title="ROAS de compras (Meta)">ROAS Compras</th><th class="col-sort" data-key="purchaseValue" onclick="setColSort('purchaseValue')" title="Valor de conversión de compras (Meta)">Valor Conv. Compras</th><th class="col-sort" data-key="profit" onclick="setColSort('profit')" title="Profit = Valor de conversión (o revenue manual) − Gasto">Profit</th>
+          <th class="col-sort" data-key="ctrUnico" onclick="setColSort('ctrUnico')" title="CTR único en enlace">CTR✱Enlace</th><th class="col-sort" data-key="cpm" onclick="setColSort('cpm')">CPM</th><th class="col-sort" data-key="clicsEnlace" onclick="setColSort('clicsEnlace')" title="Clics en el enlace">Clics Enlace</th><th class="col-sort" data-key="cpcEnlace" onclick="setColSort('cpcEnlace')" title="CPC en el enlace">CPC Enlace</th>
+          <th class="col-sort" data-key="frecuencia" onclick="setColSort('frecuencia')">Frecuencia</th><th class="col-sort" data-key="visitasPagina" onclick="setColSort('visitasPagina')">Visitas LP</th><th class="col-sort" data-key="costoVisitaPagina" onclick="setColSort('costoVisitaPagina')">Costo/Visita</th><th class="col-sort" data-key="checkouts" onclick="setColSort('checkouts')">Pagos Inic.</th><th class="col-sort" data-key="leads" onclick="setColSort('leads')">Carritos</th><th class="col-sort" data-key="videoTiempo" onclick="setColSort('videoTiempo')" title="Tiempo promedio de reproducción (segundos)">Video (s)</th>
         </tr></thead>
         <tbody id="creativos-body"></tbody>
       </table>
@@ -1994,9 +1998,9 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // Keys where LOCAL is authoritative (deletions must stick — no union merge with cloud)
-const _LOCAL_AUTH_KEYS = ['products','costCaps','versions','adAccounts','pixels','landings','enfoques','team','painPoints','metas'];
-// Keys where we use union merge (multi-user append-only content)
-const _MERGE_LIST_KEYS = ['creativos','recursos','users'];
+const _LOCAL_AUTH_KEYS = ['versions'];
+// Keys where we use union merge (multi-user append-only content) — recursos compartidos entre TODOS los usuarios
+const _MERGE_LIST_KEYS = ['creativos','recursos','users','products','costCaps','adAccounts','pixels','landings','enfoques','team','painPoints','metas'];
 // All array keys (for syncFromCloud score)
 const _ALL_ARRAY_KEYS = [..._LOCAL_AUTH_KEYS, ..._MERGE_LIST_KEYS];
 
@@ -2005,6 +2009,12 @@ const _ALL_ARRAY_KEYS = [..._LOCAL_AUTH_KEYS, ..._MERGE_LIST_KEYS];
 function _mergeArraysById(localArr, cloudArr, cloudWins = false) {
   localArr = Array.isArray(localArr) ? localArr : [];
   cloudArr = Array.isArray(cloudArr) ? cloudArr : [];
+  const tomb = new Set(state && Array.isArray(state.tombstones) ? state.tombstones.map(t=>t.id) : []);
+  // Listas de valores simples (ej. painPoints: strings) → unión por valor
+  const isPrimitive = v => v == null || typeof v !== 'object';
+  if ((localArr.length && isPrimitive(localArr[0])) || (cloudArr.length && isPrimitive(cloudArr[0]))) {
+    return [...new Set([...cloudArr, ...localArr])].filter(v => !tomb.has(v));
+  }
   const map = new Map();
   if (cloudWins) {
     // Local first, then cloud overwrites — cloud wins on conflict, local-only new items preserved
@@ -2015,7 +2025,16 @@ function _mergeArraysById(localArr, cloudArr, cloudWins = false) {
     for (const item of cloudArr) if (item && item.id != null) map.set(item.id, item);
     for (const item of localArr) if (item && item.id != null) map.set(item.id, item);
   }
-  return Array.from(map.values());
+  // Tombstones: lo que un usuario eliminó no debe "resucitar" desde la nube
+  return Array.from(map.values()).filter(item => !tomb.has(item.id));
+}
+
+// Registra una eliminación para que no reaparezca al mergear con la nube (máx 500)
+function markDeleted(id) {
+  if (id == null) return;
+  state.tombstones = Array.isArray(state.tombstones) ? state.tombstones : [];
+  state.tombstones.push({ id, ts: Date.now() });
+  if (state.tombstones.length > 500) state.tombstones = state.tombstones.slice(-500);
 }
 // Keys where cloud wins on conflict (multi-user editable content)
 const _CLOUD_WINS_KEYS = ['creativos','recursos'];
@@ -2595,12 +2614,12 @@ function totalGastosFijos() { return state.fixedCosts.reduce((s,g) => s+(+g.val|
 
 // ==================== PRODUCTS ====================
 function loadDefaultProducts() { state.products = defaultProducts(); renderProducts(); recalc(); calcDirty(); }
-function clearProducts() { if(!confirm('¿Limpiar todos los productos?')) return; state.products = []; renderProducts(); recalc(); calcDirty(); }
+function clearProducts() { if(!confirm('¿Limpiar todos los productos?')) return; state.products.forEach(p=>markDeleted(p.id)); state.products = []; renderProducts(); recalc(); calcDirty(); persistState(); }
 function addProduct() {
   state.products.push({ id: uid(), name:'Nuevo combo', qty:1, price:39.90, cost:3.50, mix:5, flete:4.50 });
   renderProducts(); recalc(); calcDirty(); persistState();
 }
-function removeProduct(id) { state.products = state.products.filter(p => p.id !== id); renderProducts(); recalc(); calcDirty(); persistState(); }
+function removeProduct(id) { markDeleted(id); state.products = state.products.filter(p => p.id !== id); renderProducts(); recalc(); calcDirty(); persistState(); }
 function updateProduct(id, field, val) {
   const p = state.products.find(x => x.id === id);
   if (p) { p[field] = isNaN(+val) ? val : +val; recalc(); calcDirty(); }
@@ -2654,6 +2673,7 @@ function deleteSelectedProducts() {
   const n = _selectedProducts.size;
   if (!n) return;
   if (!confirm(`¿Eliminar ${n} producto${n > 1 ? 's' : ''} seleccionado${n > 1 ? 's' : ''}? Esta acción no se puede deshacer.`)) return;
+  _selectedProducts.forEach(id => markDeleted(id));
   state.products = state.products.filter(p => !_selectedProducts.has(p.id));
   _selectedProducts = new Set();
   renderProducts(); recalc(); calcDirty(); persistState();
@@ -3370,7 +3390,7 @@ function saveMeta() {
 
 function deleteMeta(id) {
   if (!confirm('¿Eliminar esta meta?')) return;
-  state.metas = (state.metas||[]).filter(m=>m.id!==id);
+  markDeleted(id); state.metas = (state.metas||[]).filter(m=>m.id!==id);
   persistState(); renderConfigMetas();
 }
 
@@ -4183,6 +4203,7 @@ function renderKanban() {
           ${c.painPoint ? `<div style="font-size:10px;color:#f97316;margin-bottom:1px">😣 ${c.painPoint}</div>` : ''}
           ${c.resp ? `<div style="font-size:10px;color:var(--text2);margin-bottom:1px">✏️ ${c.resp}</div>` : ''}
           ${c.status==='testeo'||c.status==='validado'||c.status==='escalando' ? `<div style="font-size:10px;font-weight:600;margin-bottom:1px;color:${c.respTesteo?'#7c3aed':'var(--text3)'}">🧪 Tester: ${c.respTesteo||'sin asignar'}</div>` : ''}
+          ${c.status==='testeo'&&c.testeoAt ? `<div style="font-size:9px;color:var(--text3);margin-bottom:1px">🕐 Testeo desde: ${_fmtDateTime(c.testeoAt)}</div>` : ''}
           ${c.status==='listo' ? `<div style="font-size:9px;font-weight:700;display:inline-block;border-radius:4px;padding:2px 6px;margin-bottom:3px;background:#fef3c7;color:#92400e">⏳ Pendiente de testeo${c.listoAt?` · ${_daysSince(c.listoAt)}`:''}</div>
           <div style="font-size:10px;font-weight:600;margin-bottom:1px;color:${c.respTesteo?'#7c3aed':'var(--red)'}">🧪 ${c.respTesteo?'Tester: '+c.respTesteo:'⚠ Sin responsable asignado'}</div>
           ${c.listoBy?`<div style="font-size:9px;color:var(--text3);margin-bottom:1px">Listo por: ${c.listoBy}</div>`:''}` : ''}
@@ -4262,7 +4283,11 @@ function validateStageTransition(c, toStatus) {
   if (toStatus === 'validado') {
     // El gasto viene de Meta sync (spend) — NO es requisito manual bloqueante.
     // Revenue acepta el valor de conversión de Meta (purchaseValue) o el revenue manual.
-    if (!m.ventas || m.ventas <= 0) missing.push('ventas/pedidos');
+    // Regla: mínimo 3 ventas dentro de los primeros 3 días de testeo
+    if ((m.ventas||0) < 3) {
+      const _dias = c.testeoAt ? Math.floor((Date.now() - new Date(c.testeoAt).getTime())/86400000) : null;
+      missing.push(`mínimo 3 ventas para validar (lleva ${m.ventas||0}${_dias!=null?` en ${_dias} día${_dias!==1?'s':''} de testeo`:''}${_dias!=null&&_dias>3?' — pasó la ventana de 3 días, considera rotar el creativo':''})`);
+    }
     if (!m.cpa || m.cpa <= 0) missing.push('CPA registrado');
     if (!((m.purchaseValue||0) > 0 || (m.revenue||0) > 0)) missing.push('revenue o valor de conversión (sincroniza Meta o ingrésalo manual)');
     if (!c.product) missing.push('producto asociado');
@@ -4377,6 +4402,12 @@ function moveCard(id, toStatus) {
   c.status = toStatus;
   if (toStatus === 'escalando') sendToCostCap(id);
   else { renderKanban(); calcDirty(); persistState(); }
+}
+
+// Fecha y hora legible: "06 jul, 18:21"
+function _fmtDateTime(iso) {
+  try { return new Date(iso).toLocaleString('es', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }); }
+  catch(e) { return ''; }
 }
 
 // "hace X días/horas" desde un ISO timestamp
@@ -4540,6 +4571,20 @@ function _groupRecommendation(g, t, nivel) {
   return { icon:'🔴', text:`CPA ${fmt(g.cpa)} supera breakeven ${fmt(t.cpaBE)}. Apagar ${nivel} o reestructurar con los mejores anuncios.`, color:'#ef4444' };
 }
 
+// Orden por columna al hacer clic en el encabezado (alterna mayor→menor→mayor)
+function setColSort(key) {
+  const cur = window._colSort;
+  window._colSort = (cur && cur.key === key)
+    ? { key, dir: cur.dir === 'desc' ? 'asc' : 'desc' }
+    : { key, dir: 'desc' }; // primer clic: de mayor a menor
+  document.querySelectorAll('#creativos-table thead th.col-sort').forEach(th => {
+    th.classList.toggle('active', th.dataset.key === key);
+    const base = th.textContent.replace(/ [▲▼]$/, '');
+    th.textContent = th.dataset.key === key ? base + (window._colSort.dir === 'desc' ? ' ▼' : ' ▲') : base;
+  });
+  renderCreativosTable();
+}
+
 // Filtro de texto libre sobre nombre, producto, tester, editor, campaña, adset, estado y semáforo
 function _crFilterMatch(c) {
   const q = ((document.getElementById('cr-filter')||{}).value||'').trim().toLowerCase();
@@ -4555,14 +4600,34 @@ function renderCreativosTable() {
   // Si la vista agrupada está activa, mantenerla actualizada también
   const _gm = (document.getElementById('cr-group-by')||{}).value;
   if (_gm && _gm !== 'ad') renderGroupedView();
-  const sortKey = (document.getElementById('cr-sort')||{}).value || 'cpa';
+  const sortKey = (document.getElementById('cr-sort')||{}).value || 'rendimiento';
   // Solo creativos que ya llegaron a testeo (o pausados que sí tuvieron testeo/métricas).
   // Por defecto se muestran TODOS los testeados; la fecha solo aplica si el usuario eligió un período.
   const _tested = c => ['testeo','validado','escalando'].includes(c.status)
     || (c.status==='rechazado' && (c.testeoAt || (c.stageLog||{}).testeo || ((c.metrics||{}).presup||0) > 0));
+  const _profitOf = m => { const rv=(m.purchaseValue||0)>0?m.purchaseValue:(m.revenue||0); return rv-(m.presup||0); };
+  const _semRank = c => {
+    const t = c.product ? getTrafficCpaTargets(c.product) : null;
+    const s = crSemaforo(c.metrics||{}, t);
+    if (s.label === 'Escalar') return 0;
+    return { green:1, yellow:2, red:3, gray:4 }[s.color] ?? 4;
+  };
   const list = getFilteredCreativos({ ignoreDate: !_userChangedDatePreset }).filter(_tested).filter(_crFilterMatch).sort((a,b) => {
     const ma = a.metrics||{}, mb = b.metrics||{};
-    const profitA = (ma.revenue||0)-(ma.presup||0), profitB = (mb.revenue||0)-(mb.presup||0);
+    // Orden por columna clickeada en el encabezado
+    if (window._colSort && window._colSort.key) {
+      const { key, dir } = window._colSort;
+      const va = key==='profit' ? _profitOf(ma) : (ma[key]||0);
+      const vb = key==='profit' ? _profitOf(mb) : (mb[key]||0);
+      return dir === 'asc' ? va - vb : vb - va;
+    }
+    const profitA = _profitOf(ma), profitB = _profitOf(mb);
+    if (sortKey==='rendimiento') {
+      const ra = _semRank(a), rb = _semRank(b);
+      if (ra !== rb) return ra - rb;           // 🚀/🟢 arriba, 🔴/⚪ abajo
+      if (profitA !== profitB) return profitB - profitA;
+      return (mb.purchaseRoas||mb.roas||0) - (ma.purchaseRoas||ma.roas||0);
+    }
     if (sortKey==='cpa_desc') return (ma.cpa||0)-(mb.cpa||0); // worst CPA first (highest)
     if (sortKey==='roas'||sortKey==='ctr'||sortKey==='ventas'||sortKey==='presup'||sortKey==='revenue') return (mb[sortKey]||0)-(ma[sortKey]||0);
     if (sortKey==='cpc'||sortKey==='cpm') return (ma[sortKey]||0)-(mb[sortKey]||0); // lower is better
@@ -4591,6 +4656,7 @@ function renderCreativosTable() {
         </div>
         ${c.adLink?`<a href="${c.adLink}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#1877f2;font-weight:600;margin-top:2px" title="Abrir anuncio publicado">${/facebook|fb\./i.test(c.adLink)?'📘':'🔗'} Abrir anuncio ↗</a>`:''}
         <div style="font-size:10px;color:var(--text3);margin-top:1px">${c.product||''}${c.format?' · '+c.format:''}</div>
+        ${c.testeoAt?`<div style="font-size:9px;color:var(--text3)">🕐 Testeo: ${_fmtDateTime(c.testeoAt)}</div>`:''}
         ${c.hook?`<div style="font-size:10px;color:var(--text2);margin-top:1px;font-style:italic">"${c.hook.slice(0,50)}${c.hook.length>50?'…':''}"</div>`:''}
       </td>
       <td><span class="badge ${getStatusCls(c.status)}">${getStatusLabel(c.status)}</span></td>
@@ -6506,7 +6572,7 @@ function _stripForClone(c) {
 }
 
 function deleteCreativo(id) {
-  state.creativos = state.creativos.filter(c=>c.id!==id);
+  markDeleted(id); state.creativos = state.creativos.filter(c=>c.id!==id);
   renderKanban(); calcDirty(); persistState();
 }
 
@@ -6702,7 +6768,7 @@ function savePixel() {
   if (idx>=0) state.pixels[idx]=px; else state.pixels.push(px);
   closeModal('modal-pixel'); persistState(); renderRecursos();
 }
-function deletePixel(id) { if(!confirm('¿Eliminar pixel?')) return; state.pixels=(state.pixels||[]).filter(x=>x.id!==id); persistState(); renderRecursos(); }
+function deletePixel(id) { if(!confirm('¿Eliminar pixel?')) return; markDeleted(id); state.pixels=(state.pixels||[]).filter(x=>x.id!==id); persistState(); renderRecursos(); }
 
 // ---- Landing CRUD ----
 function openLandingModal(id) {
@@ -6730,7 +6796,7 @@ function saveLanding() {
   if (idx>=0) state.landings[idx]=l; else state.landings.push(l);
   closeModal('modal-landing'); persistState(); renderRecursos();
 }
-function deleteLanding(id) { if(!confirm('¿Eliminar landing?')) return; state.landings=(state.landings||[]).filter(x=>x.id!==id); persistState(); renderRecursos(); }
+function deleteLanding(id) { if(!confirm('¿Eliminar landing?')) return; markDeleted(id); state.landings=(state.landings||[]).filter(x=>x.id!==id); persistState(); renderRecursos(); }
 
 // ---- Recurso CRUD ----
 function openRecursoModal(id) {
@@ -6757,7 +6823,7 @@ function saveRecurso() {
   if (idx>=0) state.recursos[idx]=r; else state.recursos.push(r);
   closeModal('modal-recurso'); persistState(); renderRecursos();
 }
-function deleteRecurso(id) { if(!confirm('¿Eliminar recurso?')) return; state.recursos=(state.recursos||[]).filter(x=>x.id!==id); persistState(); renderRecursos(); }
+function deleteRecurso(id) { if(!confirm('¿Eliminar recurso?')) return; markDeleted(id); state.recursos=(state.recursos||[]).filter(x=>x.id!==id); persistState(); renderRecursos(); }
 
 // ---- Enfoques creativos ----
 let editingEnfoqueId = null;
@@ -6798,7 +6864,7 @@ function saveEnfoque(e) {
 }
 function deleteEnfoque(id) {
   if(!confirm('¿Eliminar enfoque?')) return;
-  state.enfoques=(state.enfoques||[]).filter(x=>x.id!==id);
+  markDeleted(id); state.enfoques=(state.enfoques||[]).filter(x=>x.id!==id);
   persistState(); renderRecursos();
 }
 
@@ -6841,7 +6907,7 @@ function openTeamModal(id) {
 
 function deleteTeamMember(id) {
   if (!confirm('¿Eliminar persona del equipo?')) return;
-  state.team = (state.team||[]).filter(x=>x.id!==id);
+  markDeleted(id); state.team = (state.team||[]).filter(x=>x.id!==id);
   persistState(); renderRecursos();
 }
 
@@ -6893,7 +6959,7 @@ function openDolorModal() {
 }
 function deleteDolorItem(idx) {
   if (!confirm('¿Eliminar punto de dolor?')) return;
-  state.painPoints.splice(idx, 1);
+  markDeleted(state.painPoints[idx]); state.painPoints.splice(idx, 1);
   persistState(); renderRecursos();
 }
 
@@ -7312,7 +7378,7 @@ function saveAdAccount() {
 
 function deleteAdAccount(id) {
   if (!confirm('¿Eliminar esta cuenta?')) return;
-  state.adAccounts = (state.adAccounts||[]).filter(x=>x.id!==id);
+  markDeleted(id); state.adAccounts = (state.adAccounts||[]).filter(x=>x.id!==id);
   renderAdAccounts(); calcDirty(); persistState();
 }
 
@@ -7568,7 +7634,7 @@ function saveUser() {
 function deleteUser(id) {
   if (id==='u1') { showToast('No puedes eliminar el admin principal','error'); return; }
   if (!confirm('¿Eliminar este usuario?')) return;
-  state.users = (state.users||[]).filter(u=>u.id!==id);
+  markDeleted(id); state.users = (state.users||[]).filter(u=>u.id!==id);
   persistState();
   renderUsersList();
 }
