@@ -6751,6 +6751,13 @@ function _renderRecLandings() {
         ${l.angle?`<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:2px">🎯 ${l.angle}</div>`:''}
         ${l.offer?`<div style="font-size:11px;color:var(--text2);margin-bottom:2px">💡 ${l.offer}</div>`:''}
         ${px?`<div style="font-size:10px;color:var(--text3)">📡 ${px.name}</div>`:''}
+        ${(l.copies||[]).length?`<div style="margin-top:5px;display:flex;flex-direction:column;gap:3px">
+          ${l.copies.map((cp,i)=>`<div style="display:flex;gap:6px;align-items:center;font-size:10px">
+            <span style="color:${cp.estado==='inactivo'?'var(--text3)':'var(--text2)'};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📝 ${(cp.titulo||cp.texto||'Copy '+(i+1)).replace(/</g,'&lt;').slice(0,60)}</span>
+            <button class="btn sm primary" style="font-size:9px;padding:1px 6px;flex-shrink:0" onclick="copyLandingCopy('${l.id}',${i})">📋 Copiar</button>
+            <button class="btn sm" style="font-size:9px;padding:1px 6px;flex-shrink:0" onclick="openLandingModal('${l.id}')">✎</button>
+          </div>`).join('')}
+        </div>`:''}
       </div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
         ${l.url?`<a href="${l.url}" target="_blank" class="btn sm" style="font-size:10px;text-decoration:none">🔗 Abrir</a><button class="btn sm" style="font-size:10px;padding:2px 6px" onclick="navigator.clipboard.writeText('${l.url}')">📋 Copiar URL</button>`:''}
@@ -6858,34 +6865,27 @@ function _renderLdCopies(copies) {
   wrap.innerHTML = (copies||[]).map((cp,i)=>`
     <div class="ld-copy-block" style="border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:8px;background:var(--surface)">
       <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
-        <input class="ldc-titulo" placeholder="Título del copy" value="${(cp.titulo||'').replace(/"/g,'&quot;')}" style="flex:1;font-weight:600">
-        <select class="ldc-estado" style="width:auto"><option value="activo" ${cp.estado!=='inactivo'?'selected':''}>Activo</option><option value="inactivo" ${cp.estado==='inactivo'?'selected':''}>Inactivo</option></select>
+        <span style="font-size:10px;font-weight:700;color:var(--text3)">COPY ${i+1}</span>
+        <select class="ldc-estado" style="width:auto;margin-left:auto"><option value="activo" ${cp.estado!=='inactivo'?'selected':''}>Activo</option><option value="inactivo" ${cp.estado==='inactivo'?'selected':''}>Inactivo</option></select>
         <button class="btn sm danger" type="button" onclick="removeLdCopy(${i})">✕</button>
       </div>
-      <div class="g2 mb10">
-        <div class="field"><label>Hook</label><input class="ldc-hook" value="${(cp.hook||'').replace(/"/g,'&quot;')}" placeholder="¿Bubis grandes sin cirugías?"></div>
-        <div class="field"><label>CTA</label><input class="ldc-cta" value="${(cp.cta||'').replace(/"/g,'&quot;')}" placeholder="Pide hoy con envío gratis 👉"></div>
-      </div>
-      <div class="field mb10"><label>Texto principal</label><textarea class="ldc-texto" rows="3" placeholder="Texto del anuncio...">${(cp.texto||'').replace(/</g,'&lt;')}</textarea></div>
-      <div class="g3">
-        <div class="field"><label>Enfoque (opcional)</label><input class="ldc-enfoque" value="${(cp.enfoque||'').replace(/"/g,'&quot;')}" placeholder="Beneficio"></div>
-        <div class="field"><label>Punto de dolor (opcional)</label><input class="ldc-dolor" value="${(cp.dolor||'').replace(/"/g,'&quot;')}" placeholder="Poco busto"></div>
-        <div class="field"><label>Notas</label><input class="ldc-notas" value="${(cp.notas||'').replace(/"/g,'&quot;')}" placeholder="Funcionó en test de junio"></div>
+      <div class="field mb10"><label>Copy completo (texto principal del anuncio)</label><textarea class="ldc-texto" rows="4" placeholder="Pega aquí el copy completo en un párrafo...">${(cp.texto||'').replace(/</g,'&lt;')}</textarea></div>
+      <div class="g2">
+        <div class="field"><label>Título <span style="font-size:9px;color:var(--text3)">(va junto al botón del anuncio)</span></label><input class="ldc-titulo" value="${(cp.titulo||'').replace(/"/g,'&quot;')}" placeholder="Gomitas que abren el apetito 🍬"></div>
+        <div class="field"><label>Descripción <span style="font-size:9px;color:var(--text3)">(va abajo del título)</span></label><input class="ldc-desc" value="${(cp.descripcion||'').replace(/"/g,'&quot;')}" placeholder="Envío gratis y pago contraentrega"></div>
       </div>
     </div>`).join('') || '<div style="font-size:11px;color:var(--text3)">Sin copies. Agrega hasta 5 con "+ Copy".</div>';
 }
+
 function _collectLdCopies() {
   return [...document.querySelectorAll('#ld-copies-wrap .ld-copy-block')].map(b=>({
-    titulo: b.querySelector('.ldc-titulo').value.trim(),
-    hook: b.querySelector('.ldc-hook').value.trim(),
-    cta: b.querySelector('.ldc-cta').value.trim(),
     texto: b.querySelector('.ldc-texto').value.trim(),
-    enfoque: b.querySelector('.ldc-enfoque').value.trim(),
-    dolor: b.querySelector('.ldc-dolor').value.trim(),
-    notas: b.querySelector('.ldc-notas').value.trim(),
+    titulo: b.querySelector('.ldc-titulo').value.trim(),
+    descripcion: b.querySelector('.ldc-desc').value.trim(),
     estado: b.querySelector('.ldc-estado').value,
-  })).filter(cp => cp.titulo || cp.texto || cp.hook);
+  })).filter(cp => cp.texto || cp.titulo);
 }
+
 function addLdCopy() {
   const cur = _collectLdCopies();
   if (cur.length >= 5) { showToast('Máximo 5 copies por landing', 'error'); return; }
@@ -6915,26 +6915,42 @@ function renderLandingSuggest() {
   const pub = l.publico||{};
   const copies = (l.copies||[]).filter(cp=>cp.estado!=='inactivo');
   const esc = s => (s||'').replace(/</g,'&lt;');
-  const fullCopy = cp => [cp.hook, cp.texto, cp.cta].filter(Boolean).join('\n\n');
   el.innerHTML = `
     <div style="border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;background:var(--surface2);margin-top:6px;font-size:11px">
-      ${copies.length?`<div style="font-weight:700;color:var(--text2);margin-bottom:4px">📝 Copies sugeridos de esta landing</div>
-      ${copies.map(cp=>`
-        <div style="display:flex;gap:8px;align-items:flex-start;padding:4px 0;border-bottom:1px dashed var(--border)">
+      ${copies.length?`<div style="font-weight:700;color:var(--text2);margin-bottom:4px">📝 Copies de esta landing</div>
+      ${copies.map((cp,i)=>`
+        <div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px dashed var(--border)">
           <div style="flex:1;min-width:0">
-            <div style="font-weight:600">${esc(cp.titulo)||'Sin título'}${cp.enfoque?` <span style="color:var(--text3);font-weight:400">· ${esc(cp.enfoque)}</span>`:''}${cp.dolor?` <span style="color:#f97316;font-weight:400">· 😣 ${esc(cp.dolor)}</span>`:''}</div>
-            ${cp.hook?`<div style="color:var(--text2)">🎣 ${esc(cp.hook)}</div>`:''}
-            ${cp.texto?`<div style="color:var(--text3);white-space:pre-wrap">${esc(cp.texto).slice(0,140)}${cp.texto.length>140?'…':''}</div>`:''}
+            <div style="font-weight:600">${esc(cp.titulo)||('Copy '+(i+1))}</div>
+            ${cp.descripcion?`<div style="color:var(--text2)">${esc(cp.descripcion)}</div>`:''}
+            ${cp.texto?`<div style="color:var(--text3);white-space:pre-wrap">${esc(cp.texto).slice(0,160)}${cp.texto.length>160?'…':''}</div>`:''}
           </div>
-          <button class="btn sm" type="button" style="font-size:9px;flex-shrink:0" onclick='copyToClipboard(${JSON.stringify(fullCopy(cp))})'>📋 Copiar</button>
+          <button class="btn sm primary" type="button" data-t style="font-size:9px;flex-shrink:0">📋 Copiar</button>
         </div>`).join('')}`:''}
       ${(pub.descripcion||pub.segmentacion)?`
       <div style="font-weight:700;color:var(--text2);margin:6px 0 4px">🎯 Público objetivo recomendado</div>
       ${pub.descripcion?`<div style="color:var(--text2)">${esc(pub.descripcion)}</div>`:''}
       <div style="color:var(--text3);margin-top:2px">${[pub.edad&&('Edad: '+pub.edad), pub.genero, pub.ubicacion, pub.intereses&&('Intereses: '+pub.intereses), pub.comportamientos&&('Comportamientos: '+pub.comportamientos), pub.exclusiones&&('Excluir: '+pub.exclusiones)].filter(Boolean).map(esc).join(' · ')}</div>
       ${pub.insight?`<div style="color:var(--text3);font-style:italic;margin-top:2px">💡 ${esc(pub.insight)}</div>`:''}
-      ${pub.segmentacion?`<div style="display:flex;gap:6px;align-items:center;margin-top:4px"><span style="color:var(--text3);flex:1">${esc(pub.segmentacion).slice(0,120)}${pub.segmentacion.length>120?'…':''}</span><button class="btn sm" type="button" style="font-size:9px;flex-shrink:0" onclick='copyToClipboard(${JSON.stringify(pub.segmentacion||'')})'>📋 Copiar segmentación</button></div>`:''}`:''}
+      ${pub.segmentacion?`<div style="display:flex;gap:6px;align-items:center;margin-top:4px"><span style="color:var(--text3);flex:1">${esc(pub.segmentacion).slice(0,120)}${pub.segmentacion.length>120?'…':''}</span><button class="btn sm" type="button" style="font-size:9px;flex-shrink:0" onclick="copyLandingSeg('${l.id}')">📋 Copiar segmentación</button></div>`:''}`:''}
     </div>`;
+  // Botones de copiar por índice (evita problemas de escape en atributos)
+  el.querySelectorAll('button[data-t]').forEach((btn,i)=>{
+    const cp = copies[i]; if (!cp) return;
+    btn.textContent = '📋 Copiar';
+    btn.onclick = () => copyToClipboard([cp.texto, cp.titulo, cp.descripcion].filter(Boolean).join('\n\n'));
+  });
+}
+
+// Copia rápida por id (desde Recursos o sugerencias)
+function copyLandingCopy(landingId, idx) {
+  const l = (state.landings||[]).find(x=>x.id===landingId); if (!l) return;
+  const cp = (l.copies||[])[idx]; if (!cp) return;
+  copyToClipboard([cp.texto, cp.titulo, cp.descripcion].filter(Boolean).join('\n\n'));
+}
+function copyLandingSeg(landingId) {
+  const l = (state.landings||[]).find(x=>x.id===landingId); if (!l) return;
+  copyToClipboard((l.publico||{}).segmentacion||'');
 }
 
 function saveLanding() {
