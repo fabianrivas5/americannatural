@@ -2068,7 +2068,9 @@ function markDeleted(id) {
   if (state.tombstones.length > 500) state.tombstones = state.tombstones.slice(-500);
 }
 // Keys where cloud wins on conflict (multi-user editable content)
-const _CLOUD_WINS_KEYS = ['creativos','recursos'];
+// Al RECIBIR datos, la nube gana en ítems existentes — así las ediciones de otros usuarios
+// (ej. copies agregados a una landing) llegan a todos. Al GUARDAR, lo local sigue ganando.
+const _CLOUD_WINS_KEYS = ['creativos','recursos','landings','pixels','adAccounts','products','costCaps','enfoques','team','metas','users'];
 
 let _savingToCloud = false;
 async function saveToCloud() {
@@ -2154,10 +2156,12 @@ function _setSyncStatus(txt, color) {
 }
 
 function _safePullFromCloud(reason) {
-  // No refrescar mientras el usuario edita en un modal, guarda, o la pestaña está oculta
+  // No refrescar mientras el usuario edita en un modal, guarda, tiene cambios sin guardar, o la pestaña está oculta
   if (!currentUser || _savingToCloud) return;
   if (document.querySelector('.modal-overlay.open, .modal.open')) return;
   if (document.visibilityState !== 'visible') return;
+  const _dot = document.getElementById('save-dot');
+  if (_dot && _dot.classList.contains('dirty')) return; // hay cambios locales pendientes — primero se guardan
   _setSyncStatus('Actualizando…');
   syncFromCloud().then(() => {
     _setSyncStatus('Sincronizado ✓');
