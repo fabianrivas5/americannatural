@@ -1224,6 +1224,34 @@ tbody tr:hover{background:var(--accent-light)!important}
     <div class="field mb10"><label>Descripción del ángulo</label><textarea id="ld-angle-desc" rows="2" placeholder="Para quién va, qué problema resuelve..."></textarea></div>
     <div class="field mb10"><label>Oferta / promesa principal</label><input id="ld-offer" placeholder="Pierde 5kg en 30 días o te devolvemos el dinero"></div>
     <div class="field mb10"><label>Notas de conversión</label><textarea id="ld-conv-notes" rows="2" placeholder="CR, mejoras pendientes..."></textarea></div>
+
+    <!-- Copies sugeridos para anuncios (máx 5) -->
+    <div style="border:1px solid var(--border);border-radius:var(--r);padding:10px;background:var(--surface2);margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:11px;font-weight:700;color:var(--text2)">📝 Copies sugeridos para anuncios <span style="font-weight:400;color:var(--text3)">(máx 5)</span></span>
+        <button class="btn sm primary" type="button" onclick="addLdCopy()">+ Copy</button>
+      </div>
+      <div id="ld-copies-wrap"></div>
+    </div>
+
+    <!-- Público objetivo recomendado -->
+    <div style="border:1px solid var(--border);border-radius:var(--r);padding:10px;background:var(--surface2);margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">🎯 Público objetivo recomendado</div>
+      <div class="field mb10"><label>Descripción del público ideal</label><textarea id="ld-pub-desc" rows="2" placeholder="Madres de 25-45 años interesadas en bienestar familiar, suplementos naturales..."></textarea></div>
+      <div class="field mb10"><label>Segmentación sugerida para Meta</label><textarea id="ld-pub-seg" rows="2" placeholder="Intereses: salud digestiva, suplementos. Comportamientos: compradores online..."></textarea></div>
+      <div class="g3 mb10">
+        <div class="field"><label>Edad recomendada</label><input id="ld-pub-edad" placeholder="25-45"></div>
+        <div class="field"><label>Género</label><select id="ld-pub-genero"><option value="">Todos</option><option>Mujeres</option><option>Hombres</option></select></div>
+        <div class="field"><label>País / ciudad</label><input id="ld-pub-ubicacion" placeholder="Ecuador · Quito, Guayaquil"></div>
+      </div>
+      <div class="g2 mb10">
+        <div class="field"><label>Intereses sugeridos</label><input id="ld-pub-intereses" placeholder="Bienestar, vida sana, nutrición"></div>
+        <div class="field"><label>Comportamientos sugeridos</label><input id="ld-pub-comport" placeholder="Compradores comprometidos"></div>
+      </div>
+      <div class="field mb10"><label>Exclusiones (si aplica)</label><input id="ld-pub-exclusiones" placeholder="Excluir compradores últimos 30 días"></div>
+      <div class="field mb10"><label>Investigación / insight del público</label><textarea id="ld-pub-insight" rows="2" placeholder="Por qué este público puede comprar: dolor principal, momento de compra, objeciones..."></textarea></div>
+    </div>
+
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
       <button class="btn" onclick="closeModal('modal-landing')">Cancelar</button>
       <button class="btn primary" onclick="saveLanding()">Guardar landing</button>
@@ -1575,12 +1603,13 @@ tbody tr:hover{background:var(--accent-light)!important}
       <div class="msec-title">🌐 Landing</div>
       <div class="g2 mb10">
         <div class="field"><label>Landing (de Recursos)</label>
-          <select id="cr-landing-sel" onchange="document.getElementById('cr-landing').value=this.options[this.selectedIndex].dataset.url||''">
+          <select id="cr-landing-sel" onchange="document.getElementById('cr-landing').value=this.options[this.selectedIndex].dataset.url||'';renderLandingSuggest()">
             <option value="">— Seleccionar landing —</option>
           </select>
         </div>
         <div class="field"><label>URL landing (manual)</label><input id="cr-landing" placeholder="https://mi-tienda.com/..."></div>
       </div>
+      <div id="cr-landing-suggest"></div>
     </div>
 
     <!-- ═══ s-testeo-setup: Listo, Testeo, Revisión, Escalando ═══ -->
@@ -1967,8 +1996,10 @@ function startAutoSync() {
           if (m.purchaseRoas      != null) metrics.purchaseRoas      = m.purchaseRoas;
           if (m.purchaseValue     != null) metrics.purchaseValue     = m.purchaseValue;
       if (m.campaignName) cr.metaCampaignName = m.campaignName;
+      if (m.effectiveStatus != null) metrics.metaStatus = m.effectiveStatus;
       if (json.adsets?.length || json.ads?.length) cr.metaBreakdown = { adsets: json.adsets||[], ads: json.ads||[], syncedAt: new Date().toISOString() };
           if (m.campaignName) cr.metaCampaignName = m.campaignName;
+          if (m.effectiveStatus != null) metrics.metaStatus = m.effectiveStatus;
           if (json.adsets?.length || json.ads?.length) state.creativos[idx].metaBreakdown = { adsets: json.adsets||[], ads: json.ads||[], syncedAt: new Date().toISOString() };
           if (m.objetivo)             metrics.objetivoCampana  = m.objetivo;
           if (m.fechaLanzamiento)     metrics.fechaMetaLanzamiento = m.fechaLanzamiento;
@@ -4404,6 +4435,19 @@ function moveCard(id, toStatus) {
   else { renderKanban(); calcDirty(); persistState(); }
 }
 
+// Estado real de campaña/adset/anuncio desde Meta (effective_status)
+function _metaStatusInfo(raw) {
+  if (!raw) return null;
+  const r = String(raw).toUpperCase();
+  if (r === 'ACTIVE') return { key:'activo', label:'Activo', off:false, bg:'#d1fae5', color:'#065f46' };
+  if (['PAUSED','CAMPAIGN_PAUSED','ADSET_PAUSED'].includes(r)) return { key:'apagado', label:'Apagado / Pausado', off:true, bg:'#fee2e2', color:'#991b1b' };
+  if (r === 'DELETED') return { key:'eliminado', label:'Eliminado', off:true, bg:'#f3f4f6', color:'#6b7280' };
+  if (['PENDING_REVIEW','IN_PROCESS','PENDING_BILLING_INFO'].includes(r)) return { key:'revision', label:'En revisión', off:true, bg:'#fef3c7', color:'#92400e' };
+  if (['DISAPPROVED','WITH_ISSUES'].includes(r)) return { key:'rechazado', label:'Rechazado por Meta', off:true, bg:'#fee2e2', color:'#991b1b' };
+  if (r === 'ARCHIVED') return { key:'archivado', label:'Archivado', off:true, bg:'#f3f4f6', color:'#6b7280' };
+  return { key:'desconocido', label:'Estado: '+raw, off:false, bg:'#f3f4f6', color:'#6b7280' };
+}
+
 // Fecha y hora legible: "06 jul, 18:21"
 function _fmtDateTime(iso) {
   try { return new Date(iso).toLocaleString('es', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }); }
@@ -4644,7 +4688,8 @@ function renderCreativosTable() {
     const costoResC = m.costoResultado>0 ? (m.costoResultado<=targets.cpaObj?'ok':m.costoResultado<=targets.cpaBE?'warn':'bad') : 'gray';
     const sem   = crSemaforo(m, targets);
     const semBg = {red:'#ef4444',yellow:'#f59e0b',green:'#10b981',gray:'#9ca3af'}[sem.color];
-    return `<tr style="border-left:3px solid ${semBg}">
+    const stInfo = _metaStatusInfo(m.metaStatus);
+    return `<tr style="border-left:3px solid ${stInfo&&stInfo.off?'#9ca3af':semBg}">
       <td style="white-space:nowrap">
         <button class="btn sm" onclick="openCreativoModal('${c.id}')" title="Editar">✎</button>
         <button class="btn sm danger" style="font-size:9px;padding:2px 4px" onclick="deleteCreativo('${c.id}')" title="Eliminar">✕</button>
@@ -4663,13 +4708,15 @@ function renderCreativosTable() {
       <td style="font-size:10px;color:${c.respTesteo?'#7c3aed':'var(--text3)'}">${c.respTesteo||'—'}</td>
       <td style="min-width:180px;font-weight:600;color:${semBg}">
         <div style="display:flex;align-items:flex-start;gap:5px">
-          <span style="flex-shrink:0">${sem.dot}</span>
+          <span style="flex-shrink:0">${stInfo&&stInfo.off?'⏸':sem.dot}</span>
           <div>
-            <div style="font-size:11px">${sem.rec}</div>
-            ${sem.reason?`<div style="font-size:10px;font-weight:400;color:var(--text3);margin-top:1px">${sem.reason}</div>`:''}
-            ${sem.label==='Escalar'&&(m.ventas||0)>=10?`<button class="btn sm primary" style="font-size:9px;margin-top:3px;padding:1px 5px;background:#7c3aed" onclick="moveCard('${c.id}','escalando')">🚀 Escalar</button>`:''}
+            <div style="font-size:11px">${stInfo&&stInfo.off?`${c.testType==='campana'?'Campaña':'Anuncio'} ${stInfo.label.toLowerCase()}. ${stInfo.key==='apagado'?'No optimizar hasta reactivar.':'Revisa histórico antes de tomar acción.'}`:sem.rec}</div>
+            ${!(stInfo&&stInfo.off)&&sem.reason?`<div style="font-size:10px;font-weight:400;color:var(--text3);margin-top:1px">${sem.reason}</div>`:''}
+            ${!(stInfo&&stInfo.off)&&sem.label==='Escalar'&&(m.ventas||0)>=10?`<button class="btn sm primary" style="font-size:9px;margin-top:3px;padding:1px 5px;background:#7c3aed" onclick="moveCard('${c.id}','escalando')">🚀 Escalar</button>`:''}
           </div>
         </div>
+        ${stInfo&&stInfo.off?`<div style="font-size:9px;font-weight:700;display:inline-block;border-radius:4px;padding:2px 6px;margin-top:3px;background:${stInfo.bg};color:${stInfo.color}">⏸ ${c.testType==='campana'?'Campaña':'Anuncio'} ${stInfo.label.toLowerCase()}</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:2px">Análisis histórico, no acción activa. No optimizar hasta reactivar.</div>`:''}
         <button onclick="showCreativoAnalysis('${c.id}')" style="margin-top:5px;font-size:10px;border:none;background:none;cursor:pointer;color:var(--blue);padding:0;display:flex;align-items:center;gap:3px;font-weight:600">🔎 Ver análisis completo</button>
         ${c.testType==='campana' ? `<span style="display:inline-block;font-size:9px;font-weight:700;background:#fef3c7;color:#92400e;border-radius:4px;padding:1px 6px;margin-top:3px">📦 Test de campaña</span>
         <button onclick="showCampaignDrilldown('${c.id}')" style="margin-top:3px;font-size:10px;border:none;background:none;cursor:pointer;color:#7c3aed;padding:0;display:flex;align-items:center;gap:3px;font-weight:600">📦 Ver campaña (conjuntos y anuncios)</button>` : ''}
@@ -5380,7 +5427,7 @@ function openCreativoModal(id) {
     sv('cr-resp-escalado', c.respEscalado||'');
     populateAngleSel(c.angle||'');
     populatePainSel(c.painPoint||'');
-    populateCrPixels(c.adAccount); sv('cr-pixel', c.pixelId); onCrPixelChange(); sv('cr-landing-sel', c.landingId); sv('cr-landing', c.landing);
+    populateCrPixels(c.adAccount); sv('cr-pixel', c.pixelId); onCrPixelChange(); sv('cr-landing-sel', c.landingId); sv('cr-landing', c.landing); renderLandingSuggest();
     _crFiles = c.files ? [...c.files] : (c.thumb ? [{data:c.thumb,type:c.thumbType||'image',name:c.thumbName||'archivo'}] : []);
     _crRefs = c.refs ? [...c.refs] : [];
     renderFilesGrid(); renderRefsGrid();
@@ -5414,7 +5461,7 @@ function openCreativoModal(id) {
     const infoEl = document.getElementById('cr-file-info'); if(infoEl) infoEl.textContent = _crFileName ? `📎 ${_crFileName}` : '';
     if (c.link) setTimeout(previewCreativoLink, 60);
   } else {
-    populateCrPixels(''); onCrPixelChange();
+    populateCrPixels(''); onCrPixelChange(); renderLandingSuggest();
     populateAngleSel(''); populatePainSel(''); _crFiles = []; _crRefs = []; renderFilesGrid(); renderRefsGrid();
     sv('cr-tipo-creativo',''); sv('cr-tipo-creativo-listo',''); sv('cr-format',''); sv('cr-format-listo','');
     sv('cr-prod-status','pendiente'); sv('cr-resp-escalado','');
@@ -5659,6 +5706,10 @@ async function syncMetaMetrics() {
     const sv2 = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
     // En modo campaña, Meta trae el nombre real — no hace falta escribirlo a mano
     if (m.campaignName) sv2('cr-meta-campaign-name', m.campaignName);
+    if (m.effectiveStatus != null && editingCreativoId) {
+      const _crS = state.creativos.find(x=>x.id===editingCreativoId);
+      if (_crS) { _crS.metrics = _crS.metrics||{}; _crS.metrics.metaStatus = m.effectiveStatus; }
+    }
     // Guardar desglose por conjunto/anuncio para la vista de campaña
     if (json.adsets?.length || json.ads?.length) {
       const _bd = { adsets: json.adsets||[], ads: json.ads||[], syncedAt: new Date().toISOString() };
@@ -6229,6 +6280,7 @@ async function syncCampaignFromDrill(id, btnEl) {
     if (m.purchaseRoas      != null) metrics.purchaseRoas      = m.purchaseRoas;
     if (m.purchaseValue     != null) metrics.purchaseValue     = m.purchaseValue;
     if (m.campaignName) c.metaCampaignName = m.campaignName;
+    if (m.effectiveStatus != null) metrics.metaStatus = m.effectiveStatus;
     if (m.objetivo)         metrics.objetivoCampana      = m.objetivo;
     if (m.fechaLanzamiento) metrics.fechaMetaLanzamiento = m.fechaLanzamiento;
     c.metrics = metrics;
@@ -6256,7 +6308,10 @@ function showCampaignDrilldown(id) {
                       roas:m.purchaseRoas||m.roas||0, ctr:m.ctrUnico||m.ctr||0,
                       revenue:(m.purchaseValue||0)>0?m.purchaseValue:(m.revenue||0) };
   campStats.profit = campStats.revenue - campStats.gasto;
-  const campRec = _groupRecommendation(campStats, targets, 'campaña');
+  const campSt = _metaStatusInfo(m.metaStatus);
+  const campRec = (campSt && campSt.off)
+    ? { icon:'⏸', text:`Campaña ${campSt.label.toLowerCase()}: análisis histórico, no acción activa. ${campSt.key==='apagado'?'No optimizar hasta reactivarla.':''}`, color:'#9ca3af' }
+    : _groupRecommendation(campStats, targets, 'campaña');
 
   // Ganadores
   const adStats = (bd.ads||[]).map(a=>({ a, s:_rowStats(a) }));
@@ -6266,26 +6321,30 @@ function showCampaignDrilldown(id) {
     ? `<div style="font-size:12px;color:var(--text3);padding:10px">Sin desglose todavía. Pulsa <b>↻ Sincronizar campaña</b> (arriba) para traer conjuntos y anuncios desde Meta.</div>`
     : bd.adsets.map(as=>{
       const s = _rowStats(as);
-      const rec = _groupRecommendation(s, targets, 'conjunto');
+      const asSt = _metaStatusInfo(as.effectiveStatus);
+      const rec = (asSt && asSt.off)
+        ? { icon:'⏸', text:`Adset ${asSt.label.toLowerCase()}. Revisa histórico antes de tomar acción.`, color:'#9ca3af' }
+        : _groupRecommendation(s, targets, 'conjunto');
       const adsOfSet = adStats.filter(x=>x.a.adsetId===as.adsetId);
       const adsHtml = !adsOfSet.length
         ? `<div style="font-size:11px;color:var(--text3);padding:6px 0">Sin anuncios reportados en este conjunto para el rango sincronizado.</div>`
         : adsOfSet.map(({a, s:st})=>{
             const sem = crSemaforo(_rowToMetrics(a), targets);
-            const sBg = {red:'#ef4444',yellow:'#f59e0b',green:'#10b981',gray:'#9ca3af'}[sem.color]||'#9ca3af';
+            const adSt = _metaStatusInfo(a.effectiveStatus);
+            const sBg = (adSt&&adSt.off) ? '#9ca3af' : ({red:'#ef4444',yellow:'#f59e0b',green:'#10b981',gray:'#9ca3af'}[sem.color]||'#9ca3af');
             return `<div style="border:1px solid var(--border);border-left:3px solid ${sBg};border-radius:6px;padding:8px 10px;margin-bottom:6px;background:var(--surface)">
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <span style="width:8px;height:8px;border-radius:50%;background:${sBg};flex-shrink:0"></span>
-                <span style="flex:1;min-width:140px;font-weight:600;font-size:11px">${winner&&winner.a===a?'🏆 ':''}${(a.adName||a.adId||'').toString().replace(/</g,'&lt;')}</span>
+                <span style="flex:1;min-width:140px;font-weight:600;font-size:11px">${winner&&winner.a===a?'🏆 ':''}${(a.adName||a.adId||'').toString().replace(/</g,'&lt;')}${adSt&&adSt.off?` <span style="font-size:9px;font-weight:700;background:${adSt.bg};color:${adSt.color};border-radius:4px;padding:1px 5px">⏸ ${adSt.label}</span>`:''}</span>
                 ${_miniMetricsRow(st)}
               </div>
-              <div style="font-size:10px;color:${sBg};font-weight:600;margin-top:4px">${sem.dot} ${sem.rec}${sem.reason?' — '+sem.reason:''}</div>
+              <div style="font-size:10px;color:${sBg};font-weight:600;margin-top:4px">${adSt&&adSt.off?`⏸ Anuncio ${adSt.label.toLowerCase()}. Revisa histórico antes de tomar acción.`:`${sem.dot} ${sem.rec}${sem.reason?' — '+sem.reason:''}`}</div>
             </div>`;
           }).join('');
       return `<div style="border:1px solid var(--border);border-left:4px solid ${rec.color};border-radius:8px;margin-bottom:8px;background:var(--surface2)">
         <div style="display:flex;gap:10px;align-items:center;padding:9px 12px;cursor:pointer;flex-wrap:wrap" onclick="const d=this.nextElementSibling;d.style.display=d.style.display==='none'?'':'none'">
           <div style="flex:1;min-width:160px">
-            <div style="font-weight:700;font-size:12px">🗂 ${(as.adsetName||as.adsetId||'').toString().replace(/</g,'&lt;')} <span style="font-weight:400;font-size:10px;color:var(--text3)">· ${adsOfSet.length} anuncio${adsOfSet.length!==1?'s':''}</span></div>
+            <div style="font-weight:700;font-size:12px">🗂 ${(as.adsetName||as.adsetId||'').toString().replace(/</g,'&lt;')} <span style="font-weight:400;font-size:10px;color:var(--text3)">· ${adsOfSet.length} anuncio${adsOfSet.length!==1?'s':''}</span>${asSt&&asSt.off?` <span style="font-size:9px;font-weight:700;background:${asSt.bg};color:${asSt.color};border-radius:4px;padding:1px 6px">⏸ Adset ${asSt.label.toLowerCase()}</span>`:''}</div>
             <div style="font-size:10px;color:${rec.color};font-weight:600;margin-top:2px">${rec.icon} ${rec.text}</div>
           </div>
           ${_miniMetricsRow(s)}
@@ -6444,7 +6503,7 @@ function saveCreativo() {
   // Conservar métricas que solo vienen del sync de Meta (no tienen campo en el formulario)
   {
     const prevM = (existing && existing.metrics) || {};
-    for (const k of ['purchaseRoas','purchaseValue','visitasPagina','costoVisitaPagina','checkouts','clicsEnlace','videoTiempo','addToCart','initCheckout']) {
+    for (const k of ['purchaseRoas','purchaseValue','visitasPagina','costoVisitaPagina','checkouts','clicsEnlace','videoTiempo','addToCart','initCheckout','metaStatus']) {
       if (prevM[k] != null && metrics[k] == null) metrics[k] = prevM[k];
     }
   }
@@ -6779,6 +6838,11 @@ function openLandingModal(id) {
   sv('ld-name',l?.name); sv('ld-url',l?.url); sv('ld-angle',l?.angle);
   sv('ld-angle-desc',l?.angleDesc); sv('ld-offer',l?.offer); sv('ld-conv-notes',l?.convNotes);
   sv('ld-status',l?.status||'active'); sv('ld-country',l?.country||'Ecuador');
+  _renderLdCopies(l?.copies||[]);
+  const _pub = l?.publico||{};
+  sv('ld-pub-desc',_pub.descripcion); sv('ld-pub-seg',_pub.segmentacion); sv('ld-pub-edad',_pub.edad);
+  sv('ld-pub-genero',_pub.genero); sv('ld-pub-ubicacion',_pub.ubicacion); sv('ld-pub-intereses',_pub.intereses);
+  sv('ld-pub-comport',_pub.comportamientos); sv('ld-pub-exclusiones',_pub.exclusiones); sv('ld-pub-insight',_pub.insight);
   // products
   const pSel = document.getElementById('ld-product');
   if (pSel) pSel.innerHTML='<option value="">— Producto —</option>'+state.products.map(p=>`<option value="${p.name}" ${l?.product===p.name?'selected':''}>${p.name}</option>`).join('');
@@ -6787,10 +6851,103 @@ function openLandingModal(id) {
   if (pxSel) pxSel.innerHTML='<option value="">— Pixel —</option>'+(state.pixels||[]).map(p=>`<option value="${p.id}" ${l?.pixelId===p.id?'selected':''}>${p.name}</option>`).join('');
   document.getElementById('modal-landing').classList.add('open');
 }
+// ── Copies por landing (máx 5) ──
+function _renderLdCopies(copies) {
+  const wrap = document.getElementById('ld-copies-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = (copies||[]).map((cp,i)=>`
+    <div class="ld-copy-block" style="border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:8px;background:var(--surface)">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+        <input class="ldc-titulo" placeholder="Título del copy" value="${(cp.titulo||'').replace(/"/g,'&quot;')}" style="flex:1;font-weight:600">
+        <select class="ldc-estado" style="width:auto"><option value="activo" ${cp.estado!=='inactivo'?'selected':''}>Activo</option><option value="inactivo" ${cp.estado==='inactivo'?'selected':''}>Inactivo</option></select>
+        <button class="btn sm danger" type="button" onclick="removeLdCopy(${i})">✕</button>
+      </div>
+      <div class="g2 mb10">
+        <div class="field"><label>Hook</label><input class="ldc-hook" value="${(cp.hook||'').replace(/"/g,'&quot;')}" placeholder="¿Bubis grandes sin cirugías?"></div>
+        <div class="field"><label>CTA</label><input class="ldc-cta" value="${(cp.cta||'').replace(/"/g,'&quot;')}" placeholder="Pide hoy con envío gratis 👉"></div>
+      </div>
+      <div class="field mb10"><label>Texto principal</label><textarea class="ldc-texto" rows="3" placeholder="Texto del anuncio...">${(cp.texto||'').replace(/</g,'&lt;')}</textarea></div>
+      <div class="g3">
+        <div class="field"><label>Enfoque (opcional)</label><input class="ldc-enfoque" value="${(cp.enfoque||'').replace(/"/g,'&quot;')}" placeholder="Beneficio"></div>
+        <div class="field"><label>Punto de dolor (opcional)</label><input class="ldc-dolor" value="${(cp.dolor||'').replace(/"/g,'&quot;')}" placeholder="Poco busto"></div>
+        <div class="field"><label>Notas</label><input class="ldc-notas" value="${(cp.notas||'').replace(/"/g,'&quot;')}" placeholder="Funcionó en test de junio"></div>
+      </div>
+    </div>`).join('') || '<div style="font-size:11px;color:var(--text3)">Sin copies. Agrega hasta 5 con "+ Copy".</div>';
+}
+function _collectLdCopies() {
+  return [...document.querySelectorAll('#ld-copies-wrap .ld-copy-block')].map(b=>({
+    titulo: b.querySelector('.ldc-titulo').value.trim(),
+    hook: b.querySelector('.ldc-hook').value.trim(),
+    cta: b.querySelector('.ldc-cta').value.trim(),
+    texto: b.querySelector('.ldc-texto').value.trim(),
+    enfoque: b.querySelector('.ldc-enfoque').value.trim(),
+    dolor: b.querySelector('.ldc-dolor').value.trim(),
+    notas: b.querySelector('.ldc-notas').value.trim(),
+    estado: b.querySelector('.ldc-estado').value,
+  })).filter(cp => cp.titulo || cp.texto || cp.hook);
+}
+function addLdCopy() {
+  const cur = _collectLdCopies();
+  if (cur.length >= 5) { showToast('Máximo 5 copies por landing', 'error'); return; }
+  cur.push({ estado:'activo' });
+  _renderLdCopies(cur);
+}
+function removeLdCopy(i) {
+  const cur = _collectLdCopies();
+  // Recolectar incluye solo bloques con contenido; para eliminar por índice usamos el DOM directo
+  const blocks = [...document.querySelectorAll('#ld-copies-wrap .ld-copy-block')];
+  if (blocks[i]) blocks[i].remove();
+  if (!document.querySelectorAll('#ld-copies-wrap .ld-copy-block').length) _renderLdCopies([]);
+}
+
+// Copiar texto al portapapeles con toast
+function copyToClipboard(txt) {
+  navigator.clipboard.writeText(txt).then(()=>showToast('📋 Copiado al portapapeles')).catch(()=>showToast('No se pudo copiar','error'));
+}
+
+// Panel compacto de copies + público al seleccionar una landing en el creativo
+function renderLandingSuggest() {
+  const el = document.getElementById('cr-landing-suggest');
+  if (!el) return;
+  const lid = (document.getElementById('cr-landing-sel')||{}).value||'';
+  const l = (state.landings||[]).find(x=>x.id===lid);
+  if (!l || (!(l.copies||[]).length && !(l.publico&&(l.publico.descripcion||l.publico.segmentacion)))) { el.innerHTML=''; return; }
+  const pub = l.publico||{};
+  const copies = (l.copies||[]).filter(cp=>cp.estado!=='inactivo');
+  const esc = s => (s||'').replace(/</g,'&lt;');
+  const fullCopy = cp => [cp.hook, cp.texto, cp.cta].filter(Boolean).join('\n\n');
+  el.innerHTML = `
+    <div style="border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;background:var(--surface2);margin-top:6px;font-size:11px">
+      ${copies.length?`<div style="font-weight:700;color:var(--text2);margin-bottom:4px">📝 Copies sugeridos de esta landing</div>
+      ${copies.map(cp=>`
+        <div style="display:flex;gap:8px;align-items:flex-start;padding:4px 0;border-bottom:1px dashed var(--border)">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600">${esc(cp.titulo)||'Sin título'}${cp.enfoque?` <span style="color:var(--text3);font-weight:400">· ${esc(cp.enfoque)}</span>`:''}${cp.dolor?` <span style="color:#f97316;font-weight:400">· 😣 ${esc(cp.dolor)}</span>`:''}</div>
+            ${cp.hook?`<div style="color:var(--text2)">🎣 ${esc(cp.hook)}</div>`:''}
+            ${cp.texto?`<div style="color:var(--text3);white-space:pre-wrap">${esc(cp.texto).slice(0,140)}${cp.texto.length>140?'…':''}</div>`:''}
+          </div>
+          <button class="btn sm" type="button" style="font-size:9px;flex-shrink:0" onclick='copyToClipboard(${JSON.stringify(fullCopy(cp))})'>📋 Copiar</button>
+        </div>`).join('')}`:''}
+      ${(pub.descripcion||pub.segmentacion)?`
+      <div style="font-weight:700;color:var(--text2);margin:6px 0 4px">🎯 Público objetivo recomendado</div>
+      ${pub.descripcion?`<div style="color:var(--text2)">${esc(pub.descripcion)}</div>`:''}
+      <div style="color:var(--text3);margin-top:2px">${[pub.edad&&('Edad: '+pub.edad), pub.genero, pub.ubicacion, pub.intereses&&('Intereses: '+pub.intereses), pub.comportamientos&&('Comportamientos: '+pub.comportamientos), pub.exclusiones&&('Excluir: '+pub.exclusiones)].filter(Boolean).map(esc).join(' · ')}</div>
+      ${pub.insight?`<div style="color:var(--text3);font-style:italic;margin-top:2px">💡 ${esc(pub.insight)}</div>`:''}
+      ${pub.segmentacion?`<div style="display:flex;gap:6px;align-items:center;margin-top:4px"><span style="color:var(--text3);flex:1">${esc(pub.segmentacion).slice(0,120)}${pub.segmentacion.length>120?'…':''}</span><button class="btn sm" type="button" style="font-size:9px;flex-shrink:0" onclick='copyToClipboard(${JSON.stringify(pub.segmentacion||'')})'>📋 Copiar segmentación</button></div>`:''}`:''}
+    </div>`;
+}
+
 function saveLanding() {
   const gv = id => (document.getElementById(id)||{}).value||'';
   if (!gv('ld-name').trim()) { alert('Ingresa un nombre para la landing'); return; }
-  const l = { id:editingLandingId||uid(), name:gv('ld-name').trim(), url:gv('ld-url'), product:gv('ld-product'), pixelId:gv('ld-pixel'), country:gv('ld-country'), status:gv('ld-status'), angle:gv('ld-angle'), angleDesc:gv('ld-angle-desc'), offer:gv('ld-offer'), convNotes:gv('ld-conv-notes'), updatedDate:new Date().toISOString().split('T')[0] };
+  const l = { id:editingLandingId||uid(), name:gv('ld-name').trim(), url:gv('ld-url'), product:gv('ld-product'), pixelId:gv('ld-pixel'), country:gv('ld-country'), status:gv('ld-status'), angle:gv('ld-angle'), angleDesc:gv('ld-angle-desc'), offer:gv('ld-offer'), convNotes:gv('ld-conv-notes'), updatedDate:new Date().toISOString().split('T')[0],
+    copies: _collectLdCopies().slice(0,5),
+    publico: {
+      descripcion: gv('ld-pub-desc').trim(), segmentacion: gv('ld-pub-seg').trim(),
+      edad: gv('ld-pub-edad').trim(), genero: gv('ld-pub-genero'), ubicacion: gv('ld-pub-ubicacion').trim(),
+      intereses: gv('ld-pub-intereses').trim(), comportamientos: gv('ld-pub-comport').trim(),
+      exclusiones: gv('ld-pub-exclusiones').trim(), insight: gv('ld-pub-insight').trim(),
+    } };
   if (!state.landings) state.landings=[];
   const idx = state.landings.findIndex(x=>x.id===l.id);
   if (idx>=0) state.landings[idx]=l; else state.landings.push(l);
