@@ -2096,6 +2096,7 @@ async function saveToCloud() {
       stateToSave.versions = versionsForCloud;
       console.warn('Cloud payload too large (' + Math.round(roughSize/1024) + 'KB) — trimmed auto-snapshots');
     }
+    stateToSave._savedBy = (currentUser && (currentUser.name || currentUser.email)) || '';
     const payload = { org:'americannatural', data: stateToSave, updated_at: new Date().toISOString() };
     const { error } = await sb.from('app_state').upsert(payload, { onConflict: 'org' });
     if (error) { console.error('Cloud save error:', error); showToast('Error al guardar: ' + error.message, 'error'); return false; }
@@ -2136,7 +2137,67 @@ function _enterApp(profile) {
   const active = localStorage.getItem('an_active_tab') || firstTab;
   showTab(allowed.includes(active) ? active : firstTab);
   startAutoSync();
+  startRealtimeSync();
 }
+
+// ==================== SINCRONIZACIÓN MULTIUSUARIO EN TIEMPO REAL ====================
+// Realtime de Supabase (push instantáneo) + polling de respaldo cada 20s.
+let _realtimeChannel = null;
+let _pollInterval = null;
+
+function _setSyncStatus(txt, color) {
+  const lbl = document.getElementById('save-label');
+  if (lbl && !document.getElementById('save-dot').classList.contains('dirty')) {
+    lbl.textContent = txt;
+    lbl.style.color = color || 'var(--text3)';
+  }
+}
+
+function _safePullFromCloud(reason) {
+  // No refrescar mientras el usuario edita en un modal, guarda, o la pestaña está oculta
+  if (!currentUser || _savingToCloud) return;
+  if (document.querySelector('.modal-overlay.open, .modal.open')) return;
+  if (document.visibilityState !== 'visible') return;
+  _setSyncStatus('Actualizando…');
+  syncFromCloud().then(() => {
+    _setSyncStatus('Sincronizado ✓');
+    setTimeout(()=>_setSyncStatus(''), 4000);
+  }).catch(() => _setSyncStatus('Error al sincronizar', 'var(--red)'));
+}
+
+function startRealtimeSync() {
+  if (!sb) return;
+  // Realtime: escuchar cambios en app_state hechos por otros usuarios
+  try {
+    if (_realtimeChannel) { sb.removeChannel(_realtimeChannel); _realtimeChannel = null; }
+    _realtimeChannel = sb.channel('app_state_rt')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state', filter: 'org=eq.americannatural' }, payload => {
+        const remoteSavedAt = payload?.new?.data?._savedAt || 0;
+        // Ignorar el eco de nuestro propio guardado
+        if (remoteSavedAt && remoteSavedAt === state._savedAt) return;
+        console.log('Realtime: cambio de otro usuario detectado');
+        _safePullFromCloud('realtime');
+      })
+      .subscribe(status => console.log('Realtime app_state:', status));
+  } catch(e) { console.warn('Realtime no disponible, usando polling:', e); }
+  // Polling de respaldo cada 20s (cubre el caso de Realtime no habilitado en la tabla)
+  if (_pollInterval) clearInterval(_pollInterval);
+  _pollInterval = setInterval(async () => {
+    if (!currentUser || _savingToCloud || !sb) return;
+    if (document.visibilityState !== 'visible') return;
+    if (document.querySelector('.modal-overlay.open, .modal.open')) return;
+    try {
+      // Chequeo barato: solo comparar _savedAt remoto antes de bajar todo
+      const { data } = await sb.from('app_state').select('data->_savedAt').eq('org','americannatural').single();
+      const remote = data ? +Object.values(data)[0] || 0 : 0;
+      if (remote && remote !== (state._savedAt||0)) _safePullFromCloud('poll');
+    } catch(_) {}
+  }, 20000);
+}
+
+// Indicador de conexión
+window.addEventListener('offline', () => _setSyncStatus('Sin conexión ⚠', 'var(--red)'));
+window.addEventListener('online',  () => { _setSyncStatus('Reconectado — sincronizando…'); _safePullFromCloud('online'); });
 
 function _showLoginScreen() {
   currentUser = null;
@@ -6635,7 +6696,11 @@ function deleteCreativo(id) {
   renderKanban(); calcDirty(); persistState();
 }
 
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  // Al salir del modal, traer cambios de otros usuarios que quedaron en espera
+  setTimeout(() => _safePullFromCloud('modal-close'), 400);
+}
 
 // ==================== RECURSOS OPERATIVOS ====================
 
