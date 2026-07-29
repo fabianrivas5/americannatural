@@ -1,0 +1,8 @@
+# Basura que macOS crea en discos externos (SSK Drive).
+# Los archivos AppleDouble "._*" dentro de .git provocan el error
+# "non-monotonic index .git/objects/pack/._pack-*.idx" al hacer commit/push.
+._*
+.DS_Store
+.Spotlight-V100
+.Trashes
+.fseventsd
