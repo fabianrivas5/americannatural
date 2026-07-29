@@ -110,12 +110,57 @@ ordenados por impacto/esfuerzo. **Sprints 1 y 2 ya implementados y verificados.*
 | 4 | Roles solo cosméticos (`display:none`). | `requireAdmin()` en las acciones (`saveUser`, `deleteUser`, `saveMeta`, `deleteMeta`, `saveEscaladoStrategy`); los intentos quedan registrados. |
 | — | **Hallazgo nuevo durante #4: contraseñas en texto plano** en `state.users`, dentro de la fila `app_state` que lee todo el equipo. No autenticaban nada (el login real es `sb.auth.signInWithPassword`). | Campo eliminado del formulario; `_stripPasswords()` las borra al cargar y al guardar, así que **se limpian solas** de la nube en el primer guardado. La migración de `team` ya no siembra `pw:'cambiar123'`. |
 
+### ✅ #1 — Lost update en edición concurrente (commit `merge por campo`)
+
+Era el problema central de la herramienta: `_mergeArraysById` reemplazaba el **objeto entero por id**,
+así que si dos personas editaban campos distintos del mismo creativo dentro de la ventana de sync, el
+objeto ganador pisaba al otro y un cambio desaparecía sin aviso.
+
+**Cómo se resolvió — merge a 3 bandas.** Para decidir bien no basta con saber quién guardó último: hay
+que saber **quién cambió qué**, y eso exige un punto de comparación. Se guarda una huella (hash por
+campo) del último estado que este navegador tuvo en común con la nube:
+
+- solo yo cambié el campo → gana lo mío
+- solo el otro lo cambió → gana lo suyo
+- los dos lo cambiaron → conflicto real: se aplica `cloudWins` **y se avisa** (toast + registro)
+
+La huella vive en `localStorage` (`an_sync_base_v1`), **no** en `app_state`: es por dispositivo y en la
+fila compartida solo engordaría el payload. Se refresca tras cada guardado y cada sincronización
+exitosos — eso es lo que evita que un cambio viejo siga contando como "mío" y gane para siempre.
+
+Funciones: `_hash`, `_huellaLista`, `_guardarBase`, `_leerBase`, `_mergeItem`, `_reportarConflictos`.
+Sin huella previa (primer arranque tras el deploy) cae al comportamiento anterior y se autocorrige en
+el primer guardado.
+
+**Limitación conocida:** los objetos anidados (`metrics`, `fallos`) se tratan como **un solo campo**. Si
+dos personas sincronizan métricas del mismo creativo a la vez, gana una y se avisa. Es aceptable porque
+ambas vienen de Meta; si algún día molesta, hay que bajar un nivel más en `_mergeItem`.
+
 ### ⚠️ Pendiente — lo importante que queda
 
-1. **#1 Lost update en edición concurrente (el más grande).** `_mergeArraysById` (`index.html`) reemplaza el **objeto entero por id**, no campo por campo, y `creativos` está en `_CLOUD_WINS_KEYS`. Si dos personas editan campos distintos del mismo creativo dentro de la ventana de 20s, un cambio desaparece sin aviso. Arreglo: merge por campo con timestamp por campo, o al menos detectar el choque y avisar. Es el problema central de una herramienta multiusuario.
-2. **RLS en Supabase (acción del usuario, no del código).** Mientras cualquier usuario autenticado pueda escribir la fila `app_state`, `requireAdmin()` es solo defensa en profundidad: se puede saltar desde la consola y un editor puede reescribir su propio rol. La seguridad real son las políticas RLS. Hay que definir en Supabase quién puede escribir `app_state`, idealmente moviendo roles a su propia tabla.
-3. **#6 Techo de `metaBreakdown`** — ver §6 y §7, sin cambios: sigue esperando el número real de `payload: NNNkB`.
-4. **#10 Mantenibilidad**: ~8100 líneas y 202 handlers inline en un archivo. No es un bug, pero multiplica el costo de todo lo demás.
+1. **RLS en Supabase (acción del usuario, no del código).** Mientras cualquier usuario autenticado pueda escribir la fila `app_state`, `requireAdmin()` es solo defensa en profundidad: se puede saltar desde la consola y un editor puede reescribir su propio rol. La seguridad real son las políticas RLS. Hay que definir en Supabase quién puede escribir `app_state`, idealmente moviendo roles a su propia tabla.
+2. **#6 Techo de `metaBreakdown`** — ver §6 y §7, sin cambios: sigue esperando el número real de `payload: NNNkB`.
+3. **#10 Mantenibilidad**: ~8100 líneas y 202 handlers inline en un archivo. No es un bug, pero multiplica el costo de todo lo demás.
+
+### Notas de la sesión
+
+- **El umbral de `_perdidaAnormal` se calibró en dos pasos.** La primera versión pesaba cada elemento
+  ×10, y con elementos de pocos campos ese peso fijo diluía la señal de contenido: un vaciado total no
+  llegaba al umbral. Ahora el elemento suma 1 y manda el contenido — la desaparición de elementos ya la
+  cubre la regla por lista. Verificado en ambas direcciones (detecta 4 tipos de pérdida real, no bloquea
+  4 tipos de edición normal).
+- **`grep` dejó de responder sobre `index.html`** a mitad de sesión: devolvía vacío con código 1 pese a
+  que el contenido estaba intacto (`iconv` confirmó UTF-8 válido y `node` leyó todo sin problema). Si
+  vuelve a pasar, buscar con node en vez de perder tiempo diagnosticando:
+
+  ```bash
+  node -e "const L=require('fs').readFileSync('index.html','utf8').split(String.fromCharCode(10)); L.forEach((l,i)=>{ if(/PATRON/.test(l)) console.log((i+1)+': '+l.trim()) })"
+  ```
+
+- **Deuda menor detectada, no tocada:** en `persistState`, el bloque de `_pendingCloudData` tiene la
+  condición al revés respecto a su comentario y nunca llega a aplicarse en ningún sitio. Hoy es
+  inofensivo (`saveToCloud` re-consulta la nube y mergea antes de escribir), pero es código muerto que
+  confunde al leer el flujo de sincronización.
 
 ### Cómo verificar sin poder entrar a la app
 

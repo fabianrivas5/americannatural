@@ -2028,7 +2028,10 @@ function _dataScore(s) {
   for (const k of _SCORE_KEYS) {
     const arr = s[k];
     if (!Array.isArray(arr)) continue;
-    score += arr.length * 10;                     // el elemento en sí pesa más que un campo
+    // El elemento existente suma poco: la desaparición de elementos ya la detecta
+    // la regla por lista de _perdidaAnormal. Aquí lo que debe pesar es el CONTENIDO,
+    // que es justo lo que la versión anterior no miraba.
+    score += arr.length;
     for (const it of arr) score += _itemScore(it);
   }
   return score;
@@ -2081,10 +2084,14 @@ async function syncFromCloud(force = false, pushOnNewer = false) {
       }
       const def = defaultState();
       if (!cloudData.users) cloudData.users = def.users;
-      // Merge multi-user arrays: cloud wins for existing items (editor's status change propagates to admin)
+      // Merge campo por campo contra la huella del último punto común: si el otro
+      // usuario cambió el estado y yo el presupuesto, ahora sobreviven los dos.
+      // cloudWins solo decide los empates reales (mismo campo tocado por ambos).
+      const baseSync = _leerBase();
+      _conflictosMerge = [];
       for (const key of _MERGE_LIST_KEYS) {
         const cw = _CLOUD_WINS_KEYS.includes(key);
-        cloudData[key] = _mergeArraysById(state[key], cloudData[key], cw);
+        cloudData[key] = _mergeArraysById(state[key], cloudData[key], cw, baseSync[key]);
       }
       // Local-auth keys: local wins — preserve local deletions even when cloud is "newer"
       for (const key of _LOCAL_AUTH_KEYS) {
@@ -2099,6 +2106,9 @@ async function syncFromCloud(force = false, pushOnNewer = false) {
       }
       state = cloudData;
       _pendingCloudData = null;
+      // Nuevo punto de acuerdo con la nube: desde aquí se miden los próximos cambios.
+      _guardarBase(state);
+      _reportarConflictos('sincronización');
       try { localStorage.setItem(APP_KEY, JSON.stringify(_leanState(state))); }
       catch(e) {
         try { localStorage.setItem(APP_KEY, JSON.stringify(_leanState(state, true))); }
@@ -2213,7 +2223,86 @@ const _ALL_ARRAY_KEYS = [..._LOCAL_AUTH_KEYS, ..._MERGE_LIST_KEYS];
 
 // cloudWins=true: cloud wins for existing items (use for multi-user content like creativos)
 // cloudWins=false: local wins for existing items (use for new items added locally before sync)
-function _mergeArraysById(localArr, cloudArr, cloudWins = false) {
+// ── MERGE POR CAMPO (3 bandas) ──────────────────────────────────────────────
+// Antes se reemplazaba el OBJETO ENTERO por id: si dos personas editaban campos
+// distintos del mismo creativo dentro de la ventana de sync, el objeto ganador
+// pisaba el otro y un cambio desaparecía sin aviso.
+//
+// Para decidir bien hace falta saber quién cambió qué, y eso exige un punto de
+// comparación: la huella (hash por campo) del último estado que ESTE navegador
+// tuvo en común con la nube. Con eso:
+//   solo yo cambié el campo   → gana lo mío
+//   solo el otro lo cambió    → gana lo suyo
+//   los dos lo cambiaron      → conflicto real: se aplica la política y se avisa
+//
+// La huella vive solo en localStorage: es por dispositivo y meterla en app_state
+// engordaría el payload compartido sin aportar nada a los demás.
+const BASE_KEY = 'an_sync_base_v1';
+
+function _hash(v) {
+  const s = v === undefined ? ' undef' : JSON.stringify(v);
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
+// {id: {campo: hash}} de una lista de elementos.
+function _huellaLista(arr) {
+  const out = {};
+  if (!Array.isArray(arr)) return out;
+  for (const it of arr) {
+    if (!it || it.id == null || typeof it !== 'object') continue;
+    const f = {};
+    for (const k of Object.keys(it)) f[k] = _hash(it[k]);
+    out[it.id] = f;
+  }
+  return out;
+}
+
+// Se llama tras cada acuerdo con la nube (guardado o sincronización exitosos):
+// a partir de aquí, esto es lo que ambos lados dan por bueno.
+function _guardarBase(s) {
+  try {
+    const base = {};
+    for (const key of _MERGE_LIST_KEYS) base[key] = _huellaLista(s && s[key]);
+    localStorage.setItem(BASE_KEY, JSON.stringify(base));
+  } catch(e) { logError('baseDeSync', e, 'el merge por campo caerá al modo anterior'); }
+}
+function _leerBase() {
+  try { return JSON.parse(localStorage.getItem(BASE_KEY) || '{}'); } catch(e) { return {}; }
+}
+
+// Conflictos reales detectados en el último merge (los lee quien lo invoca).
+let _conflictosMerge = [];
+
+function _mergeItem(local, cloud, base, cloudWins, etiqueta) {
+  // Sin huella previa no hay forma de saber quién tocó qué: se conserva el
+  // comportamiento anterior (objeto completo según la política).
+  if (!base) return cloudWins ? cloud : local;
+
+  const out = { ...cloud };
+  for (const k of new Set([...Object.keys(local), ...Object.keys(cloud)])) {
+    const hl = _hash(local[k]), hc = _hash(cloud[k]);
+    if (hl === hc) continue;                       // idénticos: nada que decidir
+    const hb = base[k];
+    const cambioLocal = hb === undefined ? local[k] !== undefined : hl !== hb;
+    const cambioNube  = hb === undefined ? cloud[k] !== undefined : hc !== hb;
+
+    let valor;
+    if (cambioLocal && !cambioNube)      valor = local[k];
+    else if (!cambioLocal && cambioNube) valor = cloud[k];
+    else {
+      // Los dos tocaron el mismo campo: alguien tiene que perder, pero al menos
+      // deja de ser silencioso.
+      valor = cloudWins ? cloud[k] : local[k];
+      if (cambioLocal && cambioNube) _conflictosMerge.push(etiqueta + ' → ' + k);
+    }
+    if (valor === undefined) delete out[k]; else out[k] = valor;
+  }
+  return out;
+}
+
+function _mergeArraysById(localArr, cloudArr, cloudWins = false, base = null) {
   localArr = Array.isArray(localArr) ? localArr : [];
   cloudArr = Array.isArray(cloudArr) ? cloudArr : [];
   const tomb = new Set(state && Array.isArray(state.tombstones) ? state.tombstones.map(t=>t.id) : []);
@@ -2222,18 +2311,35 @@ function _mergeArraysById(localArr, cloudArr, cloudWins = false) {
   if ((localArr.length && isPrimitive(localArr[0])) || (cloudArr.length && isPrimitive(cloudArr[0]))) {
     return [...new Set([...cloudArr, ...localArr])].filter(v => !tomb.has(v));
   }
-  const map = new Map();
-  if (cloudWins) {
-    // Local first, then cloud overwrites — cloud wins on conflict, local-only new items preserved
-    for (const item of localArr) if (item && item.id != null) map.set(item.id, item);
-    for (const item of cloudArr) if (item && item.id != null) map.set(item.id, item);
-  } else {
-    // Cloud first, then local overwrites — local wins on conflict (for append-only local adds)
-    for (const item of cloudArr) if (item && item.id != null) map.set(item.id, item);
-    for (const item of localArr) if (item && item.id != null) map.set(item.id, item);
+
+  const porId = arr => {
+    const m = new Map();
+    for (const it of arr) if (it && it.id != null) m.set(it.id, it);
+    return m;
+  };
+  const L = porId(localArr), C = porId(cloudArr);
+
+  // Se recorre en el orden de la nube y luego los que solo existen en local, para
+  // no alterar el orden de la lista más de lo necesario.
+  const ids = [...C.keys(), ...[...L.keys()].filter(id => !C.has(id))];
+  const out = [];
+  for (const id of ids) {
+    if (tomb.has(id)) continue;                    // lo eliminado no resucita
+    const l = L.get(id), c = C.get(id);
+    if (l && c) out.push(_mergeItem(l, c, base ? base[id] : null, cloudWins, String(l.name || l.nombre || id)));
+    else out.push(l || c);                          // solo en un lado: se conserva
   }
-  // Tombstones: lo que un usuario eliminó no debe "resucitar" desde la nube
-  return Array.from(map.values()).filter(item => !tomb.has(item.id));
+  return out;
+}
+
+// Avisa de los conflictos del último merge. Que dos personas pisen el mismo campo
+// es inevitable; que nadie se entere, no.
+function _reportarConflictos(origen) {
+  if (!_conflictosMerge.length) return;
+  const lista = [...new Set(_conflictosMerge)];
+  logError('conflictoDeEdicion', lista.length + ' campo(s) editados a la vez por dos personas', lista.slice(0, 10).join(' | '));
+  showToast('⚠️ ' + lista.length + ' campo(s) se editaron a la vez desde otra sesión. Revisa: ' + lista.slice(0, 2).join(', '), 'error');
+  _conflictosMerge = [];
 }
 
 // Registra una eliminación para que no reaparezca al mergear con la nube (máx 500)
@@ -2257,10 +2363,13 @@ async function saveToCloud() {
     // Fetch cloud first to merge append-only keys; local-auth keys are taken as-is (deletions stick)
     const { data: cur } = await sb.from('app_state').select('data').eq('org','americannatural').single();
     const cloudData = cur?.data || {};
-    // When SAVING: local always wins for existing items — we're pushing our own changes.
-    // cloudWins is only for syncFromCloud (pulling remote changes from another user).
+    // Al GUARDAR se mergea también campo por campo. Antes, "local gana" pisaba el
+    // objeto entero y borraba los cambios que otro usuario había guardado en campos
+    // que yo ni toqué. Ahora local solo gana los empates reales.
+    const baseSave = _leerBase();
+    _conflictosMerge = [];
     for (const key of _MERGE_LIST_KEYS) {
-      state[key] = _mergeArraysById(state[key], cloudData[key], false);
+      state[key] = _mergeArraysById(state[key], cloudData[key], false, baseSave[key]);
     }
     // Local-auth keys: local wins completely — no merge, deletions respected
     // Only set _savedAt now — after merge, before write — so it accurately reflects what's being saved
@@ -2296,6 +2405,9 @@ async function saveToCloud() {
     if (error) { logError('guardarEnNube', error, 'payload ' + Math.round(roughSize/1024) + 'KB'); showToast('Error al guardar: ' + error.message, 'error'); return false; }
     // Commit _savedAt to state only after confirmed save
     state._savedAt = savedAt;
+    // La nube aceptó esto: nuevo punto de acuerdo para los próximos merges.
+    _guardarBase(state);
+    _reportarConflictos('guardado');
     console.log('Cloud saved ok. creativos:', (state.creativos||[]).length, '| payload:', Math.round(roughSize/1024) + 'KB');
     try { localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state))); }
     catch(e) { logError('saveToCloud/localStorage', e, 'la nube sí guardó; solo falló la copia local'); }
