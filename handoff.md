@@ -55,7 +55,7 @@ Funciones clave (buscar **por nombre**, no por número de línea — el archivo 
 2. **[Requiere el equipo, no se puede automatizar sin credenciales]** En cada computadora: recargar con Cmd+Shift+R. Entrar, mover una etapa y **Guardar** (ese primer guardado recorta la nube de ~2.6MB a tamaño sano). Refrescar y verificar que la etapa se quedó. Tras guardar, revisar la consola: debe aparecer `Cloud saved ok ... | payload: NNNkB` — anotar ese número, es la medida real del peso de la nube.
 3. (Opcional) Activar Realtime: Supabase → Database → Replication → agregar tabla `app_state` a la publicación `supabase_realtime`.
 4. **Vigilar `metaBreakdown`** (reemplaza al ítem anterior sobre base64, que resultó no aplicar a la nube). Si el `payload: NNNkB` del paso 2 supera ~900KB, el siguiente escalón de recorte a implementar es soltar `metaBreakdown` en `saveToCloud` (es dato re-obtenible: se vuelve a traer al sincronizar la campaña). Ver números en §6.
-5. Flujo de trabajo del repo (actualizado): editar `index.html`, validar sintaxis (`node --check` sobre el `<script>` extraído), `cp index.html Calculadora_American_Natural.html`, y commitear **los dos**. El `.gitignore` ya evita el error non-monotonic; si reaparece, `find .git -name '._*' -delete`.
+5. Flujo de trabajo del repo: editar `index.html` → `node scripts/test.js` (debe dar 95 OK) → `cp index.html Calculadora_American_Natural.html` → `node scripts/mapa.js` → commitear los tres. Si el cambio toca render o escape, pasar también `scripts/test-dom.js` en el navegador. El `.gitignore` ya evita el error non-monotonic; si reaparece, `find .git -name '._*' -delete`.
 
 ## 6. Verificación del fix de guardado (esta sesión)
 Se extrajeron las funciones reales de `index.html` y se ejecutaron en Node contra estados sintéticos con la forma real del proyecto (creativos con `thumb` base64, `metaSyncHistory` de 20 entradas, `metaBreakdown` de 6 conjuntos × 5 anuncios, y snapshots gordos):
@@ -230,15 +230,35 @@ partiendo el estado en tablas por entidad con su propia RLS — un rediseño gra
   inofensivo (`saveToCloud` re-consulta la nube y mergea antes de escribir), pero es código muerto que
   confunde al leer el flujo de sincronización.
 
-### Cómo verificar sin poder entrar a la app
+### Cómo verificar los cambios
 
-Sin credenciales no se puede probar el flujo real, pero sí todo lo demás — y esto resultó **imprescindible**:
-la prueba de inyección en el DOM encontró 5 sinks de XSS que ningún `grep` detectó (los `<option>` de los
-filtros, `${c.product||''}`, y un `' · '+c.format` concatenado dentro de un ternario).
+**Antes de commitear cualquier cambio en `index.html`, ejecuta:**
 
-- Abrir `file:///Volumes/SSK%20Drive/Estrategia%20de%20Trafficker/index.html` en el navegador y ejecutar
-  las funciones de render con datos maliciosos, comprobando `img[src="q"]`, `a[href^="javascript:"]` y un
-  contador global de XSS. **No** usar `python3 -m http.server` (ver §4).
-- Validar sintaxis extrayendo el `<script>` y pasándole `node --check`.
-- Scripts de prueba en el scratchpad de la sesión: `test_seguridad.js` (33 casos) y `test_trim.js`
-  (regresión del fix de payload; extrae las funciones **por nombre**, no por número de línea).
+```bash
+node scripts/test.js
+```
+
+95 pruebas sobre el código real de `index.html` (extraído **por nombre de función**, no por número de
+línea, para que no se rompan al editar el archivo). Cubren: escape de HTML y validación de URLs, los 3
+escalones del recorte de payload, el merge por campo con sus escenarios de edición concurrente, el
+umbral de pérdida de datos, las contraseñas fuera del estado, y que el bundle compile con SRI en los 3
+CDN. Salen en rojo si algo se rompe y el proceso termina con código 1.
+
+**La suite está verificada contra regresiones reales:** se rompieron 8 cosas a propósito en
+`index.html` (dejar pasar `javascript:`, quitar el escape de comillas, borrar el escalón 3, volver al
+merge por objeto entero, desactivar la detección de pérdida, quitar un SRI, volver a `supabase-js@2`
+flotante, y devolver las contraseñas al estado) y **las 8 fueron detectadas**.
+
+**Además, las pruebas de inyección sobre el DOM** — las que en su día encontraron 5 puntos de XSS que
+ningún `grep` detectó (los `<option>` de los filtros, un `${c.product||''}` y un `' · '+c.format`
+concatenado dentro de un ternario):
+
+1. Abre `index.html` en el navegador (o https://americannatural.vercel.app/ — no hace falta sesión).
+2. Abre la consola y pega el contenido de `scripts/test-dom.js`.
+3. 25 pruebas. No guarda nada en la nube; recarga y la app queda como estaba.
+
+Buscar patrones en el código **no basta** para este archivo: hay que renderizar de verdad y mirar el
+DOM resultante.
+
+**Preview local:** no usar `python3 -m http.server` (ver §4). Se abre el archivo con `file://` o se
+verifica contra el deploy real.
