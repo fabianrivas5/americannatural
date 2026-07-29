@@ -2399,6 +2399,32 @@ async function saveToCloud() {
       roughSize = JSON.stringify(stateToSave).length;
       logError('payloadGrande', 'Payload de ' + Math.round(roughSize/1024) + 'KB — snapshots omitidos del guardado', 'los datos sí se guardaron');
     }
+    if (roughSize > 1200000) {
+      // Paso 3: soltar metaBreakdown (desglose de conjuntos/anuncios de campaña).
+      // Es el único bloque grande que queda y es RE-OBTENIBLE: vuelve a bajarse al
+      // sincronizar la campaña. Solo se activa cuando el guardado ya está en riesgo;
+      // en operación normal (payload de ~365KB con 100 creativos) nunca entra aquí.
+      let soltados = 0;
+      stateToSave.creativos = (stateToSave.creativos||[]).map(cr => {
+        if (!cr || !cr.metaBreakdown) return cr;
+        soltados++;
+        const { metaBreakdown, ...resto } = cr;
+        return resto;
+      });
+      roughSize = JSON.stringify(stateToSave).length;
+      logError('payloadGrande', 'Payload seguía en ' + Math.round(roughSize/1024) + 'KB — desglose de campaña omitido en ' + soltados + ' creativo(s)',
+               'el drilldown se recupera al volver a sincronizar esa campaña');
+      showToast('Payload muy grande: se omitió el desglose de campaña. Vuelve a sincronizar para recuperarlo.', 'error');
+    }
+    // Guardar el peso real para poder verlo en Config → Diagnóstico sin depender de
+    // que alguien tenga la consola abierta en el momento justo.
+    try {
+      localStorage.setItem(PAYLOAD_KEY, JSON.stringify({
+        kb: Math.round(roughSize/1024), ts: Date.now(),
+        creativos: (stateToSave.creativos||[]).length,
+        snapshots: (stateToSave.versions||[]).length,
+      }));
+    } catch(_) {}
     stateToSave._savedBy = (currentUser && (currentUser.name || currentUser.email)) || '';
     const payload = { org:'americannatural', data: stateToSave, updated_at: new Date().toISOString() };
     const { error } = await sb.from('app_state').upsert(payload, { onConflict: 'org' });
@@ -2419,6 +2445,9 @@ async function saveToCloud() {
 const SESSION_KEY = 'an_session_v1';
 // Marca que localStorage tiene cambios que la nube todavía no confirmó.
 const PENDING_KEY = 'an_pending_upload_v1';
+// Peso del último payload enviado a la nube. Se muestra en Config → Diagnóstico:
+// es la medida que decide si hace falta recortar más (ver handoff §7).
+const PAYLOAD_KEY = 'an_last_payload_v1';
 function _markPendingUpload(on) {
   try { on ? localStorage.setItem(PENDING_KEY, '1') : localStorage.removeItem(PENDING_KEY); }
   catch(e) { logError('marcarPendiente', e, 'localStorage no disponible'); }
@@ -7962,8 +7991,22 @@ function renderErrorLog() {
   if (!el) return;
   const log = getErrorLog().slice().reverse(); // más reciente arriba
   if (res) {
-    const pend = _hasPendingUpload() ? '<span style="color:var(--amber);font-weight:600">⚠ Hay cambios locales sin confirmar en la nube.</span> ' : '';
-    res.innerHTML = pend + (log.length
+    const pend = _hasPendingUpload() ? '<div style="color:var(--amber);font-weight:600;margin-bottom:4px">⚠ Hay cambios locales sin confirmar en la nube.</div>' : '';
+    // Peso del último guardado: la señal que dice si hace falta recortar más.
+    let peso = '';
+    try {
+      const p = JSON.parse(localStorage.getItem(PAYLOAD_KEY) || 'null');
+      if (p) {
+        const color = p.kb > 1200 ? 'var(--red)' : p.kb > 900 ? 'var(--amber)' : 'var(--green)';
+        const juicio = p.kb > 1200 ? 'demasiado grande — se está recortando el desglose de campaña'
+                     : p.kb > 900  ? 'grande — se están omitiendo los snapshots'
+                     : 'sano';
+        peso = `<div style="margin-bottom:6px">Último guardado a la nube:
+          <strong style="color:${color}">${p.kb} KB</strong> (${juicio}) ·
+          ${p.creativos} creativo(s), ${p.snapshots} snapshot(s) · ${_fmtDateTime(p.ts)}</div>`;
+      }
+    } catch(_) {}
+    res.innerHTML = pend + peso + (log.length
       ? `${log.length} evento(s) registrado(s). El más reciente: ${_fmtDateTime(log[0].ts)}.`
       : 'Sin errores registrados en este navegador. ✅');
   }

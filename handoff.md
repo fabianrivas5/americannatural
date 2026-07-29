@@ -136,11 +136,79 @@ el primer guardado.
 dos personas sincronizan métricas del mismo creativo a la vez, gana una y se avisa. Es aceptable porque
 ambas vienen de Meta; si algún día molesta, hay que bajar un nivel más en `_mergeItem`.
 
-### ⚠️ Pendiente — lo importante que queda
+### ✅ #6 — Techo de `metaBreakdown` (cerrado)
 
-1. **RLS en Supabase (acción del usuario, no del código).** Mientras cualquier usuario autenticado pueda escribir la fila `app_state`, `requireAdmin()` es solo defensa en profundidad: se puede saltar desde la consola y un editor puede reescribir su propio rol. La seguridad real son las políticas RLS. Hay que definir en Supabase quién puede escribir `app_state`, idealmente moviendo roles a su propia tabla.
-2. **#6 Techo de `metaBreakdown`** — ver §6 y §7, sin cambios: sigue esperando el número real de `payload: NNNkB`.
-3. **#10 Mantenibilidad**: ~8100 líneas y 202 handlers inline en un archivo. No es un bug, pero multiplica el costo de todo lo demás.
+Se añadió un **tercer escalón** al recorte de `saveToCloud`: por encima de 1.2 MB suelta
+`metaBreakdown` (el desglose de conjuntos/anuncios), que es el único bloque grande que quedaba y es
+**re-obtenible** — vuelve a bajarse al sincronizar esa campaña. El caso extremo que antes se quedaba
+en 1463 KB ahora cierra en 280 KB **sin perder un solo creativo**.
+
+Solo se activa cuando el guardado ya está en riesgo. Verificado en 6 tamaños:
+
+| Creativos | Payload | Desglose |
+|---|---|---|
+| 100 | 181 KB | conservado |
+| 250 | 451 KB | conservado |
+| 400 | 722 KB | conservado |
+| 700 | 170 KB | soltado |
+| 1000 | 242 KB | soltado |
+| 2000 | 486 KB | soltado |
+
+**Y ya no hace falta esperar el número de nadie:** el peso del último guardado se muestra en
+**Config → 🩺 Diagnóstico**, con color y diagnóstico en texto (sano / se omiten snapshots / se recorta
+el desglose). Eso cierra el bloqueo que arrastraba §7.
+
+### ✅ #10 — Mantenibilidad (decidido, no refactorizado)
+
+**El refactor grande no se hizo, a propósito.** Partir el archivo o sustituir los 327 handlers inline
+es mucho riesgo sobre código que funciona, y sin poder entrar a la app no hay forma de verificar que no
+se rompió nada. La ganancia sería estética; el riesgo, real.
+
+Lo que sí se hizo es atacar el costo verdadero, que era **no poder orientarse** en 8400 líneas:
+`scripts/mapa.js` genera `MAPA.md` con los paneles, las 58 secciones, el índice de funciones por
+sección y un alfabético. Al ser generado no se queda obsoleto en silencio:
+
+```bash
+node scripts/mapa.js
+```
+
+Los helpers críticos ya quedaron agrupados en bloques comentados al inicio del `<script>`
+(REGISTRO DE ERRORES, SEGURIDAD, MERGE POR CAMPO), que era la otra mitad de la propuesta.
+
+Si algún día se aborda el refactor, `MAPA.md` lista las funciones más largas: `showCreativoAnalysis`
+(~534 líneas), `renderKanban` (~357), `renderHome` (~269) son las candidatas naturales.
+
+### 🔐 RLS en Supabase — SQL listo, PENDIENTE DE APLICAR (requiere tu dashboard)
+
+Está todo escrito en **`supabase/rls.sql`**, en 5 pasos, cada uno con su nivel de riesgo, su
+verificación y su rollback. **No se pudo probar contra el proyecto real** (no hay acceso al dashboard
+desde la sesión, y leer `app_state` con la anon key devuelve `[]` por RLS — ver §4). Ejecutar paso a
+paso, verificando entre uno y otro.
+
+- **Paso 0** — diagnóstico de solo lectura: RLS activo, políticas existentes, UUID de `auth.users`.
+- **Paso 1** (riesgo bajo) — RLS en `app_state`: solo autenticados leen/escriben, sin política de DELETE.
+- **Paso 2** (riesgo bajo) — tabla `app_admins`: la fuente de verdad de quién es admin, **fuera** del
+  JSON que todos pueden escribir. Sin políticas de escritura: solo se toca desde el SQL Editor.
+- **Paso 3** (riesgo MEDIO) — trigger que impide la auto-promoción. El detalle que lo hace viable: la
+  app reescribe `users` en cada guardado, así que comparar el array completo bloquearía a todo el
+  equipo. Se compara **solo el mapa {email: rol}** — cambiar un nombre o limpiar contraseñas no lo
+  altera; cambiar un rol o añadir un usuario sí. Lleva documentado un falso positivo conocido
+  relacionado con `_mergeDefaultUsers()`.
+- **Paso 4** (riesgo bajo) — políticas de Storage para el bucket de archivos.
+
+Lo que **no** arregla: cualquier autenticado seguirá pudiendo escribir el resto del estado compartido
+(creativos, metas, recursos). Eso es inherente al diseño de "una fila para todo" y solo se resuelve
+partiendo el estado en tablas por entidad con su propia RLS — un rediseño grande, no una política.
+
+### ⚠️ Lo único que queda
+
+1. **Aplicar `supabase/rls.sql`** (arriba). Es acción tuya en el dashboard y es la última frontera de
+   seguridad real: hasta que esté, `requireAdmin()` solo evita clics accidentales.
+2. **Confirmar el peso real del payload** entrando a la app y mirando Config → 🩺 Diagnóstico. Con el
+   escalón 3 ya no hay riesgo de que el guardado falle por peso, pero el número dice si el estado está
+   creciendo más de lo esperado.
+3. **Refactor de `index.html`** — decidido que no compensa hoy (ver #10). Si el archivo sigue creciendo
+   o entra gente nueva al proyecto, reconsiderarlo empezando por `showCreativoAnalysis`.
 
 ### Notas de la sesión
 
