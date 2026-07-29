@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulador de campañas Meta · American Natural</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Mismos tokens que index.html (sistema de Notion) para que no desentone. */
+:root{
+  --bg:#f9f9f8;--surface:#fff;--surface2:#f9f9f8;--border:rgba(0,0,0,.08);
+  --text:#31302e;--text2:#615d59;--text3:#726f6a;
+  --green:#14832b;--green-bg:#eafaee;--green-border:#bfe9c8;
+  --red:#d13e2b;--red-bg:#fdd3cd;--red-border:#fbc0b7;
+  --amber:#996a0a;--amber-bg:#fff5e0;--amber-border:#ffe0a3;
+  --blue:#0075de;--blue-bg:#e6f3fe;--blue-border:#b8dcfa;
+  --accent:#065f46;--r:6px;--rl:8px;--rxl:12px;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.04);
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;margin:0}
+.wrap{max-width:1392px;margin:0 auto;padding:0 24px 48px}
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:12px;height:60px;position:sticky;top:0;z-index:100}
+.hdr h1{font-size:15px;font-weight:600;margin:0;flex:1}
+.aviso{background:var(--amber-bg);border:1px solid var(--amber-border);color:var(--amber);
+  border-radius:var(--rl);padding:12px 16px;margin:16px 0;font-size:13px;font-weight:500}
+.aviso strong{font-weight:700}
+.sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:20px 24px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.sec-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;
+  display:flex;align-items:center;gap:6px;padding-bottom:12px;margin-bottom:16px;border-bottom:1px solid var(--border)}
+.sec-title::before{content:'';width:3px;height:14px;background:var(--accent);border-radius:2px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px}
+input,select,textarea{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);
+  background:var(--surface);color:var(--text);font-family:inherit;font-size:13px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);
+  box-shadow:inset 0 0 0 1px rgba(35,131,226,.57),0 0 0 2px rgba(35,131,226,.35)}
+.hint{font-size:11px;color:var(--text3);margin-top:3px}
+.btn{padding:8px 16px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);
+  color:var(--text);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--accent);color:#fff;border-color:transparent}
+.btn.primary:hover{opacity:.9}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+pre{background:#31302e;color:#f9f9f8;border-radius:var(--r);padding:14px 16px;overflow-x:auto;
+  font-family:var(--mono);font-size:12px;line-height:1.6;margin:0}
+.paso{margin-bottom:16px}
+.paso-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.paso-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.paso-ep{font-family:var(--mono);font-size:12px;color:var(--text2);background:var(--surface2);
+  border:1px solid var(--border);border-radius:var(--r);padding:2px 8px}
+.chk{border-radius:var(--rl);padding:10px 14px;margin-bottom:8px;font-size:13px;border:1px solid}
+.chk.ok{background:var(--green-bg);border-color:var(--green-border);color:var(--green)}
+.chk.err{background:var(--red-bg);border-color:var(--red-border);color:var(--red)}
+.chk.warn{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
+.badge{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:10px;font-weight:600;
+  background:var(--blue-bg);color:var(--blue)}
+.drop{border:2px dashed var(--border);border-radius:var(--rl);padding:28px;text-align:center;
+  color:var(--text3);cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--blue);background:var(--blue-bg)}
+.mapa{width:100%;border-collapse:collapse;font-size:12px}
+.mapa th{text-align:left;padding:6px 8px;font-size:10px;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.05em;border-bottom:1px solid var(--border)}
+.mapa td{padding:6px 8px;border-bottom:1px solid var(--border)}
+.mapa code{font-family:var(--mono);font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px}
+@media(max-width:768px){.g2{grid-template-columns:1fr}.wrap{padding:0 12px 32px}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <span style="font-size:18px">🧪</span>
+  <h1>Simulador de campañas Meta</h1>
+  <span class="badge">no envía nada</span>
+</div>
+
+<div class="wrap">
+
+<div class="aviso">
+  <strong>Esto es una simulación.</strong> Construye los payloads exactos que se enviarían a la Marketing API
+  de Meta y te los enseña — pero <strong>no hace ninguna llamada</strong>. No toca tu cuenta publicitaria,
+  no gasta un dólar y no modifica <code>index.html</code>. Es un archivo aparte.
+</div>
+
+<!-- ── 1. DATOS ─────────────────────────────────────────────────────────── -->
+<div class="sec">
+  <div class="sec-title">1 · Tus datos</div>
+  <div class="drop" id="drop">
+    <div style="font-size:24px;margin-bottom:6px">📂</div>
+    <div><strong>Arrastra aquí el JSON de tu herramienta</strong></div>
+    <div class="hint" style="margin-top:4px">
+      Config → Exportar JSON. Se lee en tu navegador, no se sube a ningún sitio.
+    </div>
+    <input type="file" id="file" accept=".json" style="display:none">
+  </div>
+  <div class="btn-row">
+    <button class="btn" onclick="document.getElementById('file').click()">Elegir archivo</button>
+    <button class="btn" onclick="cargarDemo()">Usar datos de ejemplo</button>
+  </div>
+  <div id="resumen-datos" style="margin-top:12px"></div>
+</div>
+
+<!-- ── 2. CONFIGURACIÓN ─────────────────────────────────────────────────── -->
+<div class="sec">
+  <div class="sec-title">2 · Qué se lanzaría</div>
+  <div class="g3">
+    <div><label>Cuenta publicitaria</label><select id="f-cuenta" onchange="construir()"></select></div>
+    <div><label>Page ID de Facebook</label><input id="f-page" placeholder="102938..." oninput="construir()">
+      <div class="hint">Obligatorio para el creativo. No está en tu herramienta.</div></div>
+    <div><label>Objetivo</label><select id="f-objetivo" onchange="construir()">
+      <option value="OUTCOME_SALES">Ventas (OUTCOME_SALES)</option>
+      <option value="OUTCOME_LEADS">Clientes potenciales (OUTCOME_LEADS)</option>
+      <option value="OUTCOME_TRAFFIC">Tráfico (OUTCOME_TRAFFIC)</option>
+      <option value="OUTCOME_ENGAGEMENT">Interacción (OUTCOME_ENGAGEMENT)</option>
+      <option value="OUTCOME_AWARENESS">Reconocimiento (OUTCOME_AWARENESS)</option>
+    </select></div>
+    <div><label>Landing</label><select id="f-landing" onchange="construir()"></select></div>
+    <div><label>Creativo</label><select id="f-creativo" onchange="construir()"></select></div>
+    <div><label>Evento del pixel</label><select id="f-evento" onchange="construir()">
+      <option value="PURCHASE">PURCHASE (compra)</option>
+      <option value="LEAD">LEAD (formulario COD)</option>
+      <option value="COMPLETE_REGISTRATION">COMPLETE_REGISTRATION</option>
+      <option value="ADD_TO_CART">ADD_TO_CART</option>
+    </select></div>
+  </div>
+  <div class="g3" style="margin-top:12px">
+    <div><label>Presupuesto diario (USD)</label><input id="f-presup" type="number" value="20" step="1" oninput="construir()">
+      <div class="hint">Meta lo recibe en centavos. Aquí se convierte solo.</div></div>
+    <div><label>Estrategia de puja</label><select id="f-puja" onchange="construir()">
+      <option value="COST_CAP">Cost cap</option>
+      <option value="LOWEST_COST_WITH_BID_CAP">Bid cap</option>
+      <option value="LOWEST_COST_WITHOUT_CAP">Menor costo (sin tope)</option>
+    </select></div>
+    <div><label>Puja / tope (USD)</label><input id="f-bid" type="number" value="12" step="0.5" oninput="construir()"></div>
+    <div><label>País</label><input id="f-pais" value="EC" oninput="construir()">
+      <div class="hint">Código ISO. Ecuador = EC</div></div>
+    <div><label>Edad</label><div style="display:flex;gap:6px">
+      <input id="f-edad-min" type="number" value="25" oninput="construir()">
+      <input id="f-edad-max" type="number" value="45" oninput="construir()"></div></div>
+    <div><label>Género</label><select id="f-genero" onchange="construir()">
+      <option value="0">Todos</option><option value="2" selected>Mujeres</option><option value="1">Hombres</option>
+    </select></div>
+  </div>
+</div>
+
+<!-- ── 3. VALIDACIÓN ────────────────────────────────────────────────────── -->
+<div class="sec">
+  <div class="sec-title">3 · Revisión antes de enviar</div>
+  <div id="validacion"></div>
+</div>
+
+<!-- ── 4. PAYLOADS ──────────────────────────────────────────────────────── -->
+<div class="sec">
+  <div class="sec-title">4 · Lo que se enviaría a Meta</div>
+  <div id="payloads"></div>
+  <div class="btn-row">
+    <button class="btn primary" onclick="copiarTodo()">Copiar los 4 payloads</button>
+    <button class="btn" onclick="verCurl()">Ver como comandos curl</button>
+  </div>
+  <div id="curl" style="margin-top:12px"></div>
+</div>
+
+<!-- ── 5. MAPEO ─────────────────────────────────────────────────────────── -->
+<div class="sec">
+  <div class="sec-title">5 · De dónde sale cada dato</div>
+  <div id="mapeo"></div>
+</div>
+
+</div>
+
+<script>
+'use strict';
+
+// ── Estado ──────────────────────────────────────────────────────────────────
+let datos = null;          // el JSON exportado de la herramienta
+let ultimos = null;        // los 4 payloads construidos
+
+const $ = id => document.getElementById(id);
+const esc = v => v == null ? '' : String(v)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+// Meta recibe el dinero en la unidad menor (centavos). Es el error clásico
+// que multiplica un presupuesto por 100 sin querer.
+const aCentavos = usd => Math.round((Number(usd) || 0) * 100);
+
+// ── Carga de datos ──────────────────────────────────────────────────────────
+function cargarJSON(texto) {
+  try {
+    const d = JSON.parse(texto);
+    if (!d || typeof d !== 'object') throw new Error('El archivo no contiene un objeto JSON');
+    datos = d;
+    poblarSelects();
+    $('resumen-datos').innerHTML = '<div class="chk ok">✓ Cargado: '
+      + (d.creativos||[]).length + ' creativos · '
+      + (d.landings||[]).length + ' landings · '
+      + (d.adAccounts||[]).length + ' cuentas · '
+      + (d.pixels||[]).length + ' pixels · '
+      + (d.costCaps||[]).length + ' registros de cost cap</div>';
+    construir();
+  } catch (e) {
+    $('resumen-datos').innerHTML = '<div class="chk err">✗ No se pudo leer: ' + esc(e.message) + '</div>';
+  }
+}
+
+function cargarDemo() {
+  cargarJSON(JSON.stringify({
+    adAccounts: [{ id:'a1', name:'AN Ecuador 01', platform:'meta', accountId:'1234567890', country:'Ecuador' }],
+    pixels:     [{ id:'p1', name:'Pixel AN', pixelId:'9876543210' }],
+    landings:   [{ id:'l1', name:'Apetito Kids — dolor', url:'https://americannatural.ec/apetito',
+                   product:'Apetito Kids', pixelId:'9876543210', country:'Ecuador', angle:'Dolor/Problema',
+                   offer:'2x1 + envío gratis contraentrega',
+                   copies:[{ titulo:'Gomitas que abren el apetito 🍬',
+                             descripcion:'Envío gratis · Pago contraentrega',
+                             texto:'¿Tu niño no come? Estas gomitas naturales le devuelven el apetito en 2 semanas. Pago contraentrega en todo Ecuador.' }] }],
+    creativos:  [{ id:'c1', name:'Gomitas "Sabor & Salud" v2', status:'validado', product:'Apetito Kids',
+                   hook:'¿Tu niño no come? 🍬', publico:'Mujeres 25-45, Quito, salud',
+                   angle:'Dolor/Problema', painPoint:'Falta de apetito', tipoCreativo:'UGC',
+                   files:[{ name:'gomitas_v2.mp4', type:'video' }], refs:[] }],
+    costCaps:   [{ id:'cc1', creativo:'Gomitas "Sabor & Salud" v2', bid:12, presup:20 }],
+    escaladoStrategy: { tipoEscalado:'costcap', bidMode:'manual', bidManual:12, bidMult:1, cuentaDestino:'AN Ecuador 01' },
+  }, null, 2));
+}
+
+function poblarSelects() {
+  const opt = (v, t, sel) => '<option value="' + esc(v) + '"' + (sel?' selected':'') + '>' + esc(t) + '</option>';
+  $('f-cuenta').innerHTML   = (datos.adAccounts||[]).map(a => opt(a.id, a.name + ' · ' + a.accountId)).join('')
+                            || opt('', '(sin cuentas en el JSON)');
+  $('f-landing').innerHTML  = (datos.landings||[]).map(l => opt(l.id, l.name)).join('')
+                            || opt('', '(sin landings en el JSON)');
+  // Los validados primero: son los candidatos naturales a escalar
+  const cr = [...(datos.creativos||[])].sort((a,b) =>
+    (b.status==='validado'?1:0) - (a.status==='validado'?1:0));
+  $('f-creativo').innerHTML = cr.map(c => opt(c.id, c.name + (c.status?' · '+c.status:''))).join('')
+                            || opt('', '(sin creativos en el JSON)');
+
+  // Prellenar presupuesto y puja desde el cost cap del creativo, si existe
+  const st = datos.escaladoStrategy || {};
+  if (st.bidManual) $('f-bid').value = st.bidManual;
+  if (st.tipoEscalado === 'costcap') $('f-puja').value = 'COST_CAP';
+  const cc = (datos.costCaps||[])[0];
+  if (cc) { if (cc.presup) $('f-presup').value = cc.presup; if (cc.bid) $('f-bid').value = cc.bid; }
+}
+
+// ── Construcción de los payloads ────────────────────────────────────────────
+function construir() {
+  if (!datos) return;
+  const cuenta   = (datos.adAccounts||[]).find(a => a.id === $('f-cuenta').value) || {};
+  const landing  = (datos.landings||[]).find(l => l.id === $('f-landing').value) || {};
+  const creativo = (datos.creativos||[]).find(c => c.id === $('f-creativo').value) || {};
+  const copy     = (landing.copies||[])[0] || {};
+  const objetivo = $('f-objetivo').value;
+  const evento   = $('f-evento').value;
+  const puja     = $('f-puja').value;
+  const pageId   = $('f-page').value.trim();
+  const pixelId  = landing.pixelId || ((datos.pixels||[])[0]||{}).pixelId || '';
+  const actId    = 'act_' + (cuenta.accountId || 'FALTA_ID');
+  const genero   = $('f-genero').value;
+
+  // Con objetivos que no son de conversión, el pixel no aplica
+  const esConversion = objetivo === 'OUTCOME_SALES' || objetivo === 'OUTCOME_LEADS';
+  const optGoal = esConversion ? 'OFFSITE_CONVERSIONS'
+                : objetivo === 'OUTCOME_TRAFFIC' ? 'LINK_CLICKS'
+                : objetivo === 'OUTCOME_ENGAGEMENT' ? 'POST_ENGAGEMENT' : 'REACH';
+
+  const nombre = (creativo.name || 'Creativo') + ' · ' + (landing.product || landing.name || '');
+
+  // 1 · Campaña
+  const campana = {
+    name: '[AN] ' + nombre,
+    objective: objetivo,
+    status: 'PAUSED',                 // nunca se crea activa
+    special_ad_categories: [],        // obligatorio aunque vaya vacío
+    buying_type: 'AUCTION',
+  };
+
+  // 2 · Conjunto de anuncios
+  const adset = {
+    name: '[AN] ' + (creativo.publico || 'Público') + ' · ' + $('f-pais').value,
+    campaign_id: '<ID_DE_LA_CAMPAÑA>',
+    status: 'PAUSED',
+    daily_budget: aCentavos($('f-presup').value),
+    billing_event: 'IMPRESSIONS',
+    optimization_goal: optGoal,
+    bid_strategy: puja,
+    targeting: {
+      geo_locations: { countries: [$('f-pais').value.trim().toUpperCase()] },
+      age_min: Number($('f-edad-min').value) || 18,
+      age_max: Number($('f-edad-max').value) || 65,
+      ...(genero !== '0' ? { genders: [Number(genero)] } : {}),
+    },
+    start_time: new Date(Date.now() + 3600000).toISOString(),
+  };
+  if (puja !== 'LOWEST_COST_WITHOUT_CAP') adset.bid_amount = aCentavos($('f-bid').value);
+  if (esConversion) adset.promoted_object = { pixel_id: pixelId, custom_event_type: evento };
+
+  // 3 · Creativo del anuncio
+  const esVideo = ((creativo.files||[])[0]||{}).type === 'video';
+  const adcreative = {
+    name: '[AN] ' + (creativo.name || 'Creativo'),
+    object_story_spec: {
+      page_id: pageId || '<FALTA_PAGE_ID>',
+      link_data: {
+        message: copy.texto || creativo.hook || '',
+        link: landing.url || '<FALTA_URL>',
+        name: copy.titulo || '',
+        description: copy.descripcion || '',
+        [esVideo ? 'video_id' : 'image_hash']: esVideo ? '<VIDEO_ID_TRAS_SUBIR>' : '<IMAGE_HASH_TRAS_SUBIR>',
+        call_to_action: { type: 'SHOP_NOW', value: { link: landing.url || '' } },
+      },
+    },
+  };
+
+  // 4 · Anuncio
+  const ad = {
+    name: '[AN] ' + (creativo.name || 'Anuncio'),
+    adset_id: '<ID_DEL_CONJUNTO>',
+    creative: { creative_id: '<ID_DEL_CREATIVO>' },
+    status: 'PAUSED',
+  };
+
+  ultimos = { actId, campana, adset, adcreative, ad, ctx: { cuenta, landing, creativo, copy, pixelId, esVideo, pageId, esConversion } };
+  pintarPayloads();
+  validar();
+  pintarMapeo();
+}
+
+function pintarPayloads() {
+  const { actId, campana, adset, adcreative, ad, ctx } = ultimos;
+  const paso = (n, metodo, ep, cuerpo, nota) => `
+    <div class="paso">
+      <div class="paso-hdr"><span class="paso-num">${n}</span>
+        <span class="paso-ep">${esc(metodo)} /v19.0/${esc(ep)}</span>
+        ${nota ? '<span class="hint" style="margin:0">' + esc(nota) + '</span>' : ''}</div>
+      <pre>${esc(JSON.stringify(cuerpo, null, 2))}</pre>
+    </div>`;
+
+  const subida = ctx.esVideo
+    ? paso('0', 'POST', actId + '/advideos', { source: '<archivo del creativo>' },
+           'Primero hay que subir el video: devuelve el video_id')
+    : paso('0', 'POST', actId + '/adimages', { filename: '<archivo del creativo>' },
+           'Primero hay que subir la imagen: devuelve el image_hash');
+
+  $('payloads').innerHTML = subida
+    + paso(1, 'POST', actId + '/campaigns',   campana)
+    + paso(2, 'POST', actId + '/adsets',      adset, 'usa el id del paso 1')
+    + paso(3, 'POST', actId + '/adcreatives', adcreative, 'usa el hash/id del paso 0')
+    + paso(4, 'POST', actId + '/ads',         ad, 'une los pasos 2 y 3');
+}
+
+// ── Validación ──────────────────────────────────────────────────────────────
+function validar() {
+  const { campana, adset, adcreative, ctx } = ultimos;
+  const r = [];
+  const err  = m => r.push('<div class="chk err">✗ ' + m + '</div>');
+  const warn = m => r.push('<div class="chk warn">⚠ ' + m + '</div>');
+  const ok   = m => r.push('<div class="chk ok">✓ ' + m + '</div>');
+
+  if (!ctx.cuenta.accountId) err('Falta el ID de la cuenta publicitaria.');
+  if (!ctx.pageId) err('Falta el <strong>Page ID</strong> de Facebook: sin él no se puede crear el creativo. No está en tu herramienta, hay que añadirlo.');
+  if (!ctx.landing.url) err('La landing no tiene URL.');
+  else if (!/^https:\/\//i.test(ctx.landing.url)) warn('La URL de la landing no es https.');
+  if (ctx.esConversion && !ctx.pixelId) err('Objetivo de conversión sin pixel: hay que asignar un pixel a la landing.');
+  if (!adcreative.object_story_spec.link_data.message) warn('El anuncio no lleva texto principal (el copy de la landing está vacío).');
+  if (!adcreative.object_story_spec.link_data.name) warn('Sin titular: se toma del copy de la landing.');
+  if (!(ctx.creativo.files||[]).length) warn('El creativo no tiene archivo adjunto: habrá que subir la pieza a Meta antes del paso 3.');
+
+  // Presupuesto: los errores caros salen de aquí
+  const presupUsd = Number($('f-presup').value) || 0;
+  const bidUsd = Number($('f-bid').value) || 0;
+  if (adset.daily_budget < 100) err('El presupuesto diario está por debajo del mínimo de Meta (1.00 USD).');
+  else ok('Presupuesto diario: ' + presupUsd.toFixed(2) + ' USD → <code>' + adset.daily_budget + '</code> centavos.');
+  if (adset.bid_amount != null) {
+    ok('Puja: ' + bidUsd.toFixed(2) + ' USD → <code>' + adset.bid_amount + '</code> centavos.');
+    if (bidUsd > presupUsd) warn('La puja (' + bidUsd + ') supera el presupuesto diario (' + presupUsd + '): Meta puede no gastar.');
+    if (presupUsd < bidUsd * 3) warn('Con cost cap conviene un presupuesto de al menos 3× la puja para que el algoritmo tenga margen.');
+  }
+  if (adset.targeting.age_min < 18) err('La edad mínima no puede ser menor de 18.');
+  if (adset.targeting.age_min > adset.targeting.age_max) err('La edad mínima es mayor que la máxima.');
+  if (!/^[A-Z]{2}$/.test(adset.targeting.geo_locations.countries[0]||'')) err('El país debe ser un código ISO de 2 letras (Ecuador = EC).');
+
+  if (campana.status === 'PAUSED' && adset.status === 'PAUSED') ok('Todo se crearía en <strong>PAUSED</strong>: nada empieza a gastar solo.');
+  if (!campana.special_ad_categories.length)
+    warn('<code>special_ad_categories</code> va vacío. Correcto para suplementos, pero si algún día anuncias crédito, empleo o vivienda hay que declararlo.');
+
+  const errores = r.filter(x => x.includes('chk err')).length;
+  const cabecera = errores
+    ? '<div class="chk err" style="font-weight:600">✗ ' + errores + ' cosa(s) impedirían crear la campaña</div>'
+    : '<div class="chk ok" style="font-weight:600">✓ El payload está completo — con esto Meta aceptaría la creación</div>';
+  $('validacion').innerHTML = cabecera + r.join('');
+}
+
+// ── Mapeo de procedencia ────────────────────────────────────────────────────
+function pintarMapeo() {
+  const { ctx } = ultimos;
+  const filas = [
+    ['<code>act_&lt;id&gt;</code>', 'Cuenta publicitaria', 'adAccounts[].accountId', ctx.cuenta.accountId],
+    ['<code>objective</code>', 'Objetivo', 'lo eliges arriba', $('f-objetivo').value],
+    ['<code>daily_budget</code>', 'Presupuesto ×100', 'costCaps[].presup', $('f-presup').value + ' USD'],
+    ['<code>bid_amount</code>', 'Puja ×100', 'costCaps[].bid · escaladoStrategy.bidManual', $('f-bid').value + ' USD'],
+    ['<code>bid_strategy</code>', 'Estrategia', 'escaladoStrategy.tipoEscalado', $('f-puja').value],
+    ['<code>promoted_object.pixel_id</code>', 'Pixel', 'landings[].pixelId', ctx.pixelId || '—'],
+    ['<code>link_data.link</code>', 'URL', 'landings[].url', ctx.landing.url || '—'],
+    ['<code>link_data.message</code>', 'Texto principal', 'landings[].copies[0].texto', (ctx.copy.texto||'').slice(0,44) + '…'],
+    ['<code>link_data.name</code>', 'Titular', 'landings[].copies[0].titulo', ctx.copy.titulo || '—'],
+    ['<code>link_data.description</code>', 'Descripción', 'landings[].copies[0].descripcion', ctx.copy.descripcion || '—'],
+    ['<code>image_hash</code> / <code>video_id</code>', 'Pieza', 'creativos[].files[0]', ((ctx.creativo.files||[])[0]||{}).name || '⚠ falta'],
+    ['<code>targeting</code>', 'Público', '⚠ hoy es texto libre', ctx.creativo.publico || '—'],
+    ['<code>page_id</code>', 'Página de Facebook', '⚠ no existe en la herramienta', ctx.pageId || '⚠ falta'],
+  ];
+  $('mapeo').innerHTML = '<table class="mapa"><thead><tr><th>Campo de Meta</th><th>Qué es</th>'
+    + '<th>De dónde sale</th><th>Valor ahora</th></tr></thead><tbody>'
+    + filas.map(f => '<tr><td>' + f[0] + '</td><td>' + esc(f[1]) + '</td><td>' + f[2].replace(/⚠/, '<span style="color:var(--amber)">⚠</span>')
+      + '</td><td>' + esc(String(f[3] == null ? '—' : f[3])) + '</td></tr>').join('')
+    + '</tbody></table>'
+    + '<div class="hint" style="margin-top:10px">Las dos filas con ⚠ son lo único que tu herramienta todavía no guarda: '
+    + 'el <strong>Page ID</strong> y un <strong>público estructurado</strong> (Meta necesita geo, edades e IDs de interés, no una frase).</div>';
+}
+
+// ── Salidas ─────────────────────────────────────────────────────────────────
+function copiarTodo() {
+  if (!ultimos) return;
+  const { actId, campana, adset, adcreative, ad } = ultimos;
+  const txt = ['1) POST /v19.0/' + actId + '/campaigns',   JSON.stringify(campana, null, 2),
+               '2) POST /v19.0/' + actId + '/adsets',      JSON.stringify(adset, null, 2),
+               '3) POST /v19.0/' + actId + '/adcreatives', JSON.stringify(adcreative, null, 2),
+               '4) POST /v19.0/' + actId + '/ads',         JSON.stringify(ad, null, 2)].join('\n\n');
+  navigator.clipboard.writeText(txt).then(
+    () => alert('Los 4 payloads están en el portapapeles.'),
+    () => alert('No se pudo copiar.'));
+}
+
+function verCurl() {
+  if (!ultimos) return;
+  const { actId, campana, adset, adcreative, ad } = ultimos;
+  const c = (ep, cuerpo) =>
+    'curl -X POST "https://graph.facebook.com/v19.0/' + actId + '/' + ep + '" \\\n' +
+    '  -H "Content-Type: application/json" \\\n' +
+    '  -d \'' + JSON.stringify({ ...cuerpo, access_token: '$META_TOKEN' }) + '\'';
+  $('curl').innerHTML = '<pre>' + esc([c('campaigns', campana), c('adsets', adset),
+    c('adcreatives', adcreative), c('ads', ad)].join('\n\n')) + '</pre>'
+    + '<div class="hint" style="margin-top:8px">Copiar y pegar estos comandos <strong>sí</strong> crearía la campaña de verdad '
+    + '(en PAUSED). Se muestran para que puedas revisarlos, no para ejecutarlos a ciegas.</div>';
+}
+
+// ── Carga de archivo ────────────────────────────────────────────────────────
+const drop = $('drop');
+$('file').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (f) f.text().then(cargarJSON);
+});
+drop.addEventListener('click', () => $('file').click());
+['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => {
+  e.preventDefault(); drop.classList.add('over');
+}));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {
+  e.preventDefault(); drop.classList.remove('over');
+}));
+drop.addEventListener('drop', e => {
+  const f = e.dataTransfer.files[0];
+  if (f) f.text().then(cargarJSON);
+});
+
+cargarDemo();
+</script>
+</body>
+</html>
