@@ -1927,7 +1927,7 @@ async function syncFromCloud(force = false, pushOnNewer = false) {
       }
       state = cloudData;
       _pendingCloudData = null;
-      try { localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state))); } catch(e) {}
+      try { localStorage.setItem(APP_KEY, JSON.stringify(_leanState(state))); } catch(e) { try { localStorage.setItem(APP_KEY, JSON.stringify(_leanState(state, true))); } catch(_) {} }
       init();
       applyLoginScreenState();
       if (localSavedAt > 0) showToast('Datos sincronizados desde la nube ☁️');
@@ -2006,8 +2006,8 @@ function startAutoSync() {
           state.creativos[idx].metrics = metrics;
           if (!Array.isArray(state.creativos[idx].metaSyncHistory)) state.creativos[idx].metaSyncHistory = [];
           state.creativos[idx].metaSyncHistory.push({ ts: Date.now(), range: dateRange, metrics: m });
-          if (state.creativos[idx].metaSyncHistory.length > 20)
-            state.creativos[idx].metaSyncHistory = state.creativos[idx].metaSyncHistory.slice(-20);
+          if (state.creativos[idx].metaSyncHistory.length > 8)
+            state.creativos[idx].metaSyncHistory = state.creativos[idx].metaSyncHistory.slice(-8);
         } catch(_) {}
       });
       // After all fetches settle, update UI and save
@@ -2090,13 +2090,27 @@ async function saveToCloud() {
     // Only set _savedAt now — after merge, before write — so it accurately reflects what's being saved
     const savedAt = Date.now();
     const stateToSave = { ..._stripBlobs(state), _savedAt: savedAt };
-    // Guard: trim auto-snapshots from cloud payload if too large (>400KB) to prevent timeouts
-    let versionsForCloud = (stateToSave.versions || []);
-    const roughSize = JSON.stringify(stateToSave).length;
-    if (roughSize > 400000) {
-      versionsForCloud = versionsForCloud.filter(v => !v.auto).slice(-3); // only manual, max 3
-      stateToSave.versions = versionsForCloud;
-      console.warn('Cloud payload too large (' + Math.round(roughSize/1024) + 'KB) — trimmed auto-snapshots');
+    // Recortar historial de sync a los últimos 5 por creativo (solo es histórico para gráficas)
+    if (Array.isArray(stateToSave.creativos)) stateToSave.creativos = stateToSave.creativos.map(cr => {
+      if (Array.isArray(cr.metaSyncHistory) && cr.metaSyncHistory.length > 5)
+        return { ...cr, metaSyncHistory: cr.metaSyncHistory.slice(-5) };
+      return cr;
+    });
+    // Payload chico SIEMPRE: recortar snapshots por tamaño, garantizando que el guardado nunca falle por peso
+    let roughSize = JSON.stringify(stateToSave).length;
+    if (roughSize > 500000) {
+      // Paso 1: máx 2 manuales + 1 auto
+      stateToSave.versions = [
+        ...(stateToSave.versions||[]).filter(v => !v.auto).slice(-2),
+        ...(stateToSave.versions||[]).filter(v => v.auto).slice(-1),
+      ];
+      roughSize = JSON.stringify(stateToSave).length;
+    }
+    if (roughSize > 900000) {
+      // Paso 2: soltar TODOS los snapshots — son respaldo, no deben impedir guardar los datos reales
+      stateToSave.versions = [];
+      roughSize = JSON.stringify(stateToSave).length;
+      console.warn('Payload grande (' + Math.round(roughSize/1024) + 'KB) — snapshots omitidos del guardado en nube');
     }
     stateToSave._savedBy = (currentUser && (currentUser.name || currentUser.email)) || '';
     const payload = { org:'americannatural', data: stateToSave, updated_at: new Date().toISOString() };
@@ -2527,28 +2541,49 @@ function _stripBlobs(obj) {
 function _autoSnapshot() {
   try {
     if (!Array.isArray(state.versions)) state.versions = [];
-    // Snapshot the state WITHOUT versions to prevent exponential payload growth
-    const { versions: _v, ...stateWithoutVersions } = state;
+    // Snapshot SIN versions ni historiales pesados — evita que el estado se infle
+    const { versions: _v, ...rest } = state;
+    const lean = _stripBlobs(rest);
+    // No guardar historiales de sync ni desglose de Meta dentro del snapshot (pesan mucho)
+    if (Array.isArray(lean.creativos)) lean.creativos = lean.creativos.map(c => {
+      const { metaSyncHistory, metaBreakdown, ...cc } = c || {}; return cc;
+    });
     const snap = {
       id: 'auto_' + Date.now(),
       name: 'Auto ' + new Date().toLocaleString('es', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }),
-      snapshot: JSON.stringify(_stripBlobs(stateWithoutVersions)),
+      snapshot: JSON.stringify(lean),
       ts: Date.now(),
       auto: true
     };
-    const manuals = state.versions.filter(v => !v.auto);
-    const autos = state.versions.filter(v => v.auto).slice(-4); // keep last 4 auto + new = 5 total
+    // Cap agresivo: máx 3 manuales + 2 autos (los snapshots son respaldo, no deben romper el guardado)
+    const manuals = state.versions.filter(v => !v.auto).slice(-3);
+    const autos = state.versions.filter(v => v.auto).slice(-1); // 1 auto previo + el nuevo = 2
     state.versions = [...manuals, ...autos, snap];
   } catch(e) { console.warn('Auto-snapshot failed:', e); }
+}
+
+// Copia liviana del estado para guardar. aggressive=true suelta también snapshots e historiales.
+function _leanState(src, aggressive) {
+  const s = _stripBlobs(src);
+  if (aggressive) {
+    s.versions = (s.versions || []).filter(v => !v.auto).slice(-1); // solo respaldos manuales recientes
+    if (Array.isArray(s.creativos)) s.creativos = s.creativos.map(c => {
+      const { metaSyncHistory, ...cc } = c || {}; return cc;
+    });
+  }
+  return s;
 }
 
 async function persistState() {
   _autoSnapshot();
   // Do NOT set _savedAt here — only set it after confirmed cloud save to avoid false "local is newer"
+  // Escritura robusta: si localStorage se llena, reintentar con una copia liviana (sin snapshots)
   try {
-    localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state)));
+    localStorage.setItem(APP_KEY, JSON.stringify(_leanState(state)));
   } catch(e) {
-    console.warn('localStorage lleno:', e.message);
+    console.warn('localStorage lleno, reintentando liviano:', e.message);
+    try { localStorage.setItem(APP_KEY, JSON.stringify(_leanState(state, true))); }
+    catch(e2) { console.warn('localStorage aún lleno:', e2.message); }
   }
   const lbl = document.getElementById('save-label');
   if (lbl) lbl.textContent = 'Guardando…';
@@ -5694,8 +5729,8 @@ async function syncAllMetrics() {
 
       if (!Array.isArray(state.creativos[idx].metaSyncHistory)) state.creativos[idx].metaSyncHistory = [];
       state.creativos[idx].metaSyncHistory.push({ ts: Date.now(), range: dateRange, metrics: m });
-      if (state.creativos[idx].metaSyncHistory.length > 20)
-        state.creativos[idx].metaSyncHistory = state.creativos[idx].metaSyncHistory.slice(-20);
+      if (state.creativos[idx].metaSyncHistory.length > 8)
+        state.creativos[idx].metaSyncHistory = state.creativos[idx].metaSyncHistory.slice(-8);
 
       ok++;
     } catch (_) { fail++; }
@@ -5810,8 +5845,8 @@ async function syncMetaMetrics() {
         if (!Array.isArray(state.creativos[idx].metaSyncHistory)) state.creativos[idx].metaSyncHistory = [];
         state.creativos[idx].metaSyncHistory.push({ ts: Date.now(), dateRange, metrics: m });
         // Limitar historial a las últimas 20 entradas
-        if (state.creativos[idx].metaSyncHistory.length > 20)
-          state.creativos[idx].metaSyncHistory = state.creativos[idx].metaSyncHistory.slice(-20);
+        if (state.creativos[idx].metaSyncHistory.length > 8)
+          state.creativos[idx].metaSyncHistory = state.creativos[idx].metaSyncHistory.slice(-8);
       }
     }
 
