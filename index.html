@@ -1299,6 +1299,20 @@ tbody tr:hover{background:var(--accent-light)!important}
 
 <div class="panel" id="panel-config">
 
+  <!-- Diagnóstico — solo admin. Rastro de fallos para no depender de "me pareció que no guardó". -->
+  <div class="sec" id="sec-diagnostico" style="margin-bottom:16px;display:none">
+    <div class="sec-hdr">
+      <span class="sec-title">🩺 Diagnóstico</span>
+      <div class="sec-actions">
+        <button class="btn sm" onclick="renderErrorLog()">↻ Actualizar</button>
+        <button class="btn sm" onclick="copiarErrorLog()">📋 Copiar</button>
+        <button class="btn sm danger" onclick="if(confirm('¿Borrar el registro de errores?')){clearErrorLog();renderErrorLog();}">✕ Limpiar</button>
+      </div>
+    </div>
+    <div id="diag-resumen" style="font-size:12px;color:var(--text2);margin-bottom:10px"></div>
+    <div id="errlog-list"></div>
+  </div>
+
   <!-- Usuarios — solo visible para admin -->
   <div class="sec" id="sec-usuarios" style="margin-bottom:16px;display:none">
     <div class="sec-hdr">
@@ -1868,6 +1882,54 @@ const SUPABASE_URL = 'https://eqrzellupcxrzapgyucb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxcnplbGx1cGN4cnphcGd5dWNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MjgwMTgsImV4cCI6MjA5NzQwNDAxOH0.1P7vKsVbGx99V64Vpa-95RY453foNlaVroElO139BhY';
 const sb = (window.supabase) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
+// ── REGISTRO DE ERRORES ─────────────────────────────────────────────────────
+// Cuando alguien reporta "no me guardó" o "se me borró", hace falta rastro.
+// Se guardan los últimos 50 errores en localStorage (no en el estado compartido,
+// para no engordar el payload de la nube) y se ven en Config → Diagnóstico.
+const ERRLOG_KEY = 'an_errlog_v1';
+const ERRLOG_MAX = 50;
+
+function logError(origen, err, extra) {
+  const e = {
+    ts: Date.now(),
+    origen: String(origen || '?'),
+    msg: (err && (err.message || err.reason || err)) ? String(err.message || err.reason || err).slice(0, 300) : 'sin mensaje',
+    usuario: (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.email || currentUser.name || '') : '(sin sesión)',
+    extra: extra ? String(extra).slice(0, 200) : '',
+  };
+  try { console.error('[' + e.origen + ']', err, extra || ''); } catch(_) {}
+  // Un fallo repetitivo (el polling cada 20s, por ejemplo) no debe llenar el log
+  // y tapar los errores distintos: se agrupa el mismo error dentro de 5 minutos.
+  const clave = e.origen + '|' + e.msg;
+  try {
+    const log = JSON.parse(localStorage.getItem(ERRLOG_KEY) || '[]');
+    const previo = log.length ? log[log.length - 1] : null;
+    if (previo && (previo.origen + '|' + previo.msg) === clave && e.ts - previo.ts < 300000) {
+      previo.veces = (previo.veces || 1) + 1;
+      previo.ts = e.ts;
+    } else {
+      log.push(e);
+    }
+    localStorage.setItem(ERRLOG_KEY, JSON.stringify(log.slice(-ERRLOG_MAX)));
+  } catch(_) { /* localStorage lleno: el console.error de arriba ya dejó rastro */ }
+  return e;
+}
+
+function getErrorLog() {
+  try { return JSON.parse(localStorage.getItem(ERRLOG_KEY) || '[]'); } catch(_) { return []; }
+}
+function clearErrorLog() {
+  try { localStorage.removeItem(ERRLOG_KEY); } catch(_) {}
+}
+
+// Nada de fallos silenciosos: cualquier error no capturado queda registrado.
+window.addEventListener('error', ev => {
+  logError('error-global', ev.error || ev.message, (ev.filename || '') + ':' + (ev.lineno || ''));
+});
+window.addEventListener('unhandledrejection', ev => {
+  logError('promesa-sin-capturar', ev.reason);
+});
+
 // ── SEGURIDAD: escape de HTML y validación de URLs ──────────────────────────
 // Todo texto escrito por un usuario debe pasar por esc() antes de entrar al DOM,
 // y toda URL escrita por un usuario por safeUrl(). El estado es compartido por
@@ -1936,9 +1998,56 @@ function _mergeDefaultUsers(usersList) {
 }
 
 let _pendingCloudData = null;
+// Todas las listas de datos reales del estado. 'versions' (snapshots) queda fuera
+// a propósito: se recorta por peso en cada guardado, así que su tamaño oscila y no
+// dice nada sobre si se perdieron datos.
+const _SCORE_KEYS = ['creativos','products','recursos','adAccounts','pixels','landings',
+                     'costCaps','metas','team','enfoques','users','weeklyHistory',
+                     'fixedCosts','countries','painPoints'];
+
+// Cuenta cuánto contenido real tiene un elemento: campos con valor, incluidos los
+// de 'metrics'. Sirve para detectar que alguien vació los creativos sin borrarlos
+// (el conteo de elementos seguiría igual y la comprobación anterior no lo veía).
+function _itemScore(it) {
+  if (!it || typeof it !== 'object') return 0;
+  let n = 0;
+  for (const k of Object.keys(it)) {
+    const v = it[k];
+    if (v == null || v === '' || v === false) continue;
+    if (Array.isArray(v)) { n += Math.min(v.length, 20); continue; }
+    if (typeof v === 'object') { n += Math.min(Object.keys(v).length, 20); continue; }
+    n++;
+  }
+  return n;
+}
+
+// Puntaje de "cuántos datos hay". Elementos + contenido de cada elemento.
 function _dataScore(s) {
-  const SCORE_KEYS = ['creativos','products','recursos','adAccounts','pixels','landings'];
-  return SCORE_KEYS.reduce((n, k) => n + (Array.isArray(s[k]) ? s[k].length : 0), 0);
+  if (!s || typeof s !== 'object') return 0;
+  let score = 0;
+  for (const k of _SCORE_KEYS) {
+    const arr = s[k];
+    if (!Array.isArray(arr)) continue;
+    score += arr.length * 10;                     // el elemento en sí pesa más que un campo
+    for (const it of arr) score += _itemScore(it);
+  }
+  return score;
+}
+
+// ¿La nube perdió datos de forma anormal? Editar normalmente hace subir y bajar el
+// puntaje un poco (se acorta un texto, se borra un creativo), así que exigir que la
+// nube nunca baje daría falsos positivos y bloquearía la sincronización legítima.
+// Se bloquea solo ante una caída grande: >25% del total, o que una lista pierda
+// más de la mitad de sus elementos.
+function _perdidaAnormal(cloud, local) {
+  const sc = _dataScore(cloud), sl = _dataScore(local);
+  if (sl > 0 && sc < sl * 0.75) return `el contenido total cayó de ${sl} a ${sc}`;
+  for (const k of _SCORE_KEYS) {
+    const nl = Array.isArray(local[k]) ? local[k].length : 0;
+    const nc = Array.isArray(cloud[k]) ? cloud[k].length : 0;
+    if (nl >= 4 && nc < nl / 2) return `"${k}" pasó de ${nl} a ${nc} elementos`;
+  }
+  return null;
 }
 
 let _lastSyncAt = 0;
@@ -1952,7 +2061,7 @@ async function syncFromCloud(force = false, pushOnNewer = false) {
   try {
     const { data, error } = await sb.from('app_state').select('data').eq('org','americannatural').single();
     if (error || !data?.data || Object.keys(data.data).length === 0) {
-      state.users = _mergeDefaultUsers(state.users);
+      state.users = _stripPasswords(_mergeDefaultUsers(state.users));
       // No cloud data at all — push local state to initialize cloud
       if (!error && pushOnNewer && (state._savedAt || 0) > 0) saveToCloud();
       return;
@@ -1981,14 +2090,20 @@ async function syncFromCloud(force = false, pushOnNewer = false) {
       for (const key of _LOCAL_AUTH_KEYS) {
         if (Array.isArray(state[key]) && state[key].length > 0) cloudData[key] = state[key];
       }
-      if (!force && _dataScore(cloudData) < _dataScore(state)) {
-        console.warn('syncFromCloud: merged cloud has less data — keeping local, pushing to cloud');
+      const perdida = !force && _perdidaAnormal(cloudData, state);
+      if (perdida) {
+        logError('sincronizarDesdeNube', 'pérdida anormal de datos en la nube — se conserva lo local y se re-sube', perdida);
+        showToast('Se detectó una pérdida de datos en la nube. Se conservó tu versión local. ⚠️', 'error');
         if (pushOnNewer) saveToCloud();
         return;
       }
       state = cloudData;
       _pendingCloudData = null;
-      try { localStorage.setItem(APP_KEY, JSON.stringify(_leanState(state))); } catch(e) { try { localStorage.setItem(APP_KEY, JSON.stringify(_leanState(state, true))); } catch(_) {} }
+      try { localStorage.setItem(APP_KEY, JSON.stringify(_leanState(state))); }
+      catch(e) {
+        try { localStorage.setItem(APP_KEY, JSON.stringify(_leanState(state, true))); }
+        catch(e2) { logError('syncFromCloud/localStorage', e2, 'ni la copia liviana cupo'); }
+      }
       init();
       applyLoginScreenState();
       if (localSavedAt > 0) showToast('Datos sincronizados desde la nube ☁️');
@@ -1997,8 +2112,8 @@ async function syncFromCloud(force = false, pushOnNewer = false) {
       // Only push to cloud when explicitly asked (login/session restore), not on tab-switch
       saveToCloud();
     }
-    state.users = _mergeDefaultUsers(state.users);
-  } catch(e) { console.warn('Cloud sync error:', e); }
+    state.users = _stripPasswords(_mergeDefaultUsers(state.users));
+  } catch(e) { logError('sincronizarDesdeNube', e); }
 }
 
 let _metaAutoSyncInterval = null;
@@ -2069,7 +2184,7 @@ function startAutoSync() {
           state.creativos[idx].metaSyncHistory.push({ ts: Date.now(), range: dateRange, metrics: m });
           if (state.creativos[idx].metaSyncHistory.length > 8)
             state.creativos[idx].metaSyncHistory = state.creativos[idx].metaSyncHistory.slice(-8);
-        } catch(_) {}
+        } catch(e) { logError('meta-sync/aplicar-métricas', e, 'creativo ' + (cr && cr.id)); }
       });
       // After all fetches settle, update UI and save
       setTimeout(() => {
@@ -2151,6 +2266,8 @@ async function saveToCloud() {
     // Only set _savedAt now — after merge, before write — so it accurately reflects what's being saved
     const savedAt = Date.now();
     const stateToSave = { ..._stripBlobs(state), _savedAt: savedAt };
+    // Nunca subir contraseñas a la fila compartida (limpia también las heredadas)
+    stateToSave.users = _stripPasswords(stateToSave.users);
     // Recortar historial de sync a los últimos 5 por creativo (solo es histórico para gráficas)
     if (Array.isArray(stateToSave.creativos)) stateToSave.creativos = stateToSave.creativos.map(cr => {
       if (Array.isArray(cr.metaSyncHistory) && cr.metaSyncHistory.length > 5)
@@ -2171,18 +2288,19 @@ async function saveToCloud() {
       // Paso 2: soltar TODOS los snapshots — son respaldo, no deben impedir guardar los datos reales
       stateToSave.versions = [];
       roughSize = JSON.stringify(stateToSave).length;
-      console.warn('Payload grande (' + Math.round(roughSize/1024) + 'KB) — snapshots omitidos del guardado en nube');
+      logError('payloadGrande', 'Payload de ' + Math.round(roughSize/1024) + 'KB — snapshots omitidos del guardado', 'los datos sí se guardaron');
     }
     stateToSave._savedBy = (currentUser && (currentUser.name || currentUser.email)) || '';
     const payload = { org:'americannatural', data: stateToSave, updated_at: new Date().toISOString() };
     const { error } = await sb.from('app_state').upsert(payload, { onConflict: 'org' });
-    if (error) { console.error('Cloud save error:', error); showToast('Error al guardar: ' + error.message, 'error'); return false; }
+    if (error) { logError('guardarEnNube', error, 'payload ' + Math.round(roughSize/1024) + 'KB'); showToast('Error al guardar: ' + error.message, 'error'); return false; }
     // Commit _savedAt to state only after confirmed save
     state._savedAt = savedAt;
     console.log('Cloud saved ok. creativos:', (state.creativos||[]).length, '| payload:', Math.round(roughSize/1024) + 'KB');
-    try { localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state))); } catch(e) {}
+    try { localStorage.setItem(APP_KEY, JSON.stringify(_stripBlobs(state))); }
+    catch(e) { logError('saveToCloud/localStorage', e, 'la nube sí guardó; solo falló la copia local'); }
     return true;
-  } catch(e) { console.error('Cloud save error:', e); showToast('Error al guardar en la nube', 'error'); return false; }
+  } catch(e) { logError('guardarEnNube', e); showToast('Error al guardar en la nube', 'error'); return false; }
   finally { _savingToCloud = false; }
 }
 
@@ -2190,7 +2308,8 @@ const SESSION_KEY = 'an_session_v1';
 // Marca que localStorage tiene cambios que la nube todavía no confirmó.
 const PENDING_KEY = 'an_pending_upload_v1';
 function _markPendingUpload(on) {
-  try { on ? localStorage.setItem(PENDING_KEY, '1') : localStorage.removeItem(PENDING_KEY); } catch(e) {}
+  try { on ? localStorage.setItem(PENDING_KEY, '1') : localStorage.removeItem(PENDING_KEY); }
+  catch(e) { logError('marcarPendiente', e, 'localStorage no disponible'); }
 }
 function _hasPendingUpload() {
   try { return localStorage.getItem(PENDING_KEY) === '1'; } catch(e) { return false; }
@@ -2205,6 +2324,33 @@ const ROLE_TABS = {
 const ROLE_LABELS = { admin:'Admin', tester:'Tester', editor:'Editor' };
 
 let currentUser = null;
+
+// Comprobación de rol en la ACCIÓN, no solo en la pestaña. Ocultar una pestaña con
+// display:none no impide nada: basta abrir la consola o llamar a la función.
+// OJO: esto es defensa en profundidad, NO seguridad. La seguridad real vive en las
+// políticas RLS de Supabase — mientras cualquier usuario autenticado pueda escribir
+// la fila app_state, puede cambiarse el rol a sí mismo. Ver handoff.md §8.
+function requireAdmin(accion) {
+  if (currentUser && currentUser.role === 'admin') return true;
+  logError('permisos', 'acción de admin bloqueada: ' + accion,
+           'rol actual: ' + ((currentUser && currentUser.role) || 'sin sesión'));
+  showToast('No tienes permisos para esta acción', 'error');
+  return false;
+}
+
+// Las contraseñas NUNCA deben vivir en el estado: app_state es una sola fila que
+// lee todo el equipo. El login real es Supabase Auth (signInWithPassword), así que
+// este campo no autenticaba nada — era solo una filtración esperando a ocurrir.
+function _stripPasswords(usersList) {
+  if (!Array.isArray(usersList)) return usersList;
+  let limpiados = 0;
+  const out = usersList.map(u => {
+    if (u && u.pw !== undefined) { limpiados++; const { pw, ...resto } = u; return resto; }
+    return u;
+  });
+  if (limpiados) console.warn('Se eliminaron ' + limpiados + ' contraseña(s) en texto plano del estado');
+  return out;
+}
 
 function _getUserProfile(email) {
   const u = (state.users||[]).find(u => u.email.toLowerCase() === (email||'').toLowerCase() && u.active !== false);
@@ -2266,7 +2412,7 @@ function startRealtimeSync() {
         _safePullFromCloud('realtime');
       })
       .subscribe(status => console.log('Realtime app_state:', status));
-  } catch(e) { console.warn('Realtime no disponible, usando polling:', e); }
+  } catch(e) { logError('realtime', e, 'se usa el polling de 20s como respaldo'); }
   // Polling de respaldo cada 20s (cubre el caso de Realtime no habilitado en la tabla)
   if (_pollInterval) clearInterval(_pollInterval);
   _pollInterval = setInterval(async () => {
@@ -2278,7 +2424,7 @@ function startRealtimeSync() {
       const { data } = await sb.from('app_state').select('data->_savedAt').eq('org','americannatural').single();
       const remote = data ? +Object.values(data)[0] || 0 : 0;
       if (remote && remote !== (state._savedAt||0)) _safePullFromCloud('poll');
-    } catch(_) {}
+    } catch(e) { logError('polling/nube', e, 'la app queda sin sincronizar hasta que se restablezca'); }
   }, 20000);
 }
 
@@ -2581,7 +2727,7 @@ function loadState() {
       saved.team.forEach(m => {
         const email = (m.name||'').toLowerCase().replace(/\s+/g,'.')+'.legacy@local';
         if (!existingEmails.has(email)) {
-          saved.users.push({ id:'mig_'+m.id, name:m.name, email, pw:'cambiar123', role:roleMap[m.role]||'editor', active: m.status!=='inactivo', _migrated:true });
+          saved.users.push({ id:'mig_'+m.id, name:m.name, email, role:roleMap[m.role]||'editor', active: m.status!=='inactivo', _migrated:true });
           existingEmails.add(email);
         }
       });
@@ -2636,7 +2782,7 @@ function _autoSnapshot() {
     const manuals = state.versions.filter(v => !v.auto).slice(-3);
     const autos = state.versions.filter(v => v.auto).slice(-1); // 1 auto previo + el nuevo = 2
     state.versions = [...manuals, ...autos, snap];
-  } catch(e) { console.warn('Auto-snapshot failed:', e); }
+  } catch(e) { logError('autoSnapshot', e); }
 }
 
 // Copia liviana del estado para guardar. aggressive=true suelta también snapshots e historiales.
@@ -2659,7 +2805,7 @@ function _persistLocal() {
   } catch(e) {
     console.warn('localStorage lleno, reintentando liviano:', e.message);
     try { localStorage.setItem(APP_KEY, JSON.stringify(_leanState(state, true))); }
-    catch(e2) { console.warn('localStorage aún lleno:', e2.message); }
+    catch(e2) { logError('guardadoLocal', e2, 'ni la copia liviana cupo en localStorage'); }
   }
 }
 
@@ -2732,10 +2878,10 @@ async function _uploadToStorage(file, folder) {
     const ext = (file.name.split('.').pop()||'bin').toLowerCase();
     const path = `${folder}/${Date.now()}_${uid()}.${ext}`;
     const { data, error } = await sb.storage.from(STORAGE_BUCKET).upload(path, file, { upsert: false });
-    if (error) { console.error('Storage upload error:', error); showToast('Error al subir archivo: ' + error.message, 'error'); return null; }
+    if (error) { logError('subirArchivo', error); showToast('Error al subir archivo: ' + error.message, 'error'); return null; }
     const { data: pub } = sb.storage.from(STORAGE_BUCKET).getPublicUrl(data.path);
     return pub.publicUrl;
-  } catch(e) { console.error('Storage upload error:', e); showToast('Error al subir archivo', 'error'); return null; }
+  } catch(e) { logError('subirArchivo', e); showToast('Error al subir archivo', 'error'); return null; }
 }
 
 // ==================== LOGO ====================
@@ -3589,6 +3735,7 @@ function openMetaForm() {
 }
 
 function saveMeta() {
+  if (!requireAdmin('guardar meta')) return;
   const objetivo = +document.getElementById('meta-objetivo').value;
   if (!objetivo || objetivo <= 0) { showToast('Define un objetivo mayor a 0', 'error'); return; }
   state.metas = state.metas || [];
@@ -3606,6 +3753,7 @@ function saveMeta() {
 }
 
 function deleteMeta(id) {
+  if (!requireAdmin('eliminar meta')) return;
   if (!confirm('¿Eliminar esta meta?')) return;
   markDeleted(id); state.metas = (state.metas||[]).filter(m=>m.id!==id);
   persistState(); renderConfigMetas();
@@ -3662,6 +3810,7 @@ function renderEscaladoStrategyForm() {
 }
 
 function saveEscaladoStrategy() {
+  if (!requireAdmin('guardar estrategia de escalado')) return;
   const gn = id => +(document.getElementById(id)||{}).value || 0;
   const gv = id => (document.getElementById(id)||{}).value || '';
   state.escaladoStrategy = {
@@ -5945,7 +6094,7 @@ async function syncMetaMetrics() {
     calcCreativoProfit();
 
   } catch (err) {
-    console.error('syncMetaMetrics error:', err);
+    logError('metaSync', err);
     statusEl.textContent = '✗ Error de red';
     statusEl.style.color = 'var(--danger)';
     showToast('Error de conexión con Meta', 'error');
@@ -6479,7 +6628,7 @@ async function syncCampaignFromDrill(id, btnEl) {
     showToast(`✓ Campaña sincronizada · ${(json.adsets||[]).length} conjunto(s) · ${(json.ads||[]).length} anuncio(s)`);
     showCampaignDrilldown(id); // re-render con la data fresca
   } catch(e) {
-    console.error(e); showToast('Error al sincronizar la campaña', 'error');
+    logError('metaSync/campaña', e); showToast('Error al sincronizar la campaña', 'error');
   } finally {
     if (btnEl) { btnEl.disabled = false; btnEl.textContent = '↻ Sincronizar campaña'; }
   }
@@ -7686,6 +7835,52 @@ function renderConfig() {
     secU.style.display = isAdmin ? '' : 'none';
     if (isAdmin) renderUsersList();
   }
+  const secD = document.getElementById('sec-diagnostico');
+  if (secD) {
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    secD.style.display = isAdmin ? '' : 'none';
+    if (isAdmin) renderErrorLog();
+  }
+}
+
+// ==================== DIAGNÓSTICO ====================
+function renderErrorLog() {
+  const el = document.getElementById('errlog-list');
+  const res = document.getElementById('diag-resumen');
+  if (!el) return;
+  const log = getErrorLog().slice().reverse(); // más reciente arriba
+  if (res) {
+    const pend = _hasPendingUpload() ? '<span style="color:var(--amber);font-weight:600">⚠ Hay cambios locales sin confirmar en la nube.</span> ' : '';
+    res.innerHTML = pend + (log.length
+      ? `${log.length} evento(s) registrado(s). El más reciente: ${_fmtDateTime(log[0].ts)}.`
+      : 'Sin errores registrados en este navegador. ✅');
+  }
+  if (!log.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="tbl-wrap"><table style="width:100%;border-collapse:collapse;font-size:11px">
+    <thead><tr style="border-bottom:1px solid var(--border)">
+      <th style="text-align:left;padding:6px 8px;color:var(--text3)">Cuándo</th>
+      <th style="text-align:left;padding:6px 8px;color:var(--text3)">Origen</th>
+      <th style="text-align:left;padding:6px 8px;color:var(--text3)">Detalle</th>
+      <th style="text-align:left;padding:6px 8px;color:var(--text3)">Usuario</th>
+    </tr></thead>
+    <tbody>${log.map(e => `<tr style="border-bottom:1px dashed var(--border)">
+      <td style="padding:6px 8px;white-space:nowrap;color:var(--text3)">${_fmtDateTime(e.ts)}${e.veces>1?` <span style="color:var(--amber);font-weight:600">×${e.veces}</span>`:''}</td>
+      <td style="padding:6px 8px;font-weight:600;white-space:nowrap">${esc(e.origen)}</td>
+      <td style="padding:6px 8px">${esc(e.msg)}${e.extra?`<div style="color:var(--text3);margin-top:2px">${esc(e.extra)}</div>`:''}</td>
+      <td style="padding:6px 8px;color:var(--text3);white-space:nowrap">${esc(e.usuario)}</td>
+    </tr>`).join('')}</tbody></table></div>`;
+}
+
+// Copia el registro como texto para pegarlo en un chat al reportar un problema.
+function copiarErrorLog() {
+  const log = getErrorLog();
+  if (!log.length) { showToast('No hay errores que copiar'); return; }
+  const txt = log.map(e =>
+    `${new Date(e.ts).toLocaleString('es')} · ${e.origen}${e.veces>1?' (x'+e.veces+')':''} · ${e.usuario}\n  ${e.msg}${e.extra?'\n  '+e.extra:''}`
+  ).join('\n\n');
+  navigator.clipboard.writeText(txt)
+    .then(() => showToast('Registro copiado — pégalo en el chat del equipo'))
+    .catch(e => logError('copiarRegistro', e));
 }
 
 // ==================== AD ACCOUNTS ====================
@@ -7964,7 +8159,10 @@ function openUserModal(id) {
     <div style="padding:16px 20px">
       <div class="field mb10"><label>Nombre</label><input id="u-name" value="${u?u.name:''}" placeholder="Nombre completo"></div>
       <div class="field mb10"><label>Email</label><input id="u-email" type="email" value="${u?u.email:''}" placeholder="email@empresa.com"></div>
-      <div class="field mb10"><label>Contraseña ${u?'(dejar vacío para no cambiar)':''}</label><input id="u-pw" type="password" placeholder="••••••••"></div>
+      <div class="field mb10" style="background:var(--surface2);padding:8px 10px;border-radius:8px;font-size:11px;color:var(--text2)">
+        🔑 La contraseña se gestiona en <strong>Supabase → Authentication → Users</strong>.
+        Esta pantalla solo define nombre, rol y estado.
+      </div>
       <div class="field mb10"><label>Rol</label>
         <select id="u-role">
           <option value="admin" ${u&&u.role==='admin'?'selected':''}>Admin</option>
@@ -7993,21 +8191,22 @@ function openUserModal(id) {
 function editUser(id) { openUserModal(id); }
 
 function saveUser() {
+  if (!requireAdmin('crear/editar usuario')) return;
   const name   = (document.getElementById('u-name').value||'').trim();
   const email  = (document.getElementById('u-email').value||'').trim().toLowerCase();
-  const pw     = (document.getElementById('u-pw').value||'').trim();
   const role   = document.getElementById('u-role').value;
   const active = document.getElementById('u-active').value === '1';
   if (!name || !email) { showToast('Nombre y email son requeridos','error'); return; }
   if (!state.users) state.users = [];
   if (_editingUserId) {
     const u = state.users.find(x=>x.id===_editingUserId);
-    if (u) { u.name=name; u.email=email; u.role=role; u.active=active; if (pw) u.pw=pw; }
+    if (u) { u.name=name; u.email=email; u.role=role; u.active=active; }
   } else {
     if (state.users.find(u=>u.email===email)) { showToast('Ya existe un usuario con ese email','error'); return; }
-    if (!pw) { showToast('La contraseña es requerida para usuarios nuevos','error'); return; }
-    state.users.push({ id:'u'+Date.now(), name, email, pw, role, active });
+    state.users.push({ id:'u'+Date.now(), name, email, role, active });
   }
+  // La contraseña se gestiona en Supabase Auth, no aquí.
+  state.users = _stripPasswords(state.users);
   persistState();
   closeModal('modal-user');
   renderUsersList();
@@ -8016,6 +8215,7 @@ function saveUser() {
 }
 
 function deleteUser(id) {
+  if (!requireAdmin('eliminar usuario')) return;
   if (id==='u1') { showToast('No puedes eliminar el admin principal','error'); return; }
   if (!confirm('¿Eliminar este usuario?')) return;
   markDeleted(id); state.users = (state.users||[]).filter(u=>u.id!==id);
