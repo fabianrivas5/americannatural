@@ -13,32 +13,90 @@
         crossorigin="anonymous"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+/* ── Sistema de diseño: Notion (extraído con skillui) ──────────────────────
+   Neutros, tipografía, densidad, radios y sombras vienen de notion.so.
+   El acento se mantiene en el verde de American Natural: el principio del
+   sistema es "un solo acento contenido", no el azul concreto de otra marca.
+   Para ir al azul de Notion, cambiar --accent a #0075de y --accent2 a #005bab.
+   Los tintes de estado se derivan con color-mix del propio token (con valor
+   de reserva antes, para navegadores que no lo soporten): así ningún color
+   queda inventado, todos salen de la paleta.                                */
 :root{
-  --bg:#f4f5f7;--surface:#fff;--surface2:#f8f9fa;--border:#e5e7eb;
-  --text:#111827;--text2:#6b7280;--text3:#9ca3af;
-  --green:#16a34a;--green-bg:#f0fdf4;--green-border:#bbf7d0;
-  --red:#dc2626;--red-bg:#fef2f2;--red-border:#fecaca;
-  --amber:#d97706;--amber-bg:#fffbeb;--amber-border:#fde68a;
-  --blue:#1d4ed8;--blue-bg:#eff6ff;--blue-border:#bfdbfe;
+  /* Superficies — Notion es claro y cálido, no oscuro.                       */
+  --bg:#f9f9f8;            /* color-gray-100 · fondo de página               */
+  --surface:#ffffff;       /* tarjetas y paneles                             */
+  --surface2:#f9f9f8;      /* superficie hundida, filas alternas             */
+  --border:rgba(0,0,0,.08);/* --border-color-regular                         */
+
+  /* Texto — jerarquía por color, no por tamaños extra                        */
+  --text:#31302e;          /* color-gray-800                                 */
+  --text2:#615d59;         /* color-gray-600                                 */
+  /* color-gray-400 puro da 2.5 de contraste: era ilegible ya en el diseño
+     anterior (#9ca3af, 2.54). Se oscurece hasta AA manteniendo el tono.     */
+  --text3:#726f6a;         --text3:color-mix(in srgb,#a39e98 70%,#000);
+  --text3-soft:#a39e98;    /* el tono original, para bordes y separadores    */
+  --muted:var(--text3);
+
+  /* Estado — los tonos de Notion (#1aae39, #ffb110) están pensados para
+     rellenos y puntos, no para texto pequeño: sobre blanco dan 2.9 y 1.8 de
+     contraste. Y aquí se usan como color de texto 30 veces, en cifras de CPA
+     y profit que se leen todo el día. Se oscurecen lo mínimo para alcanzar
+     AA (4.5), derivándolo del mismo tono para no inventar un color nuevo.
+     Los tonos originales quedan disponibles como *-solid para rellenos.     */
+  --green-solid:#1aae39;   /* color-green-500 · puntos y rellenos            */
+  --green:#14832b;         --green:color-mix(in srgb,#1aae39 75%,#000); /* 4.87 */
+  --green-bg:#eafaee;      --green-bg:color-mix(in srgb,#1aae39 10%,#fff);
+  --green-border:#bfe9c8;  --green-border:color-mix(in srgb,#1aae39 28%,#fff);
+  --red-solid:#f64932;     /* color-red-500                                  */
+  --red:#d13e2b;           --red:color-mix(in srgb,#f64932 85%,#000);   /* 4.74 */
+  --red-bg:#fdd3cd;        --red-bg:color-mix(in srgb,#f64932 10%,#fff);
+  --red-border:#fbc0b7;    --red-border:color-mix(in srgb,#f64932 28%,#fff);
+  --amber-solid:#ffb110;   /* color-yellow-500                               */
+  --amber:#996a0a;         --amber:color-mix(in srgb,#ffb110 60%,#000);  /* 4.75 */
+  --amber-bg:#fff5e0;      /* color-yellow-100                               */
+  --amber-border:#ffe0a3;  --amber-border:color-mix(in srgb,#ffb110 32%,#fff);
+  --blue:#0075de;          /* color-blue-600 · 4.57 sobre blanco             */
+  --blue-bg:#e6f3fe;       /* color-blue-200                                 */
+  --blue-border:#b8dcfa;   --blue-border:color-mix(in srgb,#0075de 26%,#fff);
+
+  /* Alias que el código ya usaba pero nadie había definido: --ok y --bad son
+     los colores del semáforo (35 usos) y llevaban tiempo cayendo a nada.     */
+  --ok:var(--green); --success:var(--green);
+  --bad:var(--red);  --danger:var(--red);
+  --warn:var(--amber); --info:var(--blue);
+
+  /* Acento                                                                   */
   --accent:#065f46;--accent2:#047857;--accent-light:#ecfdf5;
-  --r:8px;--rl:12px;--rxl:16px;
+
+  /* Radios — escala de Notion, más contenida que la anterior (8/12/16)       */
+  --r:6px;--rl:8px;--rxl:12px;
+
+  /* Elevación — Notion apila con sombras muy suaves, nunca duras            */
+  --shadow-sm:0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 2px 4px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.06);
+  --shadow-lg:0 4px 18px rgba(0,0,0,.04),0 2px 7.8px rgba(0,0,0,.027),0 .8px 2.9px rgba(0,0,0,.02);
+  --focus-ring:inset 0 0 0 1px rgba(35,131,226,.57),0 0 0 2px rgba(35,131,226,.35);
 }
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
 .app{display:flex;flex-direction:column;min-height:100vh}
 
 /* HEADER */
-.hdr{background:var(--accent);padding:0 24px;display:flex;align-items:center;gap:16px;height:60px;position:sticky;top:0;z-index:100}
-.hdr-logo{width:38px;height:38px;border-radius:8px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0}
-.hdr-logo img{width:100%;height:100%;object-fit:cover;border-radius:8px}
-.hdr-logo-placeholder{font-size:18px}
-.hdr-name{color:#fff;font-weight:600;font-size:16px;flex:1}
+/* Cabecera al estilo Notion: superficie blanca y un borde inferior de 1px.
+   Sin barra de color ni sombra — la separación la hace el borde.            */
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:16px;height:60px;position:sticky;top:0;z-index:100}
+.hdr-logo{width:32px;height:32px;border-radius:var(--r);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0}
+.hdr-logo img{width:100%;height:100%;object-fit:cover;border-radius:var(--r)}
+.hdr-logo-placeholder{font-size:16px}
+.hdr-name{color:var(--text);font-weight:600;font-size:15px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .hdr-actions{display:flex;gap:8px;align-items:center}
-.hdr-btn{padding:6px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer}
-.hdr-btn:hover{background:rgba(255,255,255,.2)}
-.hdr-btn.save{background:rgba(255,255,255,.9);color:var(--accent);border-color:transparent}
-.hdr-btn.save:hover{background:#fff}
-.save-indicator{width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:4px;display:inline-block}
-.save-indicator.dirty{background:#fbbf24}
+/* Botón fantasma: transparente con borde, según el patrón del sistema       */
+.hdr-btn{padding:6px 12px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--text2);font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:background .15s ease,color .15s ease}
+.hdr-btn:hover{background:var(--surface2);color:var(--text)}
+/* Botón primario: el único punto de color de la cabecera                    */
+.hdr-btn.save{background:var(--accent);color:#fff;border-color:transparent;font-weight:500}
+.hdr-btn.save:hover{background:var(--accent);opacity:.9}
+.save-indicator{width:8px;height:8px;border-radius:50%;background:var(--green-solid);margin-right:4px;display:inline-block}
+.save-indicator.dirty{background:var(--amber-solid)}
 
 /* TAB NAV */
 .nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;position:sticky;top:60px;z-index:99}
@@ -91,6 +149,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .btn{padding:7px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
 .btn:hover{background:var(--surface2)}
 .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{background:var(--accent);opacity:.9}
+.btn:focus-visible,.hdr-btn:focus-visible,.nav-tab:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:var(--focus-ring)}
 .btn.primary:hover{background:var(--accent2)}
 .btn.danger{color:var(--red);border-color:var(--red-border)}
 .btn.danger:hover{background:var(--red-bg)}
@@ -107,7 +168,7 @@ tbody td{padding:7px 10px;vertical-align:middle}
 tbody td input{width:100%;padding:4px 6px;border:1px solid transparent;border-radius:4px;font-family:inherit;font-size:12px;color:var(--text);background:transparent}
 tbody td input:focus{border-color:var(--accent2);background:var(--surface);outline:none}
 .cell-calc{background:var(--surface2);border-radius:4px;padding:4px 8px;text-align:right;font-weight:600;white-space:nowrap;font-size:12px}
-.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.badge{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:10px;font-weight:600}
 .badge.ok{background:var(--green-bg);color:var(--green)}
 .badge.warn{background:var(--amber-bg);color:var(--amber)}
 .badge.bad{background:var(--red-bg);color:var(--red)}
@@ -124,10 +185,10 @@ tfoot td{background:var(--surface2);font-weight:600;padding:9px 10px;border-top:
 .kb-col.kb-drag-over{border-color:var(--accent)}
 .kb-col-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .kb-col-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.kb-count{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.kb-count{font-size:10px;font-weight:700;padding:2px 8px;border-radius:9999px}
 .kb-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:box-shadow .15s,transform .1s,border-color .15s;user-select:none}
-.kb-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.12);border-color:var(--accent);transform:translateY(-1px)}
-.kb-card:hover{box-shadow:0 3px 10px rgba(0,0,0,.12);transform:translateY(-1px)}
+.kb-card:hover{box-shadow:var(--shadow-md);border-color:var(--border);transform:translateY(-1px)}
+.kb-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
 .kb-card:active{cursor:grabbing}
 .kb-card-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;line-height:1.3}
 .kb-card-product{font-size:10px;color:var(--text2)}
@@ -184,7 +245,7 @@ tfoot td{background:var(--surface2);font-weight:600;padding:9px 10px;border-top:
 .step-body p{font-size:13px;color:var(--text2);margin-bottom:8px}
 .step-rule{background:var(--accent-light);border-left:3px solid var(--accent);border-radius:0 var(--r) var(--r) 0;padding:8px 12px;font-size:12px;color:var(--accent);font-weight:500;margin-bottom:8px}
 .tags{display:flex;gap:6px;flex-wrap:wrap}
-.tag{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
+.tag{font-size:11px;padding:2px 8px;border-radius:9999px;background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
 .tag.green{background:var(--green-bg);border-color:var(--green-border);color:var(--green)}
 .tag.amber{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
 .tag.red{background:var(--red-bg);border-color:var(--red-border);color:var(--red)}
@@ -252,14 +313,16 @@ tfoot td{background:var(--surface2);font-weight:600;padding:9px 10px;border-top:
 .preset-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .filter-reset{padding:6px 12px;border:1px solid var(--red-border);border-radius:var(--r);background:transparent;font-family:inherit;font-size:11px;color:var(--red);cursor:pointer}
 .filter-reset:hover{background:var(--red-bg)}
-.filter-active-badge{background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--amber);font-weight:600}
+.filter-active-badge{background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:9999px;padding:3px 10px;font-size:11px;color:var(--amber);font-weight:600}
 .no-data-msg{text-align:center;padding:48px 24px;color:var(--text3);font-size:13px}
 
 /* ── PHASE 8 DESIGN POLISH ─────────────────────────────────────── */
 
 /* Refined header */
-.hdr{background:linear-gradient(135deg,#065f46 0%,#047857 100%);box-shadow:0 2px 12px rgba(0,0,0,.18)}
-.hdr-name{font-size:17px;font-weight:700;letter-spacing:-.01em}
+/* El degradado y la sombra dura se retiran: Notion separa con borde, no con
+   capas de color. La regla se conserva para no romper el orden de cascada.  */
+.hdr{background:var(--surface);box-shadow:none}
+.hdr-name{font-size:15px;font-weight:600;letter-spacing:-.01em}
 
 /* Nav improvements */
 .nav{padding:0 8px;gap:0}
@@ -270,7 +333,7 @@ tfoot td{background:var(--surface2);font-weight:600;padding:9px 10px;border-top:
 .sec-hdr{padding-bottom:14px;margin-bottom:16px;border-bottom:1px solid var(--border)}
 .sec-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:6px}
 .sec-title::before{content:'';display:inline-block;width:3px;height:14px;background:var(--accent);border-radius:2px}
-.sec{box-shadow:0 1px 4px rgba(0,0,0,.04);border-radius:10px}
+.sec{box-shadow:var(--shadow-sm);border-radius:var(--rl)}
 
 /* KPI card improvements */
 .kpi{border-radius:8px;padding:16px 18px;transition:box-shadow .15s}
@@ -326,7 +389,7 @@ tbody tr:hover{background:var(--accent-light)!important}
 
 /* Animated save dot */
 .save-indicator{display:inline-block;width:8px;height:8px;border-radius:50%;background:transparent;transition:background .3s}
-.save-indicator.dirty{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.25);animation:pulse-dot 1.5s infinite}
+.save-indicator.dirty{background:var(--amber-solid);box-shadow:0 0 0 3px rgba(255,177,16,.25);animation:pulse-dot 1.5s infinite}
 @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
 .rec-tab{padding:7px 14px;border:none;background:none;font-family:inherit;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px}
 .rec-tab:hover{color:var(--text)}
@@ -380,7 +443,7 @@ tbody tr:hover{background:var(--accent-light)!important}
   /* Buttons full width en forms */
   .modal .btn{min-height:40px}
   /* Login */
-  .login-box{padding:28px 18px;width:100%;border-radius:16px}
+  .login-box{padding:28px 18px;width:100%;border-radius:var(--rxl)}
   /* Rows in forms */
   .row{flex-wrap:wrap}
 }
@@ -391,7 +454,7 @@ tbody tr:hover{background:var(--accent-light)!important}
 #login-screen.loading .login-box{display:none}
 #login-screen.loading::after{content:'';width:40px;height:40px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.login-box{background:#fff;border-radius:16px;padding:40px 36px;width:360px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--rxl);padding:40px 36px;width:360px;max-width:92vw;box-shadow:var(--shadow-lg)}
 .login-logo{text-align:center;margin-bottom:20px;font-size:32px}
 .login-title{font-size:18px;font-weight:700;color:var(--text);text-align:center;margin-bottom:4px}
 .login-sub{font-size:12px;color:var(--text2);text-align:center;margin-bottom:24px}
@@ -404,10 +467,10 @@ tbody tr:hover{background:var(--accent-light)!important}
 .login-note{font-size:11px;color:var(--text3);text-align:center;margin-top:14px}
 
 /* ── USER BADGE IN HEADER ── */
-.user-badge{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border-radius:20px;padding:4px 10px 4px 6px;cursor:default}
-.user-avatar{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.3);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.user-name{color:#fff;font-size:11px;font-weight:500;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.role-pill{font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;background:rgba(255,255,255,.2);color:#fff;text-transform:uppercase;letter-spacing:.04em}
+.user-badge{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:9999px;padding:4px 10px 4px 6px;cursor:default}
+.user-avatar{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.user-name{color:var(--text);font-size:11px;font-weight:500;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.role-pill{font-size:9px;font-weight:700;padding:1px 5px;border-radius:9999px;background:var(--blue-bg);color:var(--blue);text-transform:uppercase;letter-spacing:.04em}
 
 /* ── ROLE COLORS ── */
 .role-admin{background:#d1fae5;color:#065f46}
