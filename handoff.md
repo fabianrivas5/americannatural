@@ -20,6 +20,7 @@ Plataforma web (SPA de un solo archivo HTML) para gestionar el flujo de creativo
 - Recursos compartidos entre todos los usuarios (merge multiusuario + tombstones).
 - Sincronización multiusuario: Supabase Realtime + polling de respaldo cada 20s + indicador de estado.
 - **Fix de guardado (commit `406041d`): verificado en producción, ver §6.**
+- **Fix de productos (esta sesión):** `updateProduct` ya no convierte el nombre a número (vaciar el nombre lo volvía `0`, un nombre "39" lo volvía número → rompía `c.product===p.name` y el selector del modal). `loadState` repara nombres corrompidos a número. Selector de producto del modal defensivo (filtra nombres vacíos; conserva productos eliminados marcados). `removeProduct` ahora confirma y avisa cuántos creativos/landings quedan huérfanos. Tests: 5 nuevos en `scripts/test.js` (100 OK total).
 
 **Pendiente / no hecho:**
 - Realtime instantáneo requiere activar la tabla `app_state` en Supabase → Database → Replication (opcional; el polling de 20s ya cubre).

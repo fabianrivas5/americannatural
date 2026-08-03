@@ -367,6 +367,42 @@ seccion('#5 · detección de pérdida de datos');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+seccion('Productos: el nombre nunca se convierte a número');
+{
+  // updateProduct usa recalc()/calcDirty() (DOM) → se stubbean para poder correr la función real
+  const sandbox = { recalc(){}, calcDirty(){}, state:{ products:[
+    { id:'p1', name:'American Fit x1', price:39.9, qty:1, cost:3.5, mix:5, flete:4.5 },
+  ] } };
+  const grabSet = n => (txt.match(new RegExp('const ' + n + '\\s*=\\s*new Set\\([^)]*\\);')) || [])[0].replace('const','var');
+  const codigo = grabSet('_PRODUCT_TEXT_FIELDS') + '\n'
+    + grabSet('_PRODUCT_NUM_FIELDS') + '\n'
+    + extraerFn('updateProduct');
+  with (sandbox) { eval(codigo); }
+  const up = sandbox.updateProduct || (function(){ with(sandbox){ return updateProduct; } })();
+
+  // Vaciar el nombre no lo vuelve 0
+  up('p1','name','');
+  eq('nombre vaciado sigue siendo texto', typeof sandbox.state.products[0].name, 'string');
+  // Nombre "39" se queda como string "39", no número 39
+  up('p1','name','39');
+  ok('nombre numérico se conserva como texto', sandbox.state.products[0].name === '39' && typeof sandbox.state.products[0].name === 'string');
+  // Un campo numérico sí se convierte
+  up('p1','price','45.5');
+  eq('precio sí se convierte a número', sandbox.state.products[0].price, 45.5);
+  eq('precio inválido cae a 0', (up('p1','price','abc'), sandbox.state.products[0].price), 0);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+seccion('Productos: reparación de nombres corrompidos al cargar');
+{
+  // loadState repara nombres que quedaron como número por el bug anterior
+  const fn = extraerFn('loadState');
+  ok('loadState convierte name numérico a string',
+    /typeof p\.name === 'number'\) p\.name = String\(p\.name\)/.test(fn),
+    'la migración de reparación debe estar presente');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 seccion('Sintaxis del bundle');
 {
   const m = txt.match(/<script>([\s\S]*)<\/script>/);

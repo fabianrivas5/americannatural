@@ -2941,6 +2941,14 @@ function loadState() {
     // Backfill missing dates with today (local) so date filter works
     const todayLocal = (d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)(new Date());
     if (saved.creativos) saved.creativos.forEach(c => { if (!c.date) c.date = todayLocal; });
+    // Reparar productos cuyo nombre se corrompió a número (bug de coerción anterior):
+    // si un creativo apuntaba a ese producto por nombre, se re-vincula por texto.
+    if (Array.isArray(saved.products)) {
+      saved.products.forEach(p => {
+        if (p && typeof p.name === 'number') p.name = String(p.name);
+        if (p && p.name == null) p.name = 'Producto sin nombre';
+      });
+    }
     return saved;
   } catch { return defaultState(); }
 }
@@ -3186,10 +3194,37 @@ function addProduct() {
   state.products.push({ id: uid(), name:'Nuevo combo', qty:1, price:39.90, cost:3.50, mix:5, flete:4.50 });
   renderProducts(); recalc(); calcDirty(); persistState();
 }
-function removeProduct(id) { markDeleted(id); state.products = state.products.filter(p => p.id !== id); renderProducts(); recalc(); calcDirty(); persistState(); }
+function removeProduct(id) {
+  const p = state.products.find(x => x.id === id);
+  if (!p) return;
+  // Avisar el impacto: cuántos creativos/landings quedan huérfanos al borrar el producto
+  const usados = (state.creativos||[]).filter(c => c.product === p.name).length;
+  const landings = (state.landings||[]).filter(l => l.product === p.name).length;
+  let msg = `¿Eliminar el producto "${p.name}"?`;
+  if (usados || landings) {
+    const partes = [];
+    if (usados)   partes.push(`${usados} creativo${usados>1?'s':''}`);
+    if (landings) partes.push(`${landings} landing${landings>1?'s':''}`);
+    msg += `\n\n⚠️ ${partes.join(' y ')} usan este producto y quedarán sin producto asignado (sus métricas y objetivos de CPA/ROAS se calcularán con valores por defecto).`;
+  }
+  msg += `\n\nEsta acción no se puede deshacer.`;
+  if (!confirm(msg)) return;
+  markDeleted(id);
+  state.products = state.products.filter(x => x.id !== id);
+  renderProducts(); recalc(); calcDirty(); persistState();
+  showToast('Producto eliminado');
+}
+// Campos de texto del producto: NUNCA convertir a número (un nombre "39" o vacío
+// no debe volverse número, o se rompe la selección c.product===p.name en el modal).
+const _PRODUCT_TEXT_FIELDS = new Set(['name','img']);
+const _PRODUCT_NUM_FIELDS  = new Set(['qty','price','cost','mix','flete']);
 function updateProduct(id, field, val) {
   const p = state.products.find(x => x.id === id);
-  if (p) { p[field] = isNaN(+val) ? val : +val; recalc(); calcDirty(); }
+  if (!p) return;
+  if (_PRODUCT_TEXT_FIELDS.has(field))      p[field] = val == null ? '' : String(val);
+  else if (_PRODUCT_NUM_FIELDS.has(field))  p[field] = +val || 0;
+  else                                      p[field] = isNaN(+val) ? val : +val;
+  recalc(); calcDirty();
 }
 
 let _selectedProducts = new Set();
@@ -5934,10 +5969,21 @@ function openCreativoModal(id) {
   const c = id ? state.creativos.find(x=>x.id===id) : null;
   document.getElementById('modal-creativo-title').textContent = c ? 'Editar creativo' : 'Nuevo creativo';
 
-  // Populate product select
+  // Populate product select (defensivo: nunca romper si products falta o un nombre es inválido)
   const sel = document.getElementById('cr-product');
-  sel.innerHTML = '<option value="">— Seleccionar —</option>' +
-    state.products.map(p=>`<option value="${esc(p.name)}" ${c&&c.product===p.name?'selected':''}>${esc(p.name)}</option>`).join('');
+  if (sel) {
+    const prods = (state.products || []).filter(p => p && p.name != null && String(p.name).trim() !== '');
+    // Si el creativo apunta a un producto que ya no existe, mostrarlo igual para no perder el dato
+    const nombres = new Set(prods.map(p => String(p.name)));
+    const opciones = prods.map(p => {
+      const nm = String(p.name);
+      return `<option value="${esc(nm)}" ${c && String(c.product)===nm ? 'selected':''}>${esc(nm)}</option>`;
+    });
+    if (c && c.product && !nombres.has(String(c.product))) {
+      opciones.push(`<option value="${esc(String(c.product))}" selected>${esc(String(c.product))} (eliminado)</option>`);
+    }
+    sel.innerHTML = '<option value="">— Seleccionar —</option>' + opciones.join('');
+  }
 
   // Populate ad account select
   const aaSel = document.getElementById('cr-ad-account');
