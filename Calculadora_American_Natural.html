@@ -3249,14 +3249,18 @@ function _updateSelBar() {
   if (chkAll) chkAll.checked = n > 0 && n === state.products.length;
 }
 
+// La selección guarda la REFERENCIA del objeto producto, no su id. Así, aunque dos
+// productos compartan id, seleccionar uno y borrarlo elimina exactamente ese objeto
+// y nunca los demás (el bug de "borrar 3 y se van todos").
 function toggleProductSelect(id, checked) {
-  if (checked) _selectedProducts.add(id); else _selectedProducts.delete(id);
+  const p = state.products.find(x => x.id === id);
+  if (!p) return;
+  if (checked) _selectedProducts.add(p); else _selectedProducts.delete(p);
   _updateSelBar();
 }
 
 function toggleAllProducts(checked) {
-  _selectedProducts = checked ? new Set(state.products.map(p => p.id)) : new Set();
-  // Update all row checkboxes
+  _selectedProducts = checked ? new Set(state.products) : new Set();
   state.products.forEach(p => {
     const el = document.getElementById('pchk-' + p.id);
     if (el) el.checked = checked;
@@ -3279,11 +3283,20 @@ function deleteSelectedProducts() {
   const n = _selectedProducts.size;
   if (!n) return;
   if (!confirm(`¿Eliminar ${n} producto${n > 1 ? 's' : ''} seleccionado${n > 1 ? 's' : ''}? Esta acción no se puede deshacer.`)) return;
-  _selectedProducts.forEach(id => markDeleted(id));
-  state.products = state.products.filter(p => !_selectedProducts.has(p.id));
+  // Filtrar por identidad de objeto: elimina solo los seleccionados (temp antes de asignar)
+  const restantes = state.products.filter(p => !_selectedProducts.has(p));
+  const borrados = state.products.length - restantes.length;
+  // Candado de seguridad: nunca borrar más de los seleccionados (protege los datos).
+  if (borrados > n) {
+    if (typeof logError === 'function') logError('borradoAnormal', `intento de borrar ${borrados} con ${n} seleccionados`, '');
+    showToast('Se canceló el borrado por seguridad (inconsistencia detectada). Recarga la página.', 'error');
+    return;
+  }
+  _selectedProducts.forEach(p => markDeleted(p.id));
+  state.products = restantes;
   _selectedProducts = new Set();
   renderProducts(); recalc(); calcDirty(); persistState();
-  showToast(n + ' producto' + (n > 1 ? 's' : '') + ' eliminado' + (n > 1 ? 's' : ''));
+  showToast(borrados + ' producto' + (borrados > 1 ? 's' : '') + ' eliminado' + (borrados > 1 ? 's' : ''));
 }
 
 let _dragSrcId = null;
@@ -3327,9 +3340,11 @@ function renderProducts() {
   const tbody = document.getElementById('prod-body');
   if (!tbody) return;
   _ensureUniqueProductIds();
+  // Descartar de la selección objetos que ya no están en la lista (p. ej. tras un sync)
+  if (_selectedProducts.size) _selectedProducts = new Set([..._selectedProducts].filter(p => state.products.includes(p)));
   tbody.innerHTML = state.products.map(p => `
     <tr draggable="true" data-pid="${p.id}">
-      <td style="padding:4px;text-align:center"><input type="checkbox" id="pchk-${p.id}" ${_selectedProducts.has(p.id)?'checked':''} onchange="toggleProductSelect('${p.id}',this.checked)"></td>
+      <td style="padding:4px;text-align:center"><input type="checkbox" id="pchk-${p.id}" ${_selectedProducts.has(p)?'checked':''} onchange="toggleProductSelect('${p.id}',this.checked)"></td>
       <td style="text-align:center;padding:2px 4px;cursor:grab" title="Arrastrar para reordenar">⠿</td>
       <td style="text-align:center;padding:2px 4px">
         <div style="position:relative;display:inline-block;cursor:pointer" onclick="document.getElementById('prod-img-${p.id}').click()" title="Subir foto del producto">

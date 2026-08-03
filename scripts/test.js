@@ -423,6 +423,23 @@ seccion('Productos: ids duplicados no borran de más');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+seccion('Productos: borrado por referencia no elimina de más aunque haya ids repetidos');
+{
+  // Escenario extremo: TODOS los productos comparten el mismo id (bug original).
+  // Al seleccionar por referencia de objeto, borrar 2 elimina exactamente 2.
+  const a = {id:'dup',name:'A'}, b = {id:'dup',name:'B'}, cc = {id:'dup',name:'C'}, d = {id:'dup',name:'D'};
+  const productos = [a, b, cc, d];
+  const sel = new Set([a, b]);                       // selección por referencia
+  const restantes = productos.filter(p => !sel.has(p));
+  eq('con ids repetidos, borra solo 2 (no todos)', productos.length - restantes.length, 2);
+  ok('quedan C y D', restantes.includes(cc) && restantes.includes(d) && !restantes.includes(a));
+
+  // El candado: borrados nunca puede superar la selección
+  const n = sel.size, borrados = productos.length - restantes.length;
+  ok('candado: borrados <= seleccionados', borrados <= n, `borrados ${borrados}, sel ${n}`);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 seccion('Sintaxis del bundle');
 {
   const m = txt.match(/<script>([\s\S]*)<\/script>/);

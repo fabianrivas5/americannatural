@@ -5,7 +5,7 @@
 > node scripts/mapa.js
 > ```
 
-Estado: **8510 líneas**, **283 funciones**, **58 secciones**, 108 usos de `innerHTML`, 327 handlers inline.
+Estado: **8525 líneas**, **283 funciones**, **58 secciones**, 108 usos de `innerHTML`, 327 handlers inline.
 
 Los números de línea cambian con cada edición: sirven para orientarse, pero **busca por nombre**.
 
@@ -40,49 +40,49 @@ Los números de línea cambian con cada edición: sirven para orientarse, pero *
 | 3103 | LOGO | 7 |
 | 3167 | GASTOS FIJOS | 5 |
 | 3194 | PRODUCTS | 16 |
-| 3464 | Phase 4: country distribution & simulator | 7 |
-| 3613 | end Phase 4 | 1 |
-| 3629 | FILTERS | 6 |
-| 3705 | DASHBOARD | 0 |
-| 3706 | HOME / INICIO EJECUTIVO | 20 |
-| 4172 | WEEKLY HISTORY | 5 |
-| 4265 | EXCEL UPLOAD (Phase 5) | 11 |
-| 4526 | COMPARADOR | 2 |
-| 4619 | KANBAN | 16 |
-| 5111 | VISTA JERÁRQUICA: CAMPAÑA / ADSET / ANUNCIO | 9 |
-| 5433 | CREATIVO MODAL | 0 |
-| 5440 | Angle management | 3 |
-| 5483 | Punto de dolor | 3 |
-| 5516 | Multi-file upload | 5 |
-| 5581 | Referencias del creador (inspiración, no creativo final) | 7 |
-| 5706 | STAGE LOGIC | 13 |
-| 6447 | 🔴 ROJO — parar urgente | 0 |
-| 6473 | 🟢 VERDE — va bien | 0 |
-| 6487 | 🟡 AMARILLO — observar | 2 |
-| 6521 | Fuentes de datos | 0 |
-| 6545 | Helpers visuales | 0 |
-| 6558 | 1. EVALUACIÓN DE RENTABILIDAD | 0 |
-| 6606 | 2. EVALUACIÓN DE TRÁFICO | 0 |
-| 6658 | 3. DIAGNÓSTICO CREATIVO | 0 |
-| 6670 | 4. MÉTRICAS FALTANTES | 0 |
-| 6679 | 5. RESUMEN EJECUTIVO y ACCIÓN | 0 |
-| 6818 | VISTA DE CAMPAÑA: CAMPAÑA → CONJUNTOS → ANUNCIOS | 13 |
-| 7248 | RECURSOS OPERATIVOS | 7 |
-| 7418 | Pixel CRUD | 3 |
-| 7447 | Landing CRUD | 1 |
-| 7469 | Copies por landing (máx 5) | 10 |
-| 7581 | Recurso CRUD | 3 |
-| 7608 | Enfoques creativos | 4 |
-| 7651 | Equipo | 5 |
-| 7718 | Puntos de dolor | 3 |
-| 7746 | Pixel/Landing en formulario de creativo | 3 |
-| 7767 | COST CAP | 12 |
-| 8084 | CONFIG | 1 |
-| 8113 | DIAGNÓSTICO | 2 |
-| 8167 | AD ACCOUNTS | 10 |
-| 8301 | SAVE PROJECT | 4 |
-| 8335 | INIT | 2 |
-| 8406 | USER MANAGEMENT | 5 |
+| 3479 | Phase 4: country distribution & simulator | 7 |
+| 3628 | end Phase 4 | 1 |
+| 3644 | FILTERS | 6 |
+| 3720 | DASHBOARD | 0 |
+| 3721 | HOME / INICIO EJECUTIVO | 20 |
+| 4187 | WEEKLY HISTORY | 5 |
+| 4280 | EXCEL UPLOAD (Phase 5) | 11 |
+| 4541 | COMPARADOR | 2 |
+| 4634 | KANBAN | 16 |
+| 5126 | VISTA JERÁRQUICA: CAMPAÑA / ADSET / ANUNCIO | 9 |
+| 5448 | CREATIVO MODAL | 0 |
+| 5455 | Angle management | 3 |
+| 5498 | Punto de dolor | 3 |
+| 5531 | Multi-file upload | 5 |
+| 5596 | Referencias del creador (inspiración, no creativo final) | 7 |
+| 5721 | STAGE LOGIC | 13 |
+| 6462 | 🔴 ROJO — parar urgente | 0 |
+| 6488 | 🟢 VERDE — va bien | 0 |
+| 6502 | 🟡 AMARILLO — observar | 2 |
+| 6536 | Fuentes de datos | 0 |
+| 6560 | Helpers visuales | 0 |
+| 6573 | 1. EVALUACIÓN DE RENTABILIDAD | 0 |
+| 6621 | 2. EVALUACIÓN DE TRÁFICO | 0 |
+| 6673 | 3. DIAGNÓSTICO CREATIVO | 0 |
+| 6685 | 4. MÉTRICAS FALTANTES | 0 |
+| 6694 | 5. RESUMEN EJECUTIVO y ACCIÓN | 0 |
+| 6833 | VISTA DE CAMPAÑA: CAMPAÑA → CONJUNTOS → ANUNCIOS | 13 |
+| 7263 | RECURSOS OPERATIVOS | 7 |
+| 7433 | Pixel CRUD | 3 |
+| 7462 | Landing CRUD | 1 |
+| 7484 | Copies por landing (máx 5) | 10 |
+| 7596 | Recurso CRUD | 3 |
+| 7623 | Enfoques creativos | 4 |
+| 7666 | Equipo | 5 |
+| 7733 | Puntos de dolor | 3 |
+| 7761 | Pixel/Landing en formulario de creativo | 3 |
+| 7782 | COST CAP | 12 |
+| 8099 | CONFIG | 1 |
+| 8128 | DIAGNÓSTICO | 2 |
+| 8182 | AD ACCOUNTS | 10 |
+| 8316 | SAVE PROJECT | 4 |
+| 8350 | INIT | 2 |
+| 8421 | USER MANAGEMENT | 5 |
 
 ## Funciones más largas
 
@@ -223,312 +223,312 @@ Candidatas naturales si algún día se parte el archivo. Hoy no se tocan: funcio
 - `addProduct()` — línea 3197, 4 líneas
 - `removeProduct(id)` — línea 3201, 24 líneas
 - `updateProduct(id, field, val)` — línea 3225, 11 líneas
-- `_updateSelBar()` — línea 3236, 16 líneas
-- `toggleProductSelect(id, checked)` — línea 3252, 5 líneas
-- `toggleAllProducts(checked)` — línea 3257, 10 líneas
-- `clearProductSelection()` — línea 3267, 11 líneas
-- `deleteSelectedProducts()` — línea 3278, 13 líneas
-- `_initProductDrag(tbody)` — línea 3291, 25 líneas
-- `_ensureUniqueProductIds()` — línea 3316, 10 líneas
-- `renderProducts()` — línea 3326, 40 líneas
-- `async uploadProductImg(id, input)` — línea 3366, 9 líneas
-- `duplicateProduct(id)` — línea 3375, 11 líneas
-- `recalc()` — línea 3386, 80 líneas
+- `_updateSelBar()` — línea 3236, 19 líneas
+- `toggleProductSelect(id, checked)` — línea 3255, 7 líneas
+- `toggleAllProducts(checked)` — línea 3262, 9 líneas
+- `clearProductSelection()` — línea 3271, 11 líneas
+- `deleteSelectedProducts()` — línea 3282, 22 líneas
+- `_initProductDrag(tbody)` — línea 3304, 25 líneas
+- `_ensureUniqueProductIds()` — línea 3329, 10 líneas
+- `renderProducts()` — línea 3339, 42 líneas
+- `async uploadProductImg(id, input)` — línea 3381, 9 líneas
+- `duplicateProduct(id)` — línea 3390, 11 líneas
+- `recalc()` — línea 3401, 80 líneas
 
 ### Phase 4: country distribution & simulator
 
-- `getEcuadorShare()` — línea 3466, 11 líneas
-- `renderCountryDist(gfTotal, pedidos)` — línea 3477, 50 líneas
-- `updateCountry(id, field, val)` — línea 3527, 5 líneas
-- `updateDistMethod(val)` — línea 3532, 5 líneas
-- `updateManualPct(id, val)` — línea 3537, 4 líneas
-- `populateSimProduct()` — línea 3541, 7 líneas
-- `runSimulator()` — línea 3548, 67 líneas
+- `getEcuadorShare()` — línea 3481, 11 líneas
+- `renderCountryDist(gfTotal, pedidos)` — línea 3492, 50 líneas
+- `updateCountry(id, field, val)` — línea 3542, 5 líneas
+- `updateDistMethod(val)` — línea 3547, 5 líneas
+- `updateManualPct(id, val)` — línea 3552, 4 líneas
+- `populateSimProduct()` — línea 3556, 7 líneas
+- `runSimulator()` — línea 3563, 67 líneas
 
 ### end Phase 4
 
-- `updateDashCascade(price,mv,md,me,mop,cpao)` — línea 3615, 17 líneas
+- `updateDashCascade(price,mv,md,me,mop,cpao)` — línea 3630, 17 líneas
 
 ### FILTERS
 
-- `getFilteredHistory()` — línea 3632, 13 líneas
-- `isFilterActive()` — línea 3645, 4 líneas
-- `applyFilters()` — línea 3649, 11 líneas
-- `resetFilters()` — línea 3660, 8 líneas
-- `setPreset(p)` — línea 3668, 21 líneas
-- `updateFilterSelects()` — línea 3689, 30 líneas
+- `getFilteredHistory()` — línea 3647, 13 líneas
+- `isFilterActive()` — línea 3660, 4 líneas
+- `applyFilters()` — línea 3664, 11 líneas
+- `resetFilters()` — línea 3675, 8 líneas
+- `setPreset(p)` — línea 3683, 21 líneas
+- `updateFilterSelects()` — línea 3704, 30 líneas
 
 ### HOME / INICIO EJECUTIVO
 
-- `_metaPeriodStart(periodo)` — línea 3719, 7 líneas
-- `_stageAtInPeriod(c, stage, start)` — línea 3726, 6 líneas
-- `_metaProgress(meta)` — línea 3732, 36 líneas
-- `_homeRange()` — línea 3768, 12 líneas
-- `_inHomeRange(iso, r)` — línea 3780, 7 líneas
-- `onHomeDateChange()` — línea 3787, 9 líneas
-- `_escaladoDefaults()` — línea 3796, 4 líneas
-- `getEscaladoStrategy()` — línea 3800, 1 líneas
-- `getEscaladoCandidates()` — línea 3801, 27 líneas
-- `renderHome()` — línea 3828, 143 líneas
-- `openMetaForm()` — línea 3971, 22 líneas
-- `saveMeta()` — línea 3993, 18 líneas
-- `deleteMeta(id)` — línea 4011, 7 líneas
-- `renderConfigMetas()` — línea 4018, 16 líneas
-- `renderEscaladoStrategyForm()` — línea 4034, 34 líneas
-- `saveEscaladoStrategy()` — línea 4068, 16 líneas
-- `renderDashboard()` — línea 4084, 33 líneas
-- `renderRevenueChart(hist)` — línea 4117, 17 líneas
-- `renderPedidosChart(hist)` — línea 4134, 19 líneas
-- `renderSemaforo()` — línea 4153, 20 líneas
+- `_metaPeriodStart(periodo)` — línea 3734, 7 líneas
+- `_stageAtInPeriod(c, stage, start)` — línea 3741, 6 líneas
+- `_metaProgress(meta)` — línea 3747, 36 líneas
+- `_homeRange()` — línea 3783, 12 líneas
+- `_inHomeRange(iso, r)` — línea 3795, 7 líneas
+- `onHomeDateChange()` — línea 3802, 9 líneas
+- `_escaladoDefaults()` — línea 3811, 4 líneas
+- `getEscaladoStrategy()` — línea 3815, 1 líneas
+- `getEscaladoCandidates()` — línea 3816, 27 líneas
+- `renderHome()` — línea 3843, 143 líneas
+- `openMetaForm()` — línea 3986, 22 líneas
+- `saveMeta()` — línea 4008, 18 líneas
+- `deleteMeta(id)` — línea 4026, 7 líneas
+- `renderConfigMetas()` — línea 4033, 16 líneas
+- `renderEscaladoStrategyForm()` — línea 4049, 34 líneas
+- `saveEscaladoStrategy()` — línea 4083, 16 líneas
+- `renderDashboard()` — línea 4099, 33 líneas
+- `renderRevenueChart(hist)` — línea 4132, 17 líneas
+- `renderPedidosChart(hist)` — línea 4149, 19 líneas
+- `renderSemaforo()` — línea 4168, 20 líneas
 
 ### WEEKLY HISTORY
 
-- `saveSemana()` — línea 4173, 27 líneas
-- `renderHistory()` — línea 4200, 26 líneas
-- `deleteSemana(id)` — línea 4226, 5 líneas
-- `clearHistory()` — línea 4231, 5 líneas
-- `renderHistoryCharts()` — línea 4236, 52 líneas
+- `saveSemana()` — línea 4188, 27 líneas
+- `renderHistory()` — línea 4215, 26 líneas
+- `deleteSemana(id)` — línea 4241, 5 líneas
+- `clearHistory()` — línea 4246, 5 líneas
+- `renderHistoryCharts()` — línea 4251, 52 líneas
 
 ### EXCEL UPLOAD (Phase 5)
 
-- `handleXlFile(input)` — línea 4288, 4 líneas
-- `handleXlDrop(e)` — línea 4292, 9 líneas
-- `processXlFile(file)` — línea 4301, 21 líneas
-- `loadSheetByIdx(i)` — línea 4322, 7 líneas
-- `xlMatchField(cellStr)` — línea 4329, 8 líneas
-- `analyzeSheet(sheetName, data)` — línea 4337, 18 líneas
-- `renderKVMapper(sheetName, data)` — línea 4355, 19 líneas
-- `renderTabularMapper(sheetName, data, headerRowIdx, dataRows)` — línea 4374, 46 líneas
-- `applyTabularMap()` — línea 4420, 29 líneas
-- `renderConfirmForm(sheetName, det)` — línea 4449, 46 líneas
-- `saveFromXl()` — línea 4495, 32 líneas
+- `handleXlFile(input)` — línea 4303, 4 líneas
+- `handleXlDrop(e)` — línea 4307, 9 líneas
+- `processXlFile(file)` — línea 4316, 21 líneas
+- `loadSheetByIdx(i)` — línea 4337, 7 líneas
+- `xlMatchField(cellStr)` — línea 4344, 8 líneas
+- `analyzeSheet(sheetName, data)` — línea 4352, 18 líneas
+- `renderKVMapper(sheetName, data)` — línea 4370, 19 líneas
+- `renderTabularMapper(sheetName, data, headerRowIdx, dataRows)` — línea 4389, 46 líneas
+- `applyTabularMap()` — línea 4435, 29 líneas
+- `renderConfirmForm(sheetName, det)` — línea 4464, 46 líneas
+- `saveFromXl()` — línea 4510, 32 líneas
 
 ### COMPARADOR
 
-- `populateCompareSelects()` — línea 4527, 16 líneas
-- `compareWeeks()` — línea 4543, 90 líneas
+- `populateCompareSelects()` — línea 4542, 16 líneas
+- `compareWeeks()` — línea 4558, 90 líneas
 
 ### KANBAN
 
-- `setDatePreset(preset)` — línea 4633, 9 líneas
-- `getDateRange()` — línea 4642, 18 líneas
-- `getFilteredCreativos(opts)` — línea 4660, 41 líneas
-- `populateCreativoFilterProduct()` — línea 4701, 21 líneas
-- `renderKanban()` — línea 4722, 139 líneas
-- `dragCard(e, id)` — línea 4861, 1 líneas
-- `validateStageTransition(c, toStatus)` — línea 4862, 79 líneas
-- `dropCard(e, colId)` — línea 4941, 16 líneas
-- `showValidationBanner(missing, colLabel)` — línea 4957, 29 líneas
-- `moveCard(id, toStatus)` — línea 4986, 46 líneas
-- `_metaStatusInfo(raw)` — línea 5032, 13 líneas
-- `_fmtDateTime(iso)` — línea 5045, 6 líneas
-- `_daysSince(iso)` — línea 5051, 12 líneas
-- `openCampaignCreativoModal()` — línea 5063, 26 líneas
-- `onTestTypeChange()` — línea 5089, 12 líneas
-- `_stampStageChange(c, toStatus)` — línea 5101, 11 líneas
+- `setDatePreset(preset)` — línea 4648, 9 líneas
+- `getDateRange()` — línea 4657, 18 líneas
+- `getFilteredCreativos(opts)` — línea 4675, 41 líneas
+- `populateCreativoFilterProduct()` — línea 4716, 21 líneas
+- `renderKanban()` — línea 4737, 139 líneas
+- `dragCard(e, id)` — línea 4876, 1 líneas
+- `validateStageTransition(c, toStatus)` — línea 4877, 79 líneas
+- `dropCard(e, colId)` — línea 4956, 16 líneas
+- `showValidationBanner(missing, colLabel)` — línea 4972, 29 líneas
+- `moveCard(id, toStatus)` — línea 5001, 46 líneas
+- `_metaStatusInfo(raw)` — línea 5047, 13 líneas
+- `_fmtDateTime(iso)` — línea 5060, 6 líneas
+- `_daysSince(iso)` — línea 5066, 12 líneas
+- `openCampaignCreativoModal()` — línea 5078, 26 líneas
+- `onTestTypeChange()` — línea 5104, 12 líneas
+- `_stampStageChange(c, toStatus)` — línea 5116, 11 líneas
 
 ### VISTA JERÁRQUICA: CAMPAÑA / ADSET / ANUNCIO
 
-- `renderGroupedView()` — línea 5112, 84 líneas
-- `_groupRecommendation(g, t, nivel)` — línea 5196, 16 líneas
-- `setColSort(key)` — línea 5212, 14 líneas
-- `_crFilterMatch(c)` — línea 5226, 8 líneas
-- `renderCreativosTable()` — línea 5234, 104 líneas
-- `renderCreativosSummary()` — línea 5338, 32 líneas
-- `renderRankings()` — línea 5370, 60 líneas
-- `getStatusCls(s)` — línea 5430, 1 líneas
-- `getStatusLabel(s)` — línea 5431, 10 líneas
+- `renderGroupedView()` — línea 5127, 84 líneas
+- `_groupRecommendation(g, t, nivel)` — línea 5211, 16 líneas
+- `setColSort(key)` — línea 5227, 14 líneas
+- `_crFilterMatch(c)` — línea 5241, 8 líneas
+- `renderCreativosTable()` — línea 5249, 104 líneas
+- `renderCreativosSummary()` — línea 5353, 32 líneas
+- `renderRankings()` — línea 5385, 60 líneas
+- `getStatusCls(s)` — línea 5445, 1 líneas
+- `getStatusLabel(s)` — línea 5446, 10 líneas
 
 ### Angle management
 
-- `populateAngleSel(current)` — línea 5441, 19 líneas
-- `onAngleSel(sel)` — línea 5460, 10 líneas
-- `addAngleFromModal()` — línea 5470, 14 líneas
+- `populateAngleSel(current)` — línea 5456, 19 líneas
+- `onAngleSel(sel)` — línea 5475, 10 líneas
+- `addAngleFromModal()` — línea 5485, 14 líneas
 
 ### Punto de dolor
 
-- `populatePainSel(current)` — línea 5484, 13 líneas
-- `onPainSel(sel)` — línea 5497, 6 líneas
-- `addPainFromModal()` — línea 5503, 14 líneas
+- `populatePainSel(current)` — línea 5499, 13 líneas
+- `onPainSel(sel)` — línea 5512, 6 líneas
+- `addPainFromModal()` — línea 5518, 14 líneas
 
 ### Multi-file upload
 
-- `loadCreativoFiles(input)` — línea 5517, 24 líneas
-- `removeCreativoFile(idx)` — línea 5541, 7 líneas
-- `renderFilesGrid()` — línea 5548, 22 líneas
-- `loadCreativoFile(input)` — línea 5570, 4 líneas
-- `clearCreativoThumb()` — línea 5574, 8 líneas
+- `loadCreativoFiles(input)` — línea 5532, 24 líneas
+- `removeCreativoFile(idx)` — línea 5556, 7 líneas
+- `renderFilesGrid()` — línea 5563, 22 líneas
+- `loadCreativoFile(input)` — línea 5585, 4 líneas
+- `clearCreativoThumb()` — línea 5589, 8 líneas
 
 ### Referencias del creador (inspiración, no creativo final)
 
-- `addRefLink()` — línea 5582, 10 líneas
-- `loadCreativoRefs(input)` — línea 5592, 18 líneas
-- `removeCreativoRef(idx)` — línea 5610, 5 líneas
-- `detectPlatform(url)` — línea 5615, 10 líneas
-- `renderRefsGrid()` — línea 5625, 26 líneas
-- `showThumbPreview(src, type, name)` — línea 5651, 14 líneas
-- `previewCreativoLink()` — línea 5665, 63 líneas
+- `addRefLink()` — línea 5597, 10 líneas
+- `loadCreativoRefs(input)` — línea 5607, 18 líneas
+- `removeCreativoRef(idx)` — línea 5625, 5 líneas
+- `detectPlatform(url)` — línea 5630, 10 líneas
+- `renderRefsGrid()` — línea 5640, 26 líneas
+- `showThumbPreview(src, type, name)` — línea 5666, 14 líneas
+- `previewCreativoLink()` — línea 5680, 63 líneas
 
 ### STAGE LOGIC
 
-- `onStageChange()` — línea 5728, 59 líneas
-- `renderModalFlowActions()` — línea 5787, 36 líneas
-- `moveThenClose(toStatus)` — línea 5823, 69 líneas
-- `openDetailModal(id)` — línea 5892, 91 líneas
-- `openCreativoModal(id)` — línea 5983, 112 líneas
-- `autoCalcRevenue()` — línea 6095, 15 líneas
-- `getProductCpaTargets(productName)` — línea 6110, 16 líneas
-- `getBaseName(productName)` — línea 6126, 4 líneas
-- `getTrafficCpaTargets(productName)` — línea 6130, 41 líneas
-- `async syncAllMetrics()` — línea 6171, 87 líneas
-- `async syncMetaMetrics()` — línea 6258, 116 líneas
-- `calcCreativoProfit()` — línea 6374, 50 líneas
-- `crSemaforo(m, targets)` — línea 6424, 81 líneas
+- `onStageChange()` — línea 5743, 59 líneas
+- `renderModalFlowActions()` — línea 5802, 36 líneas
+- `moveThenClose(toStatus)` — línea 5838, 69 líneas
+- `openDetailModal(id)` — línea 5907, 91 líneas
+- `openCreativoModal(id)` — línea 5998, 112 líneas
+- `autoCalcRevenue()` — línea 6110, 15 líneas
+- `getProductCpaTargets(productName)` — línea 6125, 16 líneas
+- `getBaseName(productName)` — línea 6141, 4 líneas
+- `getTrafficCpaTargets(productName)` — línea 6145, 41 líneas
+- `async syncAllMetrics()` — línea 6186, 87 líneas
+- `async syncMetaMetrics()` — línea 6273, 116 líneas
+- `calcCreativoProfit()` — línea 6389, 50 líneas
+- `crSemaforo(m, targets)` — línea 6439, 81 líneas
 
 ### 🟡 AMARILLO — observar
 
-- `crDecision(m, targets)` — línea 6505, 7 líneas
-- `showCreativoAnalysis(id)` — línea 6512, 308 líneas
+- `crDecision(m, targets)` — línea 6520, 7 líneas
+- `showCreativoAnalysis(id)` — línea 6527, 308 líneas
 
 ### VISTA DE CAMPAÑA: CAMPAÑA → CONJUNTOS → ANUNCIOS
 
-- `_rowToMetrics(r)` — línea 6820, 9 líneas
-- `_rowStats(r)` — línea 6829, 7 líneas
-- `_miniMetricsRow(g)` — línea 6836, 7 líneas
-- `async syncCampaignFromDrill(id, btnEl)` — línea 6843, 61 líneas
-- `showCampaignDrilldown(id)` — línea 6904, 88 líneas
-- `showSemaforoTooltip(e)` — línea 6992, 41 líneas
-- `semDot(m, size=14)` — línea 7033, 6 líneas
-- `validateIdeaSave()` — línea 7039, 34 líneas
-- `saveCreativo()` — línea 7073, 136 líneas
-- `duplicateCreativo(id)` — línea 7209, 18 líneas
-- `_stripForClone(c)` — línea 7227, 10 líneas
-- `deleteCreativo(id)` — línea 7237, 5 líneas
-- `closeModal(id)` — línea 7242, 12 líneas
+- `_rowToMetrics(r)` — línea 6835, 9 líneas
+- `_rowStats(r)` — línea 6844, 7 líneas
+- `_miniMetricsRow(g)` — línea 6851, 7 líneas
+- `async syncCampaignFromDrill(id, btnEl)` — línea 6858, 61 líneas
+- `showCampaignDrilldown(id)` — línea 6919, 88 líneas
+- `showSemaforoTooltip(e)` — línea 7007, 41 líneas
+- `semDot(m, size=14)` — línea 7048, 6 líneas
+- `validateIdeaSave()` — línea 7054, 34 líneas
+- `saveCreativo()` — línea 7088, 136 líneas
+- `duplicateCreativo(id)` — línea 7224, 18 líneas
+- `_stripForClone(c)` — línea 7242, 10 líneas
+- `deleteCreativo(id)` — línea 7252, 5 líneas
+- `closeModal(id)` — línea 7257, 12 líneas
 
 ### RECURSOS OPERATIVOS
 
-- `switchRecTab(tab)` — línea 7254, 9 líneas
-- `renderRecursos()` — línea 7263, 10 líneas
-- `_renderRecPixelsOnly()` — línea 7273, 24 líneas
-- `_recFilters()` — línea 7297, 9 líneas
-- `_renderRecAccountsPixels()` — línea 7306, 32 líneas
-- `_renderRecLandings()` — línea 7338, 48 líneas
-- `_renderRecRecursos()` — línea 7386, 33 líneas
+- `switchRecTab(tab)` — línea 7269, 9 líneas
+- `renderRecursos()` — línea 7278, 10 líneas
+- `_renderRecPixelsOnly()` — línea 7288, 24 líneas
+- `_recFilters()` — línea 7312, 9 líneas
+- `_renderRecAccountsPixels()` — línea 7321, 32 líneas
+- `_renderRecLandings()` — línea 7353, 48 líneas
+- `_renderRecRecursos()` — línea 7401, 33 líneas
 
 ### Pixel CRUD
 
-- `openPixelModal(id, preAccountId)` — línea 7419, 17 líneas
-- `savePixel()` — línea 7436, 9 líneas
-- `deletePixel(id)` — línea 7445, 3 líneas
+- `openPixelModal(id, preAccountId)` — línea 7434, 17 líneas
+- `savePixel()` — línea 7451, 9 líneas
+- `deletePixel(id)` — línea 7460, 3 líneas
 
 ### Landing CRUD
 
-- `openLandingModal(id)` — línea 7448, 22 líneas
+- `openLandingModal(id)` — línea 7463, 22 líneas
 
 ### Copies por landing (máx 5)
 
-- `_renderLdCopies(copies)` — línea 7470, 18 líneas
-- `_collectLdCopies()` — línea 7488, 9 líneas
-- `addLdCopy()` — línea 7497, 6 líneas
-- `removeLdCopy(i)` — línea 7503, 9 líneas
-- `copyToClipboard(txt)` — línea 7512, 5 líneas
-- `renderLandingSuggest()` — línea 7517, 36 líneas
-- `copyLandingCopy(landingId, idx)` — línea 7553, 5 líneas
-- `copyLandingSeg(landingId)` — línea 7558, 5 líneas
-- `saveLanding()` — línea 7563, 16 líneas
-- `deleteLanding(id)` — línea 7579, 3 líneas
+- `_renderLdCopies(copies)` — línea 7485, 18 líneas
+- `_collectLdCopies()` — línea 7503, 9 líneas
+- `addLdCopy()` — línea 7512, 6 líneas
+- `removeLdCopy(i)` — línea 7518, 9 líneas
+- `copyToClipboard(txt)` — línea 7527, 5 líneas
+- `renderLandingSuggest()` — línea 7532, 36 líneas
+- `copyLandingCopy(landingId, idx)` — línea 7568, 5 líneas
+- `copyLandingSeg(landingId)` — línea 7573, 5 líneas
+- `saveLanding()` — línea 7578, 16 líneas
+- `deleteLanding(id)` — línea 7594, 3 líneas
 
 ### Recurso CRUD
 
-- `openRecursoModal(id)` — línea 7582, 15 líneas
-- `saveRecurso()` — línea 7597, 9 líneas
-- `deleteRecurso(id)` — línea 7606, 4 líneas
+- `openRecursoModal(id)` — línea 7597, 15 líneas
+- `saveRecurso()` — línea 7612, 9 líneas
+- `deleteRecurso(id)` — línea 7621, 4 líneas
 
 ### Enfoques creativos
 
-- `_renderRecEnfoques()` — línea 7610, 16 líneas
-- `openEnfoqueModal(id)` — línea 7626, 9 líneas
-- `saveEnfoque(e)` — línea 7635, 10 líneas
-- `deleteEnfoque(id)` — línea 7645, 12 líneas
+- `_renderRecEnfoques()` — línea 7625, 16 líneas
+- `openEnfoqueModal(id)` — línea 7641, 9 líneas
+- `saveEnfoque(e)` — línea 7650, 10 líneas
+- `deleteEnfoque(id)` — línea 7660, 12 líneas
 
 ### Equipo
 
-- `_renderRecEquipo()` — línea 7657, 16 líneas
-- `openTeamModal(id)` — línea 7673, 15 líneas
-- `deleteTeamMember(id)` — línea 7688, 6 líneas
-- `populateTeamSelects()` — línea 7694, 22 líneas
-- `updateProdStatusBadge()` — línea 7716, 3 líneas
+- `_renderRecEquipo()` — línea 7672, 16 líneas
+- `openTeamModal(id)` — línea 7688, 15 líneas
+- `deleteTeamMember(id)` — línea 7703, 6 líneas
+- `populateTeamSelects()` — línea 7709, 22 líneas
+- `updateProdStatusBadge()` — línea 7731, 3 líneas
 
 ### Puntos de dolor
 
-- `_renderRecDolores()` — línea 7719, 10 líneas
-- `openDolorModal()` — línea 7729, 11 líneas
-- `deleteDolorItem(idx)` — línea 7740, 7 líneas
+- `_renderRecDolores()` — línea 7734, 10 líneas
+- `openDolorModal()` — línea 7744, 11 líneas
+- `deleteDolorItem(idx)` — línea 7755, 7 líneas
 
 ### Pixel/Landing en formulario de creativo
 
-- `populateCrPixels(adAccountId)` — línea 7747, 8 líneas
-- `onCrPixelChange()` — línea 7755, 7 líneas
-- `onCrAdAccountChange()` — línea 7762, 6 líneas
+- `populateCrPixels(adAccountId)` — línea 7762, 8 líneas
+- `onCrPixelChange()` — línea 7770, 7 líneas
+- `onCrAdAccountChange()` — línea 7777, 6 líneas
 
 ### COST CAP
 
-- `calcCostCap()` — línea 7768, 8 líneas
-- `addCostCapRow()` — línea 7776, 11 líneas
-- `sendToCostCap(creativoId)` — línea 7787, 36 líneas
-- `renderLinkedCreativos()` — línea 7823, 26 líneas
-- `ccDecision(r, be)` — línea 7849, 16 líneas
-- `renderEscaladoSugeridos()` — línea 7865, 21 líneas
-- `renderCostCaps()` — línea 7886, 58 líneas
-- `renderCostCapSummary(be, avgPrice)` — línea 7944, 82 líneas
-- `updateCC(i, field, val)` — línea 8026, 3 líneas
-- `deleteCC(i)` — línea 8029, 2 líneas
-- `exportCCToCSV()` — línea 8031, 14 líneas
-- `renderJBSteps()` — línea 8045, 40 líneas
+- `calcCostCap()` — línea 7783, 8 líneas
+- `addCostCapRow()` — línea 7791, 11 líneas
+- `sendToCostCap(creativoId)` — línea 7802, 36 líneas
+- `renderLinkedCreativos()` — línea 7838, 26 líneas
+- `ccDecision(r, be)` — línea 7864, 16 líneas
+- `renderEscaladoSugeridos()` — línea 7880, 21 líneas
+- `renderCostCaps()` — línea 7901, 58 líneas
+- `renderCostCapSummary(be, avgPrice)` — línea 7959, 82 líneas
+- `updateCC(i, field, val)` — línea 8041, 3 líneas
+- `deleteCC(i)` — línea 8044, 2 líneas
+- `exportCCToCSV()` — línea 8046, 14 líneas
+- `renderJBSteps()` — línea 8060, 40 líneas
 
 ### CONFIG
 
-- `renderConfig()` — línea 8085, 29 líneas
+- `renderConfig()` — línea 8100, 29 líneas
 
 ### DIAGNÓSTICO
 
-- `renderErrorLog()` — línea 8114, 42 líneas
-- `copiarErrorLog()` — línea 8156, 14 líneas
+- `renderErrorLog()` — línea 8129, 42 líneas
+- `copiarErrorLog()` — línea 8171, 14 líneas
 
 ### AD ACCOUNTS
 
-- `renderAdAccounts()` — línea 8170, 19 líneas
-- `openAdAccountModal(id)` — línea 8189, 12 líneas
-- `saveAdAccount()` — línea 8201, 18 líneas
-- `deleteAdAccount(id)` — línea 8219, 6 líneas
-- `renderVersions()` — línea 8225, 14 líneas
-- `saveVersion()` — línea 8239, 8 líneas
-- `restoreVersion(id)` — línea 8247, 11 líneas
-- `deleteVersion(id)` — línea 8258, 5 líneas
-- `renderSemaforoConfig()` — línea 8263, 11 líneas
-- `renderGlossary()` — línea 8274, 28 líneas
+- `renderAdAccounts()` — línea 8185, 19 líneas
+- `openAdAccountModal(id)` — línea 8204, 12 líneas
+- `saveAdAccount()` — línea 8216, 18 líneas
+- `deleteAdAccount(id)` — línea 8234, 6 líneas
+- `renderVersions()` — línea 8240, 14 líneas
+- `saveVersion()` — línea 8254, 8 líneas
+- `restoreVersion(id)` — línea 8262, 11 líneas
+- `deleteVersion(id)` — línea 8273, 5 líneas
+- `renderSemaforoConfig()` — línea 8278, 11 líneas
+- `renderGlossary()` — línea 8289, 28 líneas
 
 ### SAVE PROJECT
 
-- `saveProject()` — línea 8302, 5 líneas
-- `exportJSON()` — línea 8307, 8 líneas
-- `importJSON(input)` — línea 8315, 14 líneas
-- `resetAll()` — línea 8329, 7 líneas
+- `saveProject()` — línea 8317, 5 líneas
+- `exportJSON()` — línea 8322, 8 líneas
+- `importJSON(input)` — línea 8330, 14 líneas
+- `resetAll()` — línea 8344, 7 líneas
 
 ### INIT
 
-- `init()` — línea 8336, 45 líneas
-- `_isDirty()` — línea 8381, 26 líneas
+- `init()` — línea 8351, 45 líneas
+- `_isDirty()` — línea 8396, 26 líneas
 
 ### USER MANAGEMENT
 
-- `renderUsersList()` — línea 8407, 27 líneas
-- `openUserModal(id)` — línea 8434, 38 líneas
-- `editUser(id)` — línea 8472, 2 líneas
-- `saveUser()` — línea 8474, 24 líneas
-- `deleteUser(id)` — línea 8498, 12 líneas
+- `renderUsersList()` — línea 8422, 27 líneas
+- `openUserModal(id)` — línea 8449, 38 líneas
+- `editUser(id)` — línea 8487, 2 líneas
+- `saveUser()` — línea 8489, 24 líneas
+- `deleteUser(id)` — línea 8513, 12 líneas
 
 ## Índice alfabético
 
-`_autoSnapshot` (2980) · `_collectLdCopies` (7488) · `_crFilterMatch` (5226) · `_dataScore` (2088) · `_daysSince` (5051) · `_ensureUniqueProductIds` (3316) · `_enterApp` (2565) · `_escaladoDefaults` (3796) · `_fmtDateTime` (5045) · `_getUserProfile` (2559) · `_groupRecommendation` (5196) · `_guardarBase` (2327) · `_hash` (2305) · `_hasPendingUpload` (2518) · `_homeRange` (3768) · `_huellaLista` (2313) · `_inHomeRange` (3780) · `_initProductDrag` (3291) · `_isDirty` (8381) · `_itemScore` (2074) · `_leanState` (3005) · `_leerBase` (2334) · `_markPendingUpload` (2514) · `_mergeArraysById` (2368) · `_mergeDefaultUsers` (2048) · `_mergeItem` (2341) · `_metaPeriodStart` (3719) · `_metaProgress` (3732) · `_metaStatusInfo` (5032) · `_miniMetricsRow` (6836) · `_perdidaAnormal` (2108) · `_persistLocal` (3018) · `_recFilters` (7297) · `_renderLdCopies` (7470) · `_renderRecAccountsPixels` (7306) · `_renderRecDolores` (7719) · `_renderRecEnfoques` (7610) · `_renderRecEquipo` (7657) · `_renderRecLandings` (7338) · `_renderRecPixelsOnly` (7273) · `_renderRecRecursos` (7386) · `_reportarConflictos` (2400) · `_rowStats` (6829) · `_rowToMetrics` (6820) · `_safePullFromCloud` (2591) · `_setSyncStatus` (2583) · `_showLoginScreen` (2639) · `_stageAtInPeriod` (3726) · `_stampStageChange` (5101) · `_stripBlobs` (2969) · `_stripForClone` (7227) · `_stripPasswords` (2548) · `_updateSelBar` (3236) · `_uploadToStorage` (3091) · `addAngleFromModal` (5470) · `addCostCapRow` (7776) · `addGasto` (3179) · `addLdCopy` (7497) · `addPainFromModal` (5503) · `addProduct` (3197) · `addRefLink` (5582) · `analyzeSheet` (4337) · `applyFilters` (3649) · `applyLoginLogo` (3145) · `applyLoginScreenState` (3158) · `applyLogo` (3113) · `applyRoleTabs` (2797) · `applySession` (2698) · `applyTabularMap` (4420) · `autoCalcRevenue` (6095) · `calcCostCap` (7768) · `calcCreativoProfit` (6374) · `calcDirty` (3055) · `canAccess` (2806) · `ccDecision` (7849) · `clearCreativoThumb` (5574) · `clearErrorLog` (1984) · `clearHistory` (4231) · `clearProducts` (3196) · `clearProductSelection` (3267) · `closeModal` (7242) · `compareWeeks` (4543) · `copiarErrorLog` (8156) · `copyLandingCopy` (7553) · `copyLandingSeg` (7558) · `copyToClipboard` (7512) · `crDecision` (6505) · `crSemaforo` (6424) · `defaultHistory` (2884) · `defaultProducts` (2869) · `defaultSemaforo` (2897) · `defaultState` (2816) · `deleteAdAccount` (8219) · `deleteCC` (8029) · `deleteCreativo` (7237) · `deleteDolorItem` (7740) · `deleteEnfoque` (7645) · `deleteLanding` (7579) · `deleteMeta` (4011) · `deletePixel` (7445) · `deleteRecurso` (7606) · `deleteSelectedProducts` (3278) · `deleteSemana` (4226) · `deleteTeamMember` (7688) · `deleteUser` (8498) · `deleteVersion` (8258) · `detectPlatform` (5615) · `doForgotPassword` (2724) · `doLogin` (2666) · `doLogout` (2690) · `doUpdatePassword` (2741) · `dragCard` (4861) · `dropCard` (4941) · `duplicateCreativo` (7209) · `duplicateProduct` (3375) · `editUser` (8472) · `esc` (2003) · `escJs` (2015) · `exportCCToCSV` (8031) · `exportJSON` (8307) · `getBaseName` (6126) · `getDateRange` (4642) · `getEcuadorShare` (3466) · `getErrorLog` (1981) · `getEscaladoCandidates` (3801) · `getEscaladoStrategy` (3800) · `getFilteredCreativos` (4660) · `getFilteredHistory` (3632) · `getProductCpaTargets` (6110) · `getStatusCls` (5430) · `getStatusLabel` (5431) · `getTrafficCpaTargets` (6130) · `handleXlDrop` (4292) · `handleXlFile` (4288) · `importJSON` (8315) · `init` (8336) · `isFilterActive` (3645) · `loadCreativoFile` (5570) · `loadCreativoFiles` (5517) · `loadCreativoRefs` (5592) · `loadDefaultProducts` (3195) · `loadSheetByIdx` (4322) · `loadState` (2912) · `logError` (1955) · `markDeleted` (2409) · `moveCard` (4986) · `moveThenClose` (5823) · `onAngleSel` (5460) · `onCrAdAccountChange` (7762) · `onCrPixelChange` (7755) · `onHomeDateChange` (3787) · `onPainSel` (5497) · `onStageChange` (5728) · `onTestTypeChange` (5089) · `openAdAccountModal` (8189) · `openCampaignCreativoModal` (5063) · `openCreativoModal` (5983) · `openDetailModal` (5892) · `openDolorModal` (7729) · `openEnfoqueModal` (7626) · `openLandingModal` (7448) · `openMetaForm` (3971) · `openPixelModal` (7419) · `openRecursoModal` (7582) · `openTeamModal` (7673) · `openUserModal` (8434) · `persistState` (3028) · `populateAngleSel` (5441) · `populateCompareSelects` (4527) · `populateCreativoFilterProduct` (4701) · `populateCrPixels` (7747) · `populatePainSel` (5484) · `populateSimProduct` (3541) · `populateTeamSelects` (7694) · `previewCreativoLink` (5665) · `processXlFile` (4301) · `recalc` (3386) · `removeCreativoFile` (5541) · `removeCreativoRef` (5610) · `removeGasto` (3184) · `removeLdCopy` (7503) · `removeLoginLogo` (3139) · `removeProduct` (3201) · `renderAdAccounts` (8170) · `renderConfig` (8085) · `renderConfigMetas` (4018) · `renderConfirmForm` (4449) · `renderCostCaps` (7886) · `renderCostCapSummary` (7944) · `renderCountryDist` (3477) · `renderCreativosSummary` (5338) · `renderCreativosTable` (5234) · `renderDashboard` (4084) · `renderErrorLog` (8114) · `renderEscaladoStrategyForm` (4034) · `renderEscaladoSugeridos` (7865) · `renderFilesGrid` (5548) · `renderGastos` (3168) · `renderGlossary` (8274) · `renderGroupedView` (5112) · `renderHistory` (4200) · `renderHistoryCharts` (4236) · `renderHome` (3828) · `renderJBSteps` (8045) · `renderKanban` (4722) · `renderKVMapper` (4355) · `renderLandingSuggest` (7517) · `renderLinkedCreativos` (7823) · `renderModalFlowActions` (5787) · `renderPedidosChart` (4134) · `renderProducts` (3326) · `renderRankings` (5370) · `renderRecursos` (7263) · `renderRefsGrid` (5625) · `renderRevenueChart` (4117) · `renderSemaforo` (4153) · `renderSemaforoConfig` (8263) · `renderTabularMapper` (4374) · `renderUsersList` (8407) · `renderVersions` (8225) · `requireAdmin` (2537) · `resetAll` (8329) · `resetFilters` (3660) · `restoreVersion` (8247) · `runSimulator` (3548) · `safeSrc` (2039) · `safeUrl` (2027) · `saveAdAccount` (8201) · `saveCreativo` (7073) · `saveEnfoque` (7635) · `saveEscaladoStrategy` (4068) · `saveFromXl` (4495) · `saveLanding` (7563) · `saveMeta` (3993) · `savePixel` (7436) · `saveProject` (8302) · `saveRecurso` (7597) · `saveSemana` (4173) · `saveToCloud` (2421) · `saveUser` (8474) · `saveVersion` (8239) · `semDot` (7033) · `sendToCostCap` (7787) · `setColSort` (5212) · `setDatePreset` (4633) · `setPreset` (3668) · `showCampaignDrilldown` (6904) · `showCreativoAnalysis` (6512) · `showForgotPassword` (2655) · `showLoginForm` (2648) · `showSemaforoTooltip` (6992) · `showTab` (3065) · `showThumbPreview` (5651) · `showToast` (2960) · `showValidationBanner` (4957) · `startAutoSync` (2193) · `startRealtimeSync` (2605) · `switchRecTab` (7254) · `syncAllMetrics` (6171) · `syncCampaignFromDrill` (6843) · `syncFromCloud` (2121) · `syncMetaMetrics` (6258) · `toggleAllProducts` (3257) · `toggleProductSelect` (3252) · `totalGastosFijos` (3192) · `uid` (3060) · `updateCC` (8026) · `updateCompanyName` (3122) · `updateCountry` (3527) · `updateDashCascade` (3615) · `updateDistMethod` (3532) · `updateFilterSelects` (3689) · `updateGasto` (3188) · `updateManualPct` (3537) · `updateProdStatusBadge` (7716) · `updateProduct` (3225) · `updateUserBadge` (2783) · `uploadLoginLogo` (3129) · `uploadLogo` (3104) · `uploadProductImg` (3366) · `validateIdeaSave` (7039) · `validateStageTransition` (4862) · `xlMatchField` (4329)
+`_autoSnapshot` (2980) · `_collectLdCopies` (7503) · `_crFilterMatch` (5241) · `_dataScore` (2088) · `_daysSince` (5066) · `_ensureUniqueProductIds` (3329) · `_enterApp` (2565) · `_escaladoDefaults` (3811) · `_fmtDateTime` (5060) · `_getUserProfile` (2559) · `_groupRecommendation` (5211) · `_guardarBase` (2327) · `_hash` (2305) · `_hasPendingUpload` (2518) · `_homeRange` (3783) · `_huellaLista` (2313) · `_inHomeRange` (3795) · `_initProductDrag` (3304) · `_isDirty` (8396) · `_itemScore` (2074) · `_leanState` (3005) · `_leerBase` (2334) · `_markPendingUpload` (2514) · `_mergeArraysById` (2368) · `_mergeDefaultUsers` (2048) · `_mergeItem` (2341) · `_metaPeriodStart` (3734) · `_metaProgress` (3747) · `_metaStatusInfo` (5047) · `_miniMetricsRow` (6851) · `_perdidaAnormal` (2108) · `_persistLocal` (3018) · `_recFilters` (7312) · `_renderLdCopies` (7485) · `_renderRecAccountsPixels` (7321) · `_renderRecDolores` (7734) · `_renderRecEnfoques` (7625) · `_renderRecEquipo` (7672) · `_renderRecLandings` (7353) · `_renderRecPixelsOnly` (7288) · `_renderRecRecursos` (7401) · `_reportarConflictos` (2400) · `_rowStats` (6844) · `_rowToMetrics` (6835) · `_safePullFromCloud` (2591) · `_setSyncStatus` (2583) · `_showLoginScreen` (2639) · `_stageAtInPeriod` (3741) · `_stampStageChange` (5116) · `_stripBlobs` (2969) · `_stripForClone` (7242) · `_stripPasswords` (2548) · `_updateSelBar` (3236) · `_uploadToStorage` (3091) · `addAngleFromModal` (5485) · `addCostCapRow` (7791) · `addGasto` (3179) · `addLdCopy` (7512) · `addPainFromModal` (5518) · `addProduct` (3197) · `addRefLink` (5597) · `analyzeSheet` (4352) · `applyFilters` (3664) · `applyLoginLogo` (3145) · `applyLoginScreenState` (3158) · `applyLogo` (3113) · `applyRoleTabs` (2797) · `applySession` (2698) · `applyTabularMap` (4435) · `autoCalcRevenue` (6110) · `calcCostCap` (7783) · `calcCreativoProfit` (6389) · `calcDirty` (3055) · `canAccess` (2806) · `ccDecision` (7864) · `clearCreativoThumb` (5589) · `clearErrorLog` (1984) · `clearHistory` (4246) · `clearProducts` (3196) · `clearProductSelection` (3271) · `closeModal` (7257) · `compareWeeks` (4558) · `copiarErrorLog` (8171) · `copyLandingCopy` (7568) · `copyLandingSeg` (7573) · `copyToClipboard` (7527) · `crDecision` (6520) · `crSemaforo` (6439) · `defaultHistory` (2884) · `defaultProducts` (2869) · `defaultSemaforo` (2897) · `defaultState` (2816) · `deleteAdAccount` (8234) · `deleteCC` (8044) · `deleteCreativo` (7252) · `deleteDolorItem` (7755) · `deleteEnfoque` (7660) · `deleteLanding` (7594) · `deleteMeta` (4026) · `deletePixel` (7460) · `deleteRecurso` (7621) · `deleteSelectedProducts` (3282) · `deleteSemana` (4241) · `deleteTeamMember` (7703) · `deleteUser` (8513) · `deleteVersion` (8273) · `detectPlatform` (5630) · `doForgotPassword` (2724) · `doLogin` (2666) · `doLogout` (2690) · `doUpdatePassword` (2741) · `dragCard` (4876) · `dropCard` (4956) · `duplicateCreativo` (7224) · `duplicateProduct` (3390) · `editUser` (8487) · `esc` (2003) · `escJs` (2015) · `exportCCToCSV` (8046) · `exportJSON` (8322) · `getBaseName` (6141) · `getDateRange` (4657) · `getEcuadorShare` (3481) · `getErrorLog` (1981) · `getEscaladoCandidates` (3816) · `getEscaladoStrategy` (3815) · `getFilteredCreativos` (4675) · `getFilteredHistory` (3647) · `getProductCpaTargets` (6125) · `getStatusCls` (5445) · `getStatusLabel` (5446) · `getTrafficCpaTargets` (6145) · `handleXlDrop` (4307) · `handleXlFile` (4303) · `importJSON` (8330) · `init` (8351) · `isFilterActive` (3660) · `loadCreativoFile` (5585) · `loadCreativoFiles` (5532) · `loadCreativoRefs` (5607) · `loadDefaultProducts` (3195) · `loadSheetByIdx` (4337) · `loadState` (2912) · `logError` (1955) · `markDeleted` (2409) · `moveCard` (5001) · `moveThenClose` (5838) · `onAngleSel` (5475) · `onCrAdAccountChange` (7777) · `onCrPixelChange` (7770) · `onHomeDateChange` (3802) · `onPainSel` (5512) · `onStageChange` (5743) · `onTestTypeChange` (5104) · `openAdAccountModal` (8204) · `openCampaignCreativoModal` (5078) · `openCreativoModal` (5998) · `openDetailModal` (5907) · `openDolorModal` (7744) · `openEnfoqueModal` (7641) · `openLandingModal` (7463) · `openMetaForm` (3986) · `openPixelModal` (7434) · `openRecursoModal` (7597) · `openTeamModal` (7688) · `openUserModal` (8449) · `persistState` (3028) · `populateAngleSel` (5456) · `populateCompareSelects` (4542) · `populateCreativoFilterProduct` (4716) · `populateCrPixels` (7762) · `populatePainSel` (5499) · `populateSimProduct` (3556) · `populateTeamSelects` (7709) · `previewCreativoLink` (5680) · `processXlFile` (4316) · `recalc` (3401) · `removeCreativoFile` (5556) · `removeCreativoRef` (5625) · `removeGasto` (3184) · `removeLdCopy` (7518) · `removeLoginLogo` (3139) · `removeProduct` (3201) · `renderAdAccounts` (8185) · `renderConfig` (8100) · `renderConfigMetas` (4033) · `renderConfirmForm` (4464) · `renderCostCaps` (7901) · `renderCostCapSummary` (7959) · `renderCountryDist` (3492) · `renderCreativosSummary` (5353) · `renderCreativosTable` (5249) · `renderDashboard` (4099) · `renderErrorLog` (8129) · `renderEscaladoStrategyForm` (4049) · `renderEscaladoSugeridos` (7880) · `renderFilesGrid` (5563) · `renderGastos` (3168) · `renderGlossary` (8289) · `renderGroupedView` (5127) · `renderHistory` (4215) · `renderHistoryCharts` (4251) · `renderHome` (3843) · `renderJBSteps` (8060) · `renderKanban` (4737) · `renderKVMapper` (4370) · `renderLandingSuggest` (7532) · `renderLinkedCreativos` (7838) · `renderModalFlowActions` (5802) · `renderPedidosChart` (4149) · `renderProducts` (3339) · `renderRankings` (5385) · `renderRecursos` (7278) · `renderRefsGrid` (5640) · `renderRevenueChart` (4132) · `renderSemaforo` (4168) · `renderSemaforoConfig` (8278) · `renderTabularMapper` (4389) · `renderUsersList` (8422) · `renderVersions` (8240) · `requireAdmin` (2537) · `resetAll` (8344) · `resetFilters` (3675) · `restoreVersion` (8262) · `runSimulator` (3563) · `safeSrc` (2039) · `safeUrl` (2027) · `saveAdAccount` (8216) · `saveCreativo` (7088) · `saveEnfoque` (7650) · `saveEscaladoStrategy` (4083) · `saveFromXl` (4510) · `saveLanding` (7578) · `saveMeta` (4008) · `savePixel` (7451) · `saveProject` (8317) · `saveRecurso` (7612) · `saveSemana` (4188) · `saveToCloud` (2421) · `saveUser` (8489) · `saveVersion` (8254) · `semDot` (7048) · `sendToCostCap` (7802) · `setColSort` (5227) · `setDatePreset` (4648) · `setPreset` (3683) · `showCampaignDrilldown` (6919) · `showCreativoAnalysis` (6527) · `showForgotPassword` (2655) · `showLoginForm` (2648) · `showSemaforoTooltip` (7007) · `showTab` (3065) · `showThumbPreview` (5666) · `showToast` (2960) · `showValidationBanner` (4972) · `startAutoSync` (2193) · `startRealtimeSync` (2605) · `switchRecTab` (7269) · `syncAllMetrics` (6186) · `syncCampaignFromDrill` (6858) · `syncFromCloud` (2121) · `syncMetaMetrics` (6273) · `toggleAllProducts` (3262) · `toggleProductSelect` (3255) · `totalGastosFijos` (3192) · `uid` (3060) · `updateCC` (8041) · `updateCompanyName` (3122) · `updateCountry` (3542) · `updateDashCascade` (3630) · `updateDistMethod` (3547) · `updateFilterSelects` (3704) · `updateGasto` (3188) · `updateManualPct` (3552) · `updateProdStatusBadge` (7731) · `updateProduct` (3225) · `updateUserBadge` (2783) · `uploadLoginLogo` (3129) · `uploadLogo` (3104) · `uploadProductImg` (3381) · `validateIdeaSave` (7054) · `validateStageTransition` (4877) · `xlMatchField` (4344)
