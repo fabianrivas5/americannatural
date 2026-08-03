@@ -2941,12 +2941,16 @@ function loadState() {
     // Backfill missing dates with today (local) so date filter works
     const todayLocal = (d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)(new Date());
     if (saved.creativos) saved.creativos.forEach(c => { if (!c.date) c.date = todayLocal; });
-    // Reparar productos cuyo nombre se corrompió a número (bug de coerción anterior):
-    // si un creativo apuntaba a ese producto por nombre, se re-vincula por texto.
+    // Reparar productos: nombre corrompido a número (bug anterior) e IDs duplicados/faltantes.
+    // IDs duplicados hacían que "borrar seleccionados" eliminara TODOS los que compartían id.
     if (Array.isArray(saved.products)) {
+      const vistos = new Set();
       saved.products.forEach(p => {
-        if (p && typeof p.name === 'number') p.name = String(p.name);
-        if (p && p.name == null) p.name = 'Producto sin nombre';
+        if (!p) return;
+        if (typeof p.name === 'number') p.name = String(p.name);
+        if (p.name == null) p.name = 'Producto sin nombre';
+        if (p.id == null || vistos.has(p.id)) p.id = '_' + Math.random().toString(36).substr(2,9);
+        vistos.add(p.id);
       });
     }
     return saved;
@@ -3308,8 +3312,21 @@ function _initProductDrag(tbody) {
   });
 }
 
+// Garantiza ids de producto únicos y no nulos (ids repetidos rompían la selección/borrado).
+function _ensureUniqueProductIds() {
+  if (!Array.isArray(state.products)) return;
+  const vistos = new Set();
+  for (const p of state.products) {
+    if (!p) continue;
+    if (p.id == null || vistos.has(p.id)) p.id = uid();
+    vistos.add(p.id);
+  }
+}
+
 function renderProducts() {
   const tbody = document.getElementById('prod-body');
+  if (!tbody) return;
+  _ensureUniqueProductIds();
   tbody.innerHTML = state.products.map(p => `
     <tr draggable="true" data-pid="${p.id}">
       <td style="padding:4px;text-align:center"><input type="checkbox" id="pchk-${p.id}" ${_selectedProducts.has(p.id)?'checked':''} onchange="toggleProductSelect('${p.id}',this.checked)"></td>

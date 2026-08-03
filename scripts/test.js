@@ -403,6 +403,26 @@ seccion('Productos: reparación de nombres corrompidos al cargar');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+seccion('Productos: ids duplicados no borran de más');
+{
+  // _ensureUniqueProductIds debe dar id único a cada producto
+  const sandbox = { uid: () => '_' + Math.random().toString(36).substr(2,9),
+    state:{ products:[ {id:'x',name:'A'}, {id:'x',name:'B'}, {id:'x',name:'C'}, {name:'D'} ] } };
+  const codigo = extraerFn('_ensureUniqueProductIds');
+  with (sandbox) { eval(codigo); _ensureUniqueProductIds(); }
+  const ids = sandbox.state.products.map(p => p.id);
+  ok('todos los ids son únicos', new Set(ids).size === ids.length, JSON.stringify(ids));
+  ok('ningún id es nulo', ids.every(id => id != null), JSON.stringify(ids));
+
+  // Con ids únicos, borrar un subconjunto NO elimina el resto
+  const productos = sandbox.state.products;
+  const seleccion = new Set([productos[0].id, productos[1].id]); // 2 de 4
+  const quedan = productos.filter(p => !seleccion.has(p.id));
+  eq('borrar 2 de 4 deja 2', quedan.length, 2);
+  ok('quedan exactamente los no seleccionados', quedan.every(p => !seleccion.has(p.id)));
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 seccion('Sintaxis del bundle');
 {
   const m = txt.match(/<script>([\s\S]*)<\/script>/);
