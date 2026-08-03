@@ -403,23 +403,35 @@ seccion('Productos: reparación de nombres corrompidos al cargar');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-seccion('Productos: ids duplicados no borran de más');
+seccion('Productos: ids deterministas por nombre, únicos y convergentes');
 {
-  // _ensureUniqueProductIds debe dar id único a cada producto
-  const sandbox = { uid: () => '_' + Math.random().toString(36).substr(2,9),
-    state:{ products:[ {id:'x',name:'A'}, {id:'x',name:'B'}, {id:'x',name:'C'}, {name:'D'} ] } };
-  const codigo = extraerFn('_ensureUniqueProductIds');
-  with (sandbox) { eval(codigo); _ensureUniqueProductIds(); }
-  const ids = sandbox.state.products.map(p => p.id);
+  eval(extraerFn('_normalizeProductIds'));
+  // Ids únicos aunque entren con el mismo id o sin id
+  const arr = [ {id:'x',name:'A'}, {id:'x',name:'B'}, {id:'x',name:'C'}, {name:'D'} ];
+  _normalizeProductIds(arr);
+  const ids = arr.map(p => p.id);
   ok('todos los ids son únicos', new Set(ids).size === ids.length, JSON.stringify(ids));
   ok('ningún id es nulo', ids.every(id => id != null), JSON.stringify(ids));
 
-  // Con ids únicos, borrar un subconjunto NO elimina el resto
-  const productos = sandbox.state.products;
-  const seleccion = new Set([productos[0].id, productos[1].id]); // 2 de 4
-  const quedan = productos.filter(p => !seleccion.has(p.id));
+  // Convergencia: mismos nombres → mismos ids en dos "computadoras"
+  const A = [{id:'a1',name:'American Fit x1'},{id:'a2',name:'Krec Up x2'}];
+  const B = [{id:'b9',name:'American Fit x1'},{id:'b8',name:'Krec Up x2'}];
+  _normalizeProductIds(A); _normalizeProductIds(B);
+  ok('dos computadoras convergen al mismo id',
+    JSON.stringify(A.map(p=>p.id)) === JSON.stringify(B.map(p=>p.id)), JSON.stringify(A.map(p=>p.id)));
+
+  // Idempotente: correr dos veces no cambia el id
+  const D = [{name:'American Fit x1'}]; _normalizeProductIds(D); const id1 = D[0].id; _normalizeProductIds(D);
+  eq('idempotente (no reasigna en cada pasada)', D[0].id, id1);
+
+  // Nombres repetidos → sufijo, sin colisión
+  const C = [{name:'Combo'},{name:'Combo'},{name:'Combo'}]; _normalizeProductIds(C);
+  eq('nombres repetidos quedan únicos', new Set(C.map(p=>p.id)).size, 3);
+
+  // Con ids ya únicos, borrar un subconjunto NO elimina el resto
+  const seleccion = new Set([arr[0].id, arr[1].id]);
+  const quedan = arr.filter(p => !seleccion.has(p.id));
   eq('borrar 2 de 4 deja 2', quedan.length, 2);
-  ok('quedan exactamente los no seleccionados', quedan.every(p => !seleccion.has(p.id)));
 }
 
 // ════════════════════════════════════════════════════════════════════════════

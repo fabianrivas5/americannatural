@@ -2152,6 +2152,8 @@ async function syncFromCloud(force = false, pushOnNewer = false) {
       // cloudWins solo decide los empates reales (mismo campo tocado por ambos).
       const baseSync = _leerBase();
       _conflictosMerge = [];
+      // Alinear ids de producto en ambos lados antes de mezclar (ids deterministas por nombre)
+      _normalizeProductIds(state.products); _normalizeProductIds(cloudData.products);
       for (const key of _MERGE_LIST_KEYS) {
         const cw = _CLOUD_WINS_KEYS.includes(key);
         cloudData[key] = _mergeArraysById(state[key], cloudData[key], cw, baseSync[key]);
@@ -2430,6 +2432,8 @@ async function saveToCloud() {
     // objeto entero y borraba los cambios que otro usuario había guardado en campos
     // que yo ni toqué. Ahora local solo gana los empates reales.
     const baseSave = _leerBase();
+    // Alinear ids de producto (deterministas por nombre) antes de mezclar con la nube
+    _normalizeProductIds(state.products); _normalizeProductIds(cloudData.products);
     _conflictosMerge = [];
     for (const key of _MERGE_LIST_KEYS) {
       state[key] = _mergeArraysById(state[key], cloudData[key], false, baseSave[key]);
@@ -2944,14 +2948,12 @@ function loadState() {
     // Reparar productos: nombre corrompido a número (bug anterior) e IDs duplicados/faltantes.
     // IDs duplicados hacían que "borrar seleccionados" eliminara TODOS los que compartían id.
     if (Array.isArray(saved.products)) {
-      const vistos = new Set();
       saved.products.forEach(p => {
         if (!p) return;
         if (typeof p.name === 'number') p.name = String(p.name);
         if (p.name == null) p.name = 'Producto sin nombre';
-        if (p.id == null || vistos.has(p.id)) p.id = '_' + Math.random().toString(36).substr(2,9);
-        vistos.add(p.id);
       });
+      _normalizeProductIds(saved.products);   // ids deterministas por nombre (convergen con la nube)
     }
     return saved;
   } catch { return defaultState(); }
@@ -3325,16 +3327,27 @@ function _initProductDrag(tbody) {
   });
 }
 
-// Garantiza ids de producto únicos y no nulos (ids repetidos rompían la selección/borrado).
-function _ensureUniqueProductIds() {
-  if (!Array.isArray(state.products)) return;
-  const vistos = new Set();
-  for (const p of state.products) {
+// Asigna ids de producto únicos, ESTABLES y DETERMINISTAS (derivados del nombre) a un
+// array cualquiera. Antes se reasignaban ids aleatorios en cada render → el id local
+// dejaba de coincidir con el de la nube y los cambios/borrados no se propagaban. Al
+// derivar el id del nombre, toda computadora y cada carga producen el mismo id → converge.
+function _normalizeProductIds(arr) {
+  if (!Array.isArray(arr)) return arr;
+  const usados = new Set();
+  for (const p of arr) {
     if (!p) continue;
-    if (p.id == null || vistos.has(p.id)) p.id = uid();
-    vistos.add(p.id);
+    let slug = 'prod_' + String(p.name || 'sin_nombre').toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')      // quitar acentos
+      .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40);
+    if (slug === 'prod_') slug = 'prod_sin_nombre';
+    let id = slug, n = 2;
+    while (usados.has(id)) { id = slug + '_' + n; n++; }
+    p.id = id;
+    usados.add(id);
   }
+  return arr;
 }
+function _ensureUniqueProductIds() { _normalizeProductIds(state.products); }
 
 function renderProducts() {
   const tbody = document.getElementById('prod-body');
