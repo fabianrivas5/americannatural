@@ -1,0 +1,375 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#000;font-family:'Inter','Inter Display','DejaVu Sans',sans-serif}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+.abs{position:absolute}
+.scene{position:absolute;inset:0;overflow:hidden}
+.bubble{position:absolute;padding:20px 26px;border-radius:26px;font-weight:800;font-size:34px;line-height:1.15;color:#111;box-shadow:0 8px 0 rgba(0,0,0,.18)}
+.sub{position:absolute;left:0;width:1080px;top:1420px;display:flex;justify-content:center}
+.subbox{background:#fff;border-radius:34px;padding:20px 32px;font-weight:900;font-size:62px;color:#111;box-shadow:0 10px 0 rgba(0,0,0,.35);white-space:nowrap}
+.subbox .act{color:#0a9a3a}
+.tag{position:absolute;font-weight:900;color:#fff;border-radius:24px;padding:14px 30px;font-size:52px;box-shadow:0 8px 0 rgba(0,0,0,.3);white-space:nowrap}
+.yt{position:absolute;left:0;width:1080px;text-align:center;font-weight:900;line-height:1.0;paint-order:stroke fill;text-shadow:0 12px 0 rgba(0,0,0,.4)}
+.yt.y{color:#ffe600;-webkit-text-stroke:14px #000}
+.yt.g{color:#fff;-webkit-text-stroke:14px #0a7a3a;text-shadow:0 12px 0 rgba(4,60,30,.5)}
+.clay{filter:drop-shadow(0 14px 0 rgba(0,0,0,.28))}
+</style></head><body>
+<div id="stage"></div>
+<script>
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const eo=x=>1-Math.pow(1-clamp(x),3);
+const eio=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const back=x=>{x=clamp(x);const c1=1.9,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const pop=(t,s,d=0.35)=>t<s?0:back((t-s)/d);
+const fade=(t,s,d=0.25)=>clamp((t-s)/d);
+const wob=(t,a=1,f=3)=>Math.sin(t*f*2*Math.PI)*a;
+const lerp=(a,b,p)=>a+(b-a)*p;
+const IMG='frasco.png', SELLO='sello.jpg';
+let CLAIMS=true;      // beneficios por color (energía / apetito / depura): false los quita
+const DOMINIO='americannatural.ec';
+const DUR=52.3494;
+
+/* ---------- voz: segmentos medidos del audio real ---------- */
+const SEGS=[
+ {s:0.00,e:3.60,t:"¿Te levantas inflamada y pesada aunque no cenaste mucho?"},
+ {s:4.05,e:5.08,t:"No es cansancio,"},
+ {s:5.34,e:7.41,t:"es tu cuerpo lleno de toxinas."},
+ {s:7.79,e:9.43,t:"Hay 3 tipos de productos."},
+ {s:9.70,e:13.22,t:"El de frasco de plástico y una sola pastilla es fibra barata."},
+ {s:13.53,e:15.58,t:"El original es de aluminio"},
+ {s:15.70,e:16.65,t:"y trae 3 cápsulas."},
+ {s:16.95,e:17.91,t:"Si lo dejas así,"},
+ {s:18.13,e:21.55,t:"cada día tu intestino acumula más líquido e inflamación."},
+ {s:21.86,e:23.89,t:"Terminas pesada, sin energía,"},
+ {s:24.11,e:26.11,t:"y con el maldito efecto rebote."},
+ {s:26.35,e:28.37,t:"Por eso ninguna dieta te funciona."},
+ {s:28.75,e:32.45,t:"American Fit original actúa desde dentro en 3 fases."},
+ {s:32.71,e:34.42,t:"La roja activa tu energía,"},
+ {s:34.68,e:37.80,t:"la blanca mejora la digestión y controla el apetito,"},
+ {s:38.03,e:39.90,t:"y la verde depura tu cuerpo."},
+ {s:40.19,e:41.92,t:"No es una pastilla genérica."},
+ {s:42.13,e:44.82,t:"Te despiertas liviana, y te pones lo que quieras,"},
+ {s:45.01,e:47.06,t:"sin sentirte inflamada ni pesada."},
+ {s:47.39,e:48.84,t:"¿Quieres el original de aluminio?"},
+ {s:49.12,e:52.16,t:"Comenta YO QUIERO FIT y te mando el link oficial."}];
+const WORDS=[];
+SEGS.forEach((g,si)=>{const ws=g.t.split(' ');const L=ws.map(w=>w.length+2);const sum=L.reduce((a,b)=>a+b,0);let c=g.s;
+ ws.forEach((w,i)=>{const d=(g.e-g.s)*L[i]/sum;WORDS.push({w,s:c,e:c+d,seg:si});c+=d;});});
+const SEGW=SEGS.map((g,i)=>WORDS.filter(x=>x.seg===i));
+const Wt=(si,k)=>SEGW[si][Math.min(k,SEGW[si].length-1)].s;
+const CHUNKS=[];
+SEGS.forEach((g,si)=>{const ws=SEGW[si];const n=ws.length;const k=Math.ceil(n/4);let a=0;
+ for(let i=0;i<k;i++){const sz=Math.round((n-a)/(k-i));CHUNKS.push(ws.slice(a,a+sz));a+=sz;}});
+function subtitle(t){
+ let ch=null;
+ for(let i=0;i<CHUNKS.length;i++){const c=CHUNKS[i];const s=c[0].s-0.04;const nextS=(CHUNKS[i+1]?CHUNKS[i+1][0].s:99);const e=Math.min(c[c.length-1].e+0.25,nextS);if(t>=s&&t<e){ch=c;break;}}
+ if(!ch)return '';
+ const sc=1+0.06*(1-eo((t-ch[0].s+0.04)/0.15));
+ const h=ch.map(x=>`<span class="${t>=x.s&&t<x.e?'act':''}">${x.w}</span>`).join(' ');
+ return `<div class="sub"><div class="subbox" style="transform:scale(${sc})">${h}</div></div>`;
+}
+
+/* ---------- texto gigante: amarillo = dolor, blanco/verde = solución ---------- */
+const YT=[
+ [0.0,3.9,"¿VIENTRE INFLAMADO|Y PESADO|TODO EL DÍA?",'y'],[4.05,7.79,"NO ES|CANSANCIO...",'y'],
+ [7.79,9.7,"HAY 3 TIPOS",'g'],[9.7,13.5,"EL DE PLÁSTICO|ES FIBRA BARATA",'y'],[13.5,16.95,"EL ORIGINAL:|ALUMINIO + 3 CÁPSULAS",'g'],
+ [16.95,18.1,"SI LO DEJAS...",'y'],[18.13,21.8,"CADA DÍA|ACUMULAS MÁS",'y'],[21.86,24.1,"SIN ENERGÍA",'y'],[24.11,26.3,"EFECTO REBOTE",'y'],[26.35,28.75,"NINGUNA DIETA|TE FUNCIONA",'y'],
+ [28.75,32.7,"3 FASES|DESDE DENTRO",'g'],[40.19,42.13,"NO ES UNA|PASTILLA GENÉRICA",'g'],
+ [42.13,47.39,"TE DESPIERTAS|LIVIANA",'g'],
+ [47.39,49.1,"¿EL ORIGINAL|DE ALUMINIO?",'g'],[49.12,53,"COMENTA|YO QUIERO FIT",'y']];
+function yellow(t){
+ const it=YT.find(x=>t>=x[0]&&t<x[1]); if(!it)return '';
+ const lines=it[2].split('|'); const mx=Math.max(...lines.map(l=>l.length));
+ const fs=mx<=9?132:mx<=12?112:mx<=15?92:mx<=18?80:68;
+ const p=pop(t,it[0],0.3);
+ const top=(t>=47.39)?1060:(t>=42.13?1090:1110);
+ return `<div class="yt ${it[3]}" style="top:${top}px;font-size:${fs}px;transform:scale(${p}) rotate(${(Math.floor(it[0]*7)%3-1)*2}deg)">${lines.join('<br>')}</div>`;
+}
+
+/* ---------- personaje estilo plastilina ---------- */
+function girl(o){
+ const f=o.mood==='f', tight=!!o.tight, t=o.t||0, pose=o.pose||'down', dress=!!o.dress, pj=!!o.pj;
+ const vb=o.vb||'0 0 600 1000'; const w=o.w||460; const [,,vw,vh]=vb.split(' ').map(Number);
+ const bob=Math.sin(t*2.4)*3, bl=o.bloat||0;
+ const blink=(Math.floor(t*10)%27===0);
+ const brows=f?`<path d="M216 168 L284 186" stroke="#2a170c" stroke-width="11" stroke-linecap="round"/><path d="M316 186 L384 168" stroke="#2a170c" stroke-width="11" stroke-linecap="round"/>`
+   :`<path d="M222 176 Q252 154 284 172" stroke="#2a170c" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M316 172 Q348 154 378 176" stroke="#2a170c" stroke-width="10" fill="none" stroke-linecap="round"/>`;
+ const eyes=blink?`<path d="M236 208 h40 M324 208 h40" stroke="#222" stroke-width="8" stroke-linecap="round"/>`
+  :`<ellipse cx="256" cy="208" rx="21" ry="${f?19:24}" fill="#fff"/><ellipse cx="344" cy="208" rx="21" ry="${f?19:24}" fill="#fff"/><circle cx="${f?262:258}" cy="${f?212:210}" r="11" fill="#2b1a10"/><circle cx="${f?350:346}" cy="${f?212:210}" r="11" fill="#2b1a10"/><circle cx="${f?266:262}" cy="${f?207:205}" r="4" fill="#fff"/><circle cx="${f?354:350}" cy="${f?207:205}" r="4" fill="#fff"/>${f?`<path d="M232 190 Q256 184 280 192 L280 202 L232 202Z" fill="#f0bd98"/><path d="M320 192 Q344 184 368 190 L368 202 L320 202Z" fill="#f0bd98"/>`:''}`;
+ const bags=o.bags?`<path d="M232 236 Q256 250 280 236" stroke="#9a6a7a" stroke-width="8" fill="none" stroke-linecap="round" opacity=".7"/><path d="M320 236 Q344 250 368 236" stroke="#9a6a7a" stroke-width="8" fill="none" stroke-linecap="round" opacity=".7"/>`:'';
+ const mouth=f?`<path d="M262 282 Q300 252 338 282" stroke="#8a2b2b" stroke-width="11" fill="none" stroke-linecap="round"/>${o.disgust?`<path d="M270 292 q30 28 60 0" stroke="#d96a6a" stroke-width="10" fill="none" stroke-linecap="round"/>`:''}`
+   :`<path d="M238 262 Q300 338 362 262 Z" fill="#8a2b2b"/><path d="M248 266 Q300 288 352 266 L348 276 Q300 296 252 276Z" fill="#fff"/>`;
+ const sweat=f&&o.sweat?`<path d="M404 150 q20 36 0 54 q-20 -18 0 -54z" fill="#7fd3ff" transform="translate(0,${(t*70)%46})"/>`:'';
+ const topG=dress?'url(#dr)':pj?'url(#pjg)':'url(#sh)';
+ const shirtBottom=dress?660:tight?640:700;
+ const shirt=`<path d="M150 392 Q300 336 450 392 L${tight?492:476} ${shirtBottom-10} Q300 ${shirtBottom+(tight?12:20)} ${tight?108:124} ${shirtBottom-10} Z" fill="${topG}"/>
+  <ellipse cx="236" cy="430" rx="52" ry="22" fill="#fff" opacity=".18" transform="rotate(-16 236 430)"/>`;
+ const wr=tight&&!dress?`<path d="M170 520 Q215 530 205 560 M430 520 Q385 530 395 560 M300 560 q-40 20 -90 14 M300 590 q40 20 90 14" stroke="${pj?'#6d8fb8':'#c4402c'}" stroke-width="7" fill="none" stroke-linecap="round" opacity=".75"/>`:'';
+ const belly=tight&&!dress?`<ellipse cx="300" cy="${676+bl*10}" rx="${132+bl*26}" ry="${58+bl*18}" fill="url(#sk)"/><path d="M300 640 q-4 24 0 44" stroke="#c98c68" stroke-width="5" fill="none" stroke-linecap="round"/>`:'';
+ const pop0=o.pop&&t>o.pop;
+ const jeans=dress?`<path d="M150 652 Q300 620 450 652 L560 990 L40 990Z" fill="url(#dr)"/><path d="M150 652 Q300 620 450 652 L452 684 Q300 664 148 684Z" fill="#0a7a3a"/><ellipse cx="236" cy="800" rx="40" ry="140" fill="#fff" opacity=".12" transform="rotate(8 236 800)"/>`
+  :pj?`<path d="M130 676 Q300 636 470 676 L506 1000 L322 1000 L300 810 L278 1000 L94 1000Z" fill="#9db8dd"/>`
+  :`<path d="M130 676 Q300 636 470 676 L506 1000 L322 1000 L300 810 L278 1000 L94 1000Z" fill="url(#jn)"/><path d="M130 676 Q300 636 470 676 L474 712 Q300 690 126 712Z" fill="#2e56ae"/>${tight?`<circle cx="${pop0?360+(t-o.pop)*120:300}" cy="${pop0?690-Math.sin((t-o.pop)*8)*40:700}" r="13" fill="#d9d9d9" stroke="#888" stroke-width="4"/>`:`<rect x="262" y="682" width="76" height="20" rx="8" fill="#5a3a1a"/><rect x="290" y="684" width="20" height="16" rx="3" fill="#e5c24a"/>`}`;
+ let arms='';
+ const sleeveL=`<path d="M156 396 Q104 420 96 520 L162 540 Q176 470 214 430Z" fill="${topG}"/>`;
+ const sleeveR=`<path d="M444 396 Q496 420 504 520 L438 540 Q424 470 386 430Z" fill="${topG}"/>`;
+ if(pose==='belly'){
+  arms=`${sleeveL}${sleeveR}<path d="M118 520 Q140 640 232 686" stroke="url(#sk)" stroke-width="48" fill="none" stroke-linecap="round"/><path d="M482 520 Q460 640 368 686" stroke="url(#sk)" stroke-width="48" fill="none" stroke-linecap="round"/>
+   <ellipse cx="248" cy="690" rx="36" ry="30" fill="url(#sk)"/><ellipse cx="352" cy="690" rx="36" ry="30" fill="url(#sk)"/>`;
+ }else if(pose==='up'){
+  arms=`${sleeveL}${sleeveR}<path d="M108 520 Q60 400 90 300" stroke="url(#sk)" stroke-width="46" fill="none" stroke-linecap="round"/><path d="M492 520 Q540 400 510 300" stroke="url(#sk)" stroke-width="46" fill="none" stroke-linecap="round"/><circle cx="90" cy="282" r="30" fill="url(#sk)"/><circle cx="510" cy="282" r="30" fill="url(#sk)"/>`;
+ }else{
+  arms=`${sleeveL}${sleeveR}<path d="M108 520 Q96 620 100 700" stroke="url(#sk)" stroke-width="46" fill="none" stroke-linecap="round"/><path d="M492 520 Q504 620 500 700" stroke="url(#sk)" stroke-width="46" fill="none" stroke-linecap="round"/><circle cx="100" cy="716" r="30" fill="url(#sk)"/><circle cx="500" cy="716" r="30" fill="url(#sk)"/>`;
+ }
+ return `<svg class="clay" width="${w}" height="${w*vh/vw}" viewBox="${vb}" style="overflow:visible"><defs>
+ <linearGradient id="sk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8d3b2"/><stop offset="1" stop-color="#e0a67d"/></linearGradient>
+ <linearGradient id="sh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff8a66"/><stop offset="1" stop-color="#e2503a"/></linearGradient>
+ <linearGradient id="pjg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bcd4f2"/><stop offset="1" stop-color="#86a8d8"/></linearGradient>
+ <linearGradient id="dr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#27d27a"/><stop offset="1" stop-color="#0a8f4a"/></linearGradient>
+ <linearGradient id="jn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a7ae0"/><stop offset="1" stop-color="#2a4aa0"/></linearGradient>
+ <linearGradient id="hr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a3520"/><stop offset="1" stop-color="#2a170c"/></linearGradient></defs>
+ <g transform="translate(0,${bob})">
+ <path d="M168 200 Q160 34 300 32 Q440 34 432 200 L458 440 Q300 486 142 440Z" fill="url(#hr)"/>
+ <rect x="266" y="296" width="68" height="90" rx="26" fill="#d9a07a"/>
+ ${jeans}${belly}${shirt}${wr}${arms}
+ <ellipse cx="300" cy="206" rx="110" ry="128" fill="url(#sk)"/>
+ <ellipse cx="190" cy="214" rx="17" ry="26" fill="#eab08a"/><ellipse cx="410" cy="214" rx="17" ry="26" fill="#eab08a"/>
+ <path d="M188 176 Q200 70 300 70 Q400 70 412 176 Q364 118 300 126 Q236 118 188 176Z" fill="url(#hr)"/>
+ <ellipse cx="258" cy="116" rx="46" ry="14" fill="#fff" opacity=".18" transform="rotate(-12 258 116)"/>
+ <circle cx="222" cy="254" r="19" fill="#ee9a8a" opacity=".5"/><circle cx="378" cy="254" r="19" fill="#ee9a8a" opacity=".5"/>
+ ${brows}${eyes}${bags}<path d="M300 214 q-12 38 6 46" stroke="#c98c68" stroke-width="6" fill="none" stroke-linecap="round"/>${mouth}${sweat}
+ </g></svg>`;
+}
+function plastic(w){
+ return `<svg class="clay" width="${w}" viewBox="0 0 300 520" style="overflow:visible">
+ <rect x="80" y="10" width="140" height="70" rx="14" fill="#e9eef2" stroke="#b7c2cc" stroke-width="6"/>
+ <rect x="62" y="70" width="176" height="30" rx="10" fill="#dde5ec" stroke="#b7c2cc" stroke-width="6"/>
+ <path d="M40 140 Q40 96 100 96 L200 96 Q260 96 260 140 L260 480 Q260 510 230 510 L70 510 Q40 510 40 480Z" fill="#fbfdff" stroke="#b7c2cc" stroke-width="6"/>
+ <rect x="62" y="210" width="176" height="190" rx="12" fill="#fff" stroke="#c9d3dc" stroke-width="4"/>
+ <text x="150" y="285" font-size="40" font-weight="900" text-anchor="middle" fill="#9aa7b3" font-family="Inter,sans-serif">¿ ? ? ?</text>
+ <rect x="86" y="318" width="128" height="14" rx="7" fill="#d5dde4"/><rect x="104" y="346" width="92" height="14" rx="7" fill="#d5dde4"/></svg>`;
+}
+const CAP={r:['#ff3b3b','#b01212'],b:['#ffffff','#cfd6dc'],v:['#2fcf5a','#0e8a34']};
+function capsule(k,w,rot,glow){
+ const [a,b]=CAP[k];
+ return `<svg class="clay" width="${w}" viewBox="0 0 200 80" style="transform:rotate(${rot}deg);overflow:visible${glow?`;filter:drop-shadow(0 0 ${14+glow*20}px ${a==='#ffffff'?'#fff':a}) drop-shadow(0 14px 0 rgba(0,0,0,.28))`:''}"><defs><clipPath id="cp${k}"><rect x="6" y="6" width="188" height="68" rx="34"/></clipPath></defs>
+ <g clip-path="url(#cp${k})"><rect x="0" y="0" width="100" height="80" fill="${a}"/><rect x="100" y="0" width="100" height="80" fill="${b}"/><rect x="0" y="6" width="200" height="22" fill="#fff" opacity=".35"/></g>
+ <rect x="6" y="6" width="188" height="68" rx="34" fill="none" stroke="rgba(0,0,0,.25)" stroke-width="4"/></svg>`;
+}
+function palm(w){
+ return `<svg class="clay" width="${w}" viewBox="0 0 520 440" style="overflow:visible"><defs><linearGradient id="pk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8d3b2"/><stop offset="1" stop-color="#df9f75"/></linearGradient></defs>
+ <g fill="url(#pk)"><rect x="70" y="60" width="74" height="210" rx="37" transform="rotate(-22 107 270)"/><rect x="150" y="20" width="76" height="230" rx="38" transform="rotate(-8 188 250)"/><rect x="236" y="6" width="78" height="240" rx="39"/><rect x="326" y="30" width="72" height="220" rx="36" transform="rotate(10 362 250)"/>
+ <ellipse cx="260" cy="320" rx="215" ry="115"/><ellipse cx="440" cy="330" rx="80" ry="46" transform="rotate(-24 440 330)"/><rect x="-10" y="360" width="140" height="120" rx="50"/></g>
+ <ellipse cx="260" cy="330" rx="150" ry="62" fill="#e8b08a" opacity=".6"/></svg>`;
+}
+const XMARK=(w,sw=44)=>`<svg viewBox="0 0 420 420" width="${w}"><path d="M60 60 L360 360 M360 60 L60 360" stroke="#ff2b3d" stroke-width="${sw}" stroke-linecap="round"/></svg>`;
+const bolt=w=>`<svg width="${w}" viewBox="0 0 100 120"><path d="M58 4 L14 68 H46 L36 116 L88 46 H56Z" fill="#ffd21f" stroke="#a87800" stroke-width="6" stroke-linejoin="round"/></svg>`;
+const leaf=w=>`<svg width="${w}" viewBox="0 0 100 100"><path d="M12 88 Q8 20 88 10 Q92 78 18 90Z" fill="#35d56f" stroke="#0a7a3a" stroke-width="6"/><path d="M18 84 Q50 50 80 18" stroke="#0a7a3a" stroke-width="5" fill="none"/></svg>`;
+const apple=w=>`<svg width="${w}" viewBox="0 0 100 100"><path d="M50 30 Q20 18 14 52 Q14 90 40 90 Q50 86 60 90 Q86 90 86 52 Q80 18 50 30Z" fill="#ff5a5a" stroke="#a31212" stroke-width="6"/><path d="M50 30 Q52 12 66 6" stroke="#5a3a1a" stroke-width="6" fill="none"/><path d="M62 12 Q80 8 84 22 Q68 26 62 12Z" fill="#35d56f"/></svg>`;
+
+/* ---------- escenas ---------- */
+const BOUNDS=[0,7.79,16.95,28.75,42.13,47.39,53.2];
+const BG=[["#8ea4c0","#2a3345"],["#13806a","#04261e"],["#a3303a","#2a060b"],["#2fcf86","#06623f"],["#ffffff","#9fe6c1"],["#26c47a","#06613f"]];
+function bg(i,lt){
+ const g=BG[i]; const z=1+0.04*lt/4;
+ return `<div class="abs" style="inset:-60px;background:radial-gradient(circle at 50% 38%,${g[0]},${g[1]});transform:scale(${z})"></div>
+ <div class="abs" style="left:0;top:0;width:1080px;height:1920px;opacity:.13;background:repeating-linear-gradient(60deg,rgba(255,255,255,.4) 0 6px,transparent 6px 90px);transform:translateX(${(lt*50)%90}px)"></div>`;
+}
+const cam=(z,ox,oy,inner)=>`<div class="abs" style="inset:0;transform:scale(${z});transform-origin:${ox}px ${oy}px">${inner}</div>`;
+const SFXEV=[]; // se rellena al final desde los mismos tiempos
+
+/* ===== 1 · GANCHO: vientre inflamado por la mañana ===== */
+function sc1(t){
+ let h=bg(0,t);
+ const z=1+0.26*eio(t/7.8);
+ let c='';
+ // luz de la mañana por la ventana
+ c+=`<div class="abs" style="left:560px;top:250px;width:460px;height:520px;border-radius:30px;background:linear-gradient(160deg,#fff4c2,#ffd36e);border:14px solid #e8e0d0;box-shadow:0 12px 0 rgba(0,0,0,.25);opacity:${fade(t,0.0,0.4)}"><div class="abs" style="left:215px;top:0;width:12px;height:100%;background:#e8e0d0"></div><div class="abs" style="left:0;top:240px;width:100%;height:12px;background:#e8e0d0"></div></div>`;
+ // despertador sonando
+ const ring=t<2.4?wob(t,7,13):0;
+ c+=`<div class="abs" style="left:70px;top:300px;transform:rotate(${ring}deg) scale(${pop(t,0.05,0.4)});transform-origin:center"><svg width="200" viewBox="0 0 200 200"><circle cx="60" cy="30" r="26" fill="#d94f4f"/><circle cx="140" cy="30" r="26" fill="#d94f4f"/><circle cx="100" cy="110" r="78" fill="#fff" stroke="#333" stroke-width="10"/><path d="M100 110 L100 62 M100 110 L132 126" stroke="#222" stroke-width="9" stroke-linecap="round"/><rect x="40" y="176" width="120" height="14" rx="7" fill="#333"/></svg></div>`;
+ c+=`<div class="abs" style="left:120px;top:220px;font:900 56px 'DejaVu Sans',sans-serif;color:#fff;text-shadow:0 5px 0 rgba(0,0,0,.5);opacity:${t<2.4?1:0}">6:30 ♪</div>`;
+ // la chica, plano cercano
+ c+=`<div class="abs" style="left:100px;top:${40+(1-eo(t/0.5))*120}px">${girl({mood:'f',tight:true,pose:'belly',pj:true,bags:true,disgust:t>1.5,t,w:880,bloat:0.5+0.5*Math.sin(t*2.2)})}</div>`;
+ // gases / hinchazón
+ for(let i=0;i<6;i++){const s=1.0+i*0.45;if(t<s)continue;const p=clamp((t-s)/1.8);c+=`<div class="abs" style="left:${300+((i*83)%420)}px;top:${960-p*260}px;width:${60+i*10}px;height:${60+i*10}px;border-radius:50%;background:rgba(255,255,255,${0.35*(1-p)});transform:scale(${0.6+p})"></div>`;}
+ c+=`<div class="tag" style="left:70px;top:640px;background:#7a4a8a;font-size:46px;transform:scale(${pop(t,2.6)}) rotate(-5deg)">PESADA · HINCHADA</div>`;
+ h+=cam(z,540,900,c);
+ return h;
+}
+
+/* ===== 2 · AUTORIDAD: 3 cápsulas sobre el frasco de aluminio; original vs plástico ===== */
+function sc2(t){
+ let h=bg(1,t);
+ const T=t+7.79;
+ const split=eio((T-10.2)/0.6);
+ let c='';
+ // frasco de aluminio (centro → izquierda)
+ const bh=lerp(760,600,split), bx=lerp(300,60,split), by=lerp(330,420,split);
+ c+=`<div class="abs" style="left:${bx}px;top:${by}px;transform:scale(${pop(t,0.0,0.5)});transform-origin:center bottom"><img class="clay" src="${IMG}" style="height:${bh}px"></div>`;
+ // mano que deja caer las 3 cápsulas
+ const hp=eio(t/0.6);
+ if(T<10.6){c+=`<div class="abs" style="left:230px;top:${-330+hp*80}px;transform:rotate(180deg);opacity:${T<10.2?1:1-(T-10.2)/0.4}">${palm(640)}</div>`;}
+ [['r',0.55,-20],['b',0.8,8],['v',1.05,-12]].forEach(([k,ts,r],i)=>{
+  const p=clamp((t-ts)/1.0); if(t<ts)return;
+  // cae sobre la tapa y rueda al pie del frasco
+  const fall=clamp(p/0.4), roll=clamp((p-0.4)/0.6);
+  const x0=440+i*70, y0=360, yTop=lerp(y0,by+30,eo(fall));
+  const dest=[bx+bh*0.51+10+i*95, by+bh-70+(i===1?10:0)];
+  const x=lerp(x0,dest[0]-((1-split)*0),eo(roll)), y=lerp(yTop,dest[1],eo(roll));
+  const ok=pop(T,10.8+i*0.2);
+  c+=`<div class="abs" style="left:${x-80}px;top:${y-32}px;opacity:${T<10.9?1:1}">${capsule(k,170,r+roll*40)}</div>`;
+ });
+ // plástico (derecha)
+ if(T>=10.0){
+  const b=eio((T-10.0)/0.5);
+  c+=`<div class="abs" style="left:${lerp(1100,640,b)}px;top:520px;transform:rotate(${wob(t,1.5,.7)}deg)">${plastic(380)}</div>`;
+  c+=`<div class="abs" style="left:${lerp(1100,730,b)}px;top:1050px;transform:rotate(-12deg)">${capsule('b',130,0).replace('class="clay"','class="clay" style="filter:grayscale(1) opacity(.8)"')}</div>`;
+  const x=pop(T,11.2,0.3);
+  c+=`<div class="abs" style="left:600px;top:480px;opacity:${x?1:0};transform:scale(${x}) rotate(-6deg)">${XMARK(460)}</div>`;
+  c+=`<div class="tag" style="left:560px;top:350px;background:#e11d2e;transform:scale(${pop(T,10.7)});font-size:40px;padding:12px 22px">FALSO · PLÁSTICO ✘</div>`;
+  c+=`<div class="tag" style="left:30px;top:270px;background:#0a9a3a;transform:scale(${pop(T,13.55)});font-size:40px;padding:12px 22px">ORIGINAL · ALUMINIO ✔</div>`;
+  c+=`<div class="tag" style="left:620px;top:1000px;background:#333;transform:scale(${pop(T,11.6)});font-size:40px;padding:10px 20px">1 pastilla</div>`;
+ }
+ h+=cam(1+0.08*clamp(t/9),540,800,c);
+ return h;
+}
+
+/* ===== 3 · AGITACIÓN: montaje rápido ===== */
+function sc3(t){
+ const T=t+16.95;
+ let h=bg(2,t);
+ let c='';
+ const part=T<20.4?0:T<24.1?1:2;
+ const lt=part===0?T-16.95:part===1?T-20.4:T-24.1;
+ if(part===0){ // jeans que no cierran
+  const z=1+0.22*eio(lt/3.4);
+  c+=`<div class="abs" style="left:230px;top:300px;transform:translateX(${lt>1.7&&lt<2.3?wob(lt,8,16):0}px)">${girl({mood:'f',tight:true,pose:'belly',t:lt,w:640,sweat:lt>0.8,pop:1.7,bloat:0.4})}</div>`;
+  c+=`<div class="tag" style="left:620px;top:420px;background:#c4252f;transform:scale(${pop(lt,0.5)}) rotate(5deg);font-size:46px">NO CIERRAN</div>`;
+  c+=`<div class="abs" style="left:80px;top:360px;width:260px;transform:scale(${pop(lt,0.9)}) rotate(-8deg)"><svg viewBox="0 0 260 90" width="260"><rect x="4" y="20" width="252" height="50" rx="8" fill="#ffe36a" stroke="#222" stroke-width="5"/>${[...Array(12)].map((_,i)=>`<path d="M${22+i*20} 20 v${i%2?16:28}" stroke="#222" stroke-width="4"/>`).join('')}</svg></div>`;
+  h+=cam(z,540,820,c);
+ }else if(part===1){ // sofá sin energía
+  const z=1+0.14*eio(lt/3.6);
+  c+=`<div class="abs" style="left:60px;top:830px;width:960px;height:330px;border-radius:70px 70px 40px 40px;background:#5a6576;box-shadow:0 14px 0 rgba(0,0,0,.35)"></div><div class="abs" style="left:20px;top:820px;width:150px;height:360px;border-radius:60px;background:#47505f"></div><div class="abs" style="left:910px;top:820px;width:150px;height:360px;border-radius:60px;background:#47505f"></div>`;
+  c+=`<div class="abs" style="left:250px;top:${360+(1-eo(lt/0.4))*80}px;transform:rotate(${-12+wob(lt,2,.5)}deg);transform-origin:center bottom">${girl({mood:'f',tight:true,pose:'down',bags:true,t:lt,w:560,vb:'0 0 600 760'})}</div>`;
+  c+=`<div class="abs" style="left:700px;top:320px;transform:scale(${pop(lt,0.3)})"><svg width="260" viewBox="0 0 260 130"><rect x="6" y="20" width="220" height="90" rx="16" fill="#222" stroke="#fff" stroke-width="8"/><rect x="226" y="45" width="22" height="40" rx="6" fill="#fff"/><rect x="16" y="30" width="${22+Math.max(0,Math.sin(lt*6))*10}" height="70" rx="8" fill="#ff3b3b"/></svg><div style="font-weight:900;font-size:60px;color:#fff;text-shadow:0 5px 0 #000;margin-left:30px">5%</div></div>`;
+  ['z','Z','Z'].forEach((q,i)=>{const p=clamp((lt-0.6-i*0.5)/1.5);if(lt>0.6+i*0.5)c+=`<div class="abs" style="left:${660+i*40}px;top:${620-p*220}px;font-size:${60+i*26}px;font-weight:900;color:#fff;opacity:${1-p}">${q}</div>`;});
+  h+=cam(z,540,800,c);
+ }else{ // comiendo y culpable + rebote
+  const z=1+0.12*eio(lt/4.6);
+  c+=`<div class="abs" style="left:60px;top:330px;transform:translateY(${(1-eo(lt/0.4))*60}px)">${girl({mood:'f',tight:true,pose:'down',sweat:lt>1,t:lt,w:560,vb:'0 0 600 760'})}</div>`;
+  // dona y papas
+  const dn=pop(lt,0.2);
+  c+=`<div class="abs" style="left:440px;top:820px;transform:scale(${dn}) rotate(${wob(lt,6,.8)}deg)"><svg width="250" viewBox="0 0 200 200"><circle cx="100" cy="100" r="86" fill="#d9954a" stroke="#8a5a1e" stroke-width="6"/><circle cx="100" cy="100" r="74" fill="#ff8fb8"/><circle cx="100" cy="100" r="26" fill="#9bd0ff"/>${[[60,60],[130,50],[150,100],[70,140],[120,150],[100,35]].map(p=>`<rect x="${p[0]}" y="${p[1]}" width="22" height="7" rx="3" fill="#fff" transform="rotate(${p[0]*3} ${p[0]} ${p[1]})"/>`).join('')}</svg></div>`;
+  c+=`<div class="abs" style="left:680px;top:810px;transform:scale(${pop(lt,0.5)}) rotate(8deg)"><svg width="260" viewBox="0 0 220 260"><path d="M20 70 L200 70 L184 250 L36 250Z" fill="#e8b020" stroke="#7a5a00" stroke-width="6"/><text x="110" y="170" font-size="48" font-weight="900" fill="#c4252f" text-anchor="middle" font-family="Inter,sans-serif">PAPAS</text>${[...Array(6)].map((_,i)=>`<rect x="${42+i*24}" y="${20-(i%3)*8}" width="14" height="60" rx="5" fill="#ffd34d" transform="rotate(${(i-3)*6} ${50+i*24} 70)"/>`).join('')}</svg></div>`;
+  // nube de culpa
+  c+=`<div class="abs" style="left:560px;top:330px;transform:scale(${pop(lt,1.0)});transform-origin:left bottom"><div style="background:#fff;border-radius:50px;padding:24px 34px;font-weight:900;font-size:50px;color:#c4252f;box-shadow:0 8px 0 rgba(0,0,0,.3)">¿OTRA VEZ?</div></div>`;
+  // gráfico rebote
+  if(T>=24.6){const gp=clamp((T-24.6)/1.4);const pts=[[0,0],[90,70],[170,140],[240,60],[320,10],[420,-90]];const n=Math.max(2,Math.ceil(gp*pts.length));const d=pts.slice(0,n).map((p,i)=>(i?'L':'M')+p[0]+' '+(150+p[1]*-1+ (p[1]>0?0:0))).join(' ');
+   c+=`<div class="abs" style="left:520px;top:520px;width:500px;transform:scale(${pop(T,24.6,0.3)})"><div style="background:#fff;border-radius:24px;padding:14px;box-shadow:0 8px 0 rgba(0,0,0,.3)"><svg viewBox="0 0 440 240" width="472"><path d="M10 200 H430" stroke="#ccc" stroke-width="4"/><path d="${pts.slice(0,n).map((p,i)=>(i?'L':'M')+(10+p[0])+' '+(120+p[1]*0.9)).join(' ')}" stroke="#e11d2e" stroke-width="12" fill="none" stroke-linejoin="round" stroke-linecap="round"/><text x="14" y="236" font-size="26" font-weight="900" fill="#555" font-family="Inter,sans-serif">dieta</text><text x="300" y="236" font-size="26" font-weight="900" fill="#e11d2e" font-family="Inter,sans-serif">rebote ↑</text></svg></div></div>`;}
+  h+=cam(z,540,800,c);
+ }
+ // corte rápido entre tomas
+ const cuts=[20.4,24.1];
+ cuts.forEach(cu=>{if(T>=cu&&T<cu+0.12)h+=`<div class="abs" style="inset:0;background:#fff;opacity:${0.6*(1-(T-cu)/0.12)}"></div>`;});
+ return h;
+}
+
+/* ===== 4 · MECANISMO: 3 cápsulas, cada color y su beneficio; sello con relieve ===== */
+function sc4(t){
+ let h=bg(3,t);
+ const T=t+28.75;
+ let c='';
+ const phase=T<32.7?0:T<40.19?1:2;
+ const act=T<32.71?-1:T<34.68?0:T<38.03?1:T<40.19?2:-1;
+ const zoom=phase===0?1+0.34*eio(t/3.9):1.0;
+ const posA=[[170,520,-18],[430,540,4],[690,510,-12]]; // fase macro
+ const caps=['r','b','v'];
+ if(phase<2){
+  caps.forEach((k,i)=>{
+   const p=pop(t,0.2+i*0.25,0.45);
+   const big=(phase===0);
+   const sc=big?1:(act===i?1.28:0.86);
+   const x=big?posA[i][0]:[90,390,690][i], y=big?posA[i][1]:560;
+   const a=act===i?(0.5+0.5*Math.sin(T*8)):0;
+   c+=`<div class="abs" style="left:${x}px;top:${y}px;transform:scale(${p*sc}) rotate(${wob(T,3,.6)}deg);transform-origin:center;opacity:${act>=0&&act!==i?0.55:1}">${capsule(k,big?340:300,posA[i][2],a)}</div>`;
+  });
+  // iconos del beneficio
+  const ico=[bolt(190),apple(190),leaf(190)];
+  if(act>=0){c+=`<div class="abs" style="left:${[190,490,790][act]-30}px;top:${300+Math.sin(T*6)*8}px;transform:scale(${pop(T,[32.71,34.68,38.03][act],0.35)})">${ico[act]}</div>`;}
+  // fases macro
+  if(phase===0){['FASE 1','FASE 2','FASE 3'].forEach((s,i)=>{c+=`<div class="tag" style="left:${[90,420,740][i]}px;top:${[820,860,820][i]}px;background:${['#e11d2e','#6b7a86','#0a9a3a'][i]};transform:scale(${pop(T,30.0+i*0.9)});font-size:44px">${s}</div>`;});}
+ } else { // sello con relieve brillando
+  const tt=T-40.19, sp=pop(tt,0.0,0.45), sh=((tt*0.9)%1.6)-0.3;
+  c+=`<div class="abs" style="left:190px;top:330px;width:700px;height:680px;border-radius:44px;overflow:hidden;border:10px solid #fff;box-shadow:0 14px 0 rgba(0,0,0,.35);transform:scale(${sp})"><img src="${SELLO}" style="width:700px;height:800px;object-fit:cover;margin-top:-50px;transform:scale(${1.02+0.06*clamp(tt/1.9)});transform-origin:55% 50%"><div class="abs" style="left:${-300+sh*1100}px;top:0;width:180px;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.75),transparent);transform:skewX(-14deg)"></div></div>`;
+  c+=`<div class="abs" style="left:300px;top:400px;width:500px;height:500px;border-radius:250px;border:10px solid #ffe600;opacity:${pop(tt,0.4)?0.95:0};transform:scale(${pop(tt,0.4,0.5)*(1+0.05*Math.sin(tt*8))})"></div>`;
+  c+=`<div class="tag" style="left:70px;top:300px;background:#0a7a3a;transform:scale(${pop(tt,0.2)}) rotate(-5deg);font-size:46px">SELLO CON RELIEVE</div>`;
+ }
+ h+=cam(zoom,540,700,c);
+ // lista de beneficios por color (afirmaciones del guion)
+ if(phase===1){
+  const rows=[['#ff3b3b','ROJA','Activa energía',32.71],['#ffffff','BLANCA','Controla apetito',34.68],['#2fcf5a','VERDE','Depura natural',38.03]];
+  rows.forEach((r,i)=>{const p=pop(T,r[3],0.3);if(!p)return;
+   h+=`<div class="abs" style="left:60px;top:${1010+i*108}px;transform:scale(${p});transform-origin:left center"><div style="display:inline-flex;align-items:center;gap:16px;background:#fff;border-radius:30px;padding:12px 28px;font-weight:900;font-size:46px;color:#0a3a22;box-shadow:0 8px 0 rgba(0,0,0,.3)"><span style="display:inline-block;width:42px;height:42px;border-radius:21px;background:${r[0]};border:5px solid #667"></span>${r[1]}${CLAIMS?`: <span style="color:#0a9a3a">${r[2]}</span>`:''}</div></div>`;});
+ }
+ return h;
+}
+
+/* ===== 5 · TRANSFORMACIÓN: misma chica, liviana, con el vestido ===== */
+function sc5(t){
+ const T=t+42.13;
+ let h=bg(4,t);
+ let c='';
+ // rayos de sol
+ for(let i=0;i<9;i++){c+=`<div class="abs" style="left:540px;top:700px;width:30px;height:1300px;background:linear-gradient(rgba(255,230,120,.55),rgba(255,230,120,0));transform-origin:50% 0;transform:rotate(${-80+i*20+wob(T,3,.2)}deg)"></div>`;}
+ const dressOn=T>=44.1;
+ // vestido que no le entraba (cuelga y entra)
+ if(!dressOn){const dp=eo(t/0.6);c+=`<div class="abs" style="left:640px;top:${300+dp*60}px;transform:rotate(${wob(t,4,1)}deg);transform-origin:50% 0"><svg width="300" viewBox="0 0 300 420"><path d="M150 0 q0 22 -18 26" stroke="#555" stroke-width="8" fill="none"/><path d="M60 40 Q150 20 240 40" stroke="#888" stroke-width="10" fill="none"/><path d="M90 50 Q150 36 210 50 L230 180 L300 410 L0 410 L70 180Z" fill="#27d27a" stroke="#0a7a3a" stroke-width="6"/></svg></div>`;}
+ const gp=pop(t,0.0,0.5);
+ const tw=dressOn?Math.sin((T-44.1)*5)*5:0;
+ c+=`<div class="abs" style="left:190px;top:300px;transform:scale(${gp}) rotate(${tw}deg);transform-origin:center bottom">${girl({mood:'h',tight:false,pose:dressOn?'up':'down',pj:!dressOn,dress:dressOn,t,w:700,vb:'0 0 600 1000'})}</div>`;
+ if(T>=44.1&&T<44.7){const p=(T-44.1)/0.6;c+=`<div class="abs" style="left:240px;top:420px;width:600px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,${0.9*(1-p)}),transparent 70%)"></div>`;}
+ for(let i=0;i<10;i++){const a=i*Math.PI*2/10+T*1.2,r=380+Math.sin(T*5+i)*24;const s=pop(t,0.5+i*0.05);c+=`<div class="abs" style="left:${540+Math.cos(a)*r*0.9}px;top:${700+Math.sin(a)*r*0.85}px;font-size:56px;color:#ffd21f;text-shadow:0 4px 0 rgba(0,0,0,.25);transform:scale(${s*(0.7+0.3*Math.sin(T*9+i))})">✦</div>`;}
+ // energía
+ c+=`<div class="abs" style="left:60px;top:430px;transform:scale(${pop(T,45.1)}) rotate(-12deg)">${bolt(130)}</div>`;
+ h+=cam(1+0.1*eio(t/5.2),540,700,c);
+ return h;
+}
+
+/* ===== 6 · CTA: frasco hero en mano, comentar y comprar ===== */
+function sc6(t){
+ const T=t+47.39;
+ let h=bg(5,t);
+ let c='';
+ const bp=pop(t,0.0,0.55);
+ c+=`<div class="abs" style="left:300px;top:330px;transform:scale(${bp}) rotate(${wob(T,2,.7)}deg);transform-origin:center bottom"><img class="clay" src="${IMG}" style="height:650px"></div>`;
+ // mano de plastilina sosteniendo el frasco
+ c+=`<div class="abs" style="left:330px;top:870px;width:420px;height:160px;transform:scale(${bp});transform-origin:center"><svg width="420" viewBox="0 0 420 170"><defs><linearGradient id="hk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8d3b2"/><stop offset="1" stop-color="#df9f75"/></linearGradient></defs><g fill="url(#hk)"><rect x="20" y="30" width="380" height="110" rx="55"/><rect x="40" y="0" width="80" height="90" rx="40"/><rect x="130" y="-10" width="80" height="90" rx="40"/><rect x="220" y="-8" width="80" height="90" rx="40"/><rect x="300" y="4" width="76" height="86" rx="38"/></g><ellipse cx="200" cy="100" rx="150" ry="14" fill="#e8b08a" opacity=".7"/></svg></div>`;
+ for(let i=0;i<9;i++){const a=i*Math.PI*2/9+T*1.3,r=420+Math.sin(T*5+i)*24;const s=pop(t,0.3+i*0.05);c+=`<div class="abs" style="left:${540+Math.cos(a)*r}px;top:${700+Math.sin(a)*r*0.8}px;font-size:56px;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.25);transform:scale(${s*(0.7+0.3*Math.sin(T*9+i))})">✦</div>`;}
+ h+=cam(1+0.08*clamp(t/5),540,700,c);
+ // cuadro de comentario que se escribe
+ const txt='YO QUIERO FIT'; const n=Math.floor(clamp((T-49.3)/0.8)*txt.length);
+ if(T>=49.0){h+=`<div class="abs" style="left:70px;top:160px;width:940px;transform:scale(${pop(T,49.0,0.3)});transform-origin:center"><div style="background:#fff;border-radius:60px;padding:22px 30px;box-shadow:0 8px 0 rgba(0,0,0,.3);display:flex;align-items:center;gap:18px"><div style="width:62px;height:62px;border-radius:31px;background:#cfd8e0;flex:none"></div><div style="font-weight:800;font-size:44px;color:#111;white-space:nowrap">${txt.slice(0,n)}<span style="opacity:${Math.floor(T*3)%2}">|</span></div><div style="margin-left:auto;font-weight:900;font-size:36px;color:#1877f2">Publicar</div></div></div>`;}
+ // botón de compra
+ const bb=pop(T,50.4,0.4);
+ if(bb){h+=`<div class="abs" style="left:90px;top:1290px;width:900px;transform:scale(${bb*(1+0.03*Math.sin(T*8))});transform-origin:center"><div style="background:#16a34a;color:#fff;font-weight:900;font-size:46px;text-align:center;padding:16px 12px;border-radius:30px;box-shadow:0 10px 0 #0b6b30,0 0 0 8px #fff;line-height:1.1">COMPRAR AHORA · ${DOMINIO}</div><div style="margin-top:12px;text-align:center;font-weight:800;font-size:28px;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.5)">Evita falsificaciones</div></div>`;}
+ return h;
+}
+const SCENES=[sc1,sc2,sc3,sc4,sc5,sc6];
+function render(t){
+ let h='';
+ const idx=BOUNDS.findIndex((b,i)=>t>=b&&t<BOUNDS[i+1]);
+ const i=Math.max(0,idx);
+ const lt=t-BOUNDS[i];
+ if(i>0&&lt<0.28){const pl=t-BOUNDS[i-1];h+=`<div class="scene">${SCENES[i-1](pl)}</div>`;}
+ const enter=i>0?eo(lt/0.28):1;
+ h+=`<div class="scene" style="transform:translateX(${(1-enter)*1080}px)">${SCENES[i](lt)}</div>`;
+ if(i>0&&lt<0.12)h+=`<div class="abs" style="inset:0;background:#fff;opacity:${0.5*(1-lt/0.12)}"></div>`;
+ h+=yellow(t);
+ h+=subtitle(t);
+ document.getElementById('stage').innerHTML=h;
+}
+window.render=render;
+</script></body></html>
