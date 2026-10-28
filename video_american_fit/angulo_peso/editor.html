@@ -1,0 +1,236 @@
+<title>Mesa de edición</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Concepto: mesa de montaje oscura. Vista previa vertical a la izquierda, inspector a la derecha, línea de tiempo con pistas abajo. */
+:root{
+  --bg:#0f1115; --panel:#171a20; --panel2:#1d2129; --line:#2a2f39;
+  --fg:#e7eaef; --muted:#8f97a5; --accent:#ff5a3c; --yellow:#ffe600;
+  --voice:#5aa9ff; --tense:#8b6bd9; --hope:#35c27a; --sfx:#f2b84b;
+  --font:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 var(--font);padding-block:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+button:hover{border-color:#3b4250}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1500px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding-block:12px 24px}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:space-between}
+h1{font-size:15px;font-weight:600;margin:0;letter-spacing:.02em}
+.sub{color:var(--muted);font-size:12px}
+.rec{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.rec i{width:8px;height:8px;border-radius:50%;background:var(--hope);display:inline-block}
+.main{display:grid;grid-template-columns:minmax(260px,380px) minmax(0,1fr);gap:14px}
+@media (max-width:820px){.main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.card h2{margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+/* vista previa */
+.pv{display:flex;flex-direction:column;gap:10px;align-items:center}
+.screen{position:relative;width:100%;max-width:340px;aspect-ratio:9/16;background:#000;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.screen iframe{position:absolute;left:0;top:0;width:1080px;height:1920px;border:0;transform-origin:0 0;pointer-events:none;background:#000}
+.safe{position:absolute;inset:0;pointer-events:none;display:none}
+.safe.on{display:block}
+.safe::before,.safe::after{content:"";position:absolute;left:0;right:0;border-top:1px dashed #ff5a3c}
+.safe::before{top:6.25%}.safe::after{bottom:13%}
+.safe span{position:absolute;left:6px;font:10px var(--mono);color:#ff5a3c;background:rgba(0,0,0,.6);padding:1px 4px}
+.tc{font-family:var(--mono);font-size:22px;font-weight:500;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.tc small{color:var(--muted);font-size:12px}
+.transport{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
+.play{background:var(--accent);border-color:var(--accent);color:#1a0a06;font-weight:600;min-width:96px}
+/* inspector */
+.side{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;align-content:start}
+.now dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px}
+.now dt{color:var(--muted);font-size:12px}
+.now dd{margin:0;font-weight:500;min-width:0;overflow-wrap:anywhere}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:600;color:#111}
+.hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;max-height:300px;overflow:auto}
+.hist li{display:grid;grid-template-columns:20px 1fr;gap:8px;font-size:13px}
+.hist b{font-family:var(--mono);font-size:11px;color:var(--hope);padding-top:2px}
+.hist em{display:block;color:var(--muted);font-style:normal;font-size:12px}
+.tog{display:flex;gap:10px;align-items:flex-start;padding:6px 0}
+.tog input{margin-top:3px;accent-color:var(--accent)}
+.tog span{font-size:13px}.tog em{display:block;color:var(--muted);font-style:normal;font-size:12px}
+.sfxlist{display:flex;flex-wrap:wrap;gap:6px;min-height:26px}
+.chip{font:11px var(--mono);padding:3px 8px;border-radius:99px;border:1px solid var(--sfx);color:var(--sfx);animation:fl .5s}
+@keyframes fl{from{background:var(--sfx);color:#111}to{background:transparent}}
+@media (prefers-reduced-motion:reduce){.chip{animation:none}}
+/* línea de tiempo */
+.tl{padding:0}
+.tlbar{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tlbar label{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.tlscroll{overflow-x:auto;position:relative}
+.tlin{position:relative;min-width:100%}
+.row{display:flex;border-bottom:1px solid var(--line);height:44px}
+.row.ruler{height:28px;background:var(--panel2)}
+.lab{position:sticky;left:0;z-index:5;width:104px;flex:none;background:var(--panel);border-right:1px solid var(--line);padding:0 10px;display:flex;align-items:center;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lane{position:relative;flex:1;cursor:pointer}
+.blk{position:absolute;top:6px;bottom:6px;border-radius:5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;font-weight:600;padding:0 6px;display:flex;align-items:center;color:#111;border:1px solid rgba(0,0,0,.35)}
+.blk.dim{opacity:.55}
+.blk.cur{box-shadow:0 0 0 2px #fff}
+.tick{position:absolute;top:0;bottom:0;border-left:1px solid var(--line);font:10px var(--mono);color:var(--muted);padding:6px 0 0 4px}
+.mk{position:absolute;top:10px;bottom:10px;width:3px;border-radius:2px;background:var(--sfx)}
+.mk.t-ding{background:#6ee7a8}.mk.t-thud,.mk.t-buzz{background:#ff7a66}.mk.t-coin{background:#ffd23c}.mk.t-swoosh{background:#7fb8ff;opacity:.8}.mk.t-pop{background:#d9b8ff}
+.mk.hit{height:auto;box-shadow:0 0 6px currentColor;width:4px;filter:brightness(1.6)}
+.ph{position:absolute;top:0;bottom:0;width:0;border-left:2px solid var(--accent);z-index:6;pointer-events:none}
+.ph::before{content:"";position:absolute;top:0;left:-7px;border:6px solid transparent;border-top:9px solid var(--accent)}
+.leg{display:flex;gap:14px;flex-wrap:wrap;padding:10px 12px;font-size:12px;color:var(--muted)}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.warn{color:#ff9a8a;font-size:13px;padding:8px 12px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Mesa de edición · American Fit · Ángulo del peso</h1>
+      <div class="sub">9:16 · 1080×1920 · 30 fps · 35,5 s · pistas: escenas, texto, voz, música, efectos</div>
+    </div>
+    <div class="rec"><i></i> Edición en vivo: lo que ves es la composición real que se renderiza</div>
+  </header>
+
+  <div class="main">
+    <section class="card pv" aria-label="Vista previa">
+      <div class="screen" id="screen">
+        <iframe id="comp" src="composition.html" title="Composición del video"></iframe>
+        <div class="safe" id="safe"><span style="top:6.5%">zona segura arriba</span><span style="bottom:13.5%">zona segura abajo</span></div>
+      </div>
+      <div class="tc" id="tc">00:00.00 <small>/ 00:35.55</small></div>
+      <div class="transport">
+        <button id="back" title="Un segundo atrás (Shift + ←)">−1 s</button>
+        <button id="prev" title="Cuadro anterior (←)">◀ cuadro</button>
+        <button id="play" class="play">▶ Reproducir</button>
+        <button id="next" title="Cuadro siguiente (→)">cuadro ▶</button>
+        <button id="fwd" title="Un segundo adelante (Shift + →)">+1 s</button>
+      </div>
+      <div class="sub">Espacio reproduce. El audio de la mezcla (voz, música y efectos) marca el tiempo.</div>
+    </section>
+
+    <div class="side">
+      <section class="card now" aria-live="polite">
+        <h2>En pantalla ahora</h2>
+        <dl>
+          <dt>Escena</dt><dd id="nScene">—</dd>
+          <dt>Texto amarillo</dt><dd id="nYt">—</dd>
+          <dt>Voz</dt><dd id="nVoice">—</dd>
+          <dt>Música</dt><dd id="nMus">—</dd>
+        </dl>
+        <h2 style="margin-top:14px">Efectos que suenan</h2>
+        <div class="sfxlist" id="nSfx"></div>
+      </section>
+
+      <section class="card">
+        <h2>Ajustes de la edición</h2>
+        <label class="tog"><input type="checkbox" id="claims" checked><span>Chips de colores de las cápsulas<em>Roja: energía · Blanca: apetito · Verde: detox. Quitarlos reduce riesgo de rechazo en Meta.</em></span></label>
+        <label class="tog"><input type="checkbox" id="safeT"><span>Mostrar zonas seguras<em>Margen de 120 px arriba y 250 px abajo para botones de la app.</em></span></label>
+      </section>
+
+      <section class="card">
+        <h2>Historial de ediciones</h2>
+        <ul class="hist">
+          <li><b>✓</b><div>Voz generada con la guion completo<em>14 frases medidas con pausas reales; los textos siguen cada palabra.</em></div></li>
+          <li><b>✓</b><div>Sello de la tapa con foto real<em>Se quitó el holograma inventado; ahora dice nombre en relieve.</em></div></li>
+          <li><b>✓</b><div>Música en dos tiempos<em>Tensa en Re menor hasta 14,3 s; esperanzadora y con campanas al cierre.</em></div></li>
+          <li><b>✓</b><div>Efectos de sonido en cada aparición<em>Pops, whooshes, dings, golpes, monedas, tapa y cápsulas (139 eventos).</em></div></li>
+          <li><b>✓</b><div>Cierre con botón de compra<em>americannatural.ec y «Evita falsificaciones».</em></div></li>
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <section class="card tl" aria-label="Línea de tiempo">
+    <div class="tlbar">
+      <strong style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Línea de tiempo</strong>
+      <label for="zoom">Zoom <input type="range" id="zoom" min="18" max="90" value="38"></label>
+      <label><input type="checkbox" id="follow" checked> Seguir cabezal</label>
+    </div>
+    <div class="tlscroll" id="tlscroll"><div class="tlin" id="tlin"></div></div>
+    <div class="leg">
+      <span><i style="background:var(--yellow)"></i>Texto amarillo</span>
+      <span><i style="background:var(--voice)"></i>Voz</span>
+      <span><i style="background:var(--tense)"></i>Música tensa</span>
+      <span><i style="background:var(--hope)"></i>Música esperanzadora</span>
+      <span><i style="background:var(--sfx)"></i>Efectos de sonido</span>
+    </div>
+    <div class="warn" id="warn" hidden>No se pudo enlazar la vista previa con la composición; la línea de tiempo sigue funcionando.</div>
+  </section>
+
+  <audio id="aud" src="mezcla.mp3" preload="auto"></audio>
+</div>
+
+<script>
+const DATA={"segs":[{"s":0,"e":0.69,"t":"¿Te pasa?"},{"s":1.21,"e":4.29,"t":"Controlar el peso es un reto para mucha gente..."},{"s":4.63,"e":7.27,"t":"Haces dieta, ejercicio, y nada..."},{"s":7.56,"e":9.16,"t":"es frustrante, lo sé."},{"s":9.49,"e":14.02,"t":"Y encima hay un montón de copias baratas que no te ayudan y te hacen perder plata."},{"s":14.27,"e":16.76,"t":"Por eso yo solo confío en el original."},{"s":17.07,"e":21.43,"t":"American Fit viene con sus 3 cápsulas de colores y en su frasco de aluminio."},{"s":21.68,"e":24.4,"t":"Si no es de aluminio, si no tiene sus 3 colores,"},{"s":24.54,"e":26.3,"t":"y si no tiene su sello con relieve,"},{"s":26.49,"e":27.33,"t":"desconfía."},{"s":27.58,"e":28.8,"t":"No es el original."},{"s":29.12,"e":30.95,"t":"Si controlar tu peso es tu reto,"},{"s":31.17,"e":32.66,"t":"empieza con el original."},{"s":32.92,"e":35.34,"t":"Solo en la web oficial de American Natural."}],"yt":[{"s":0,"e":1.15,"t":"¿TE PASA?"},{"s":1.16,"e":2.325172413793103,"t":"CONTROLAR|EL PESO"},{"s":2.325172413793103,"e":3.068620689655172,"t":"ES UN RETO"},{"s":3.068620689655172,"e":4.3,"t":"PARA MUCHA|GENTE"},{"s":4.3,"e":6.457692307692307,"t":"DIETA Y|EJERCICIO"},{"s":6.457692307692307,"e":7.5,"t":"¿Y NADA?"},{"s":7.5,"e":9.5,"t":"ES|FRUSTRANTE"},{"s":9.5,"e":10.939599999999999,"t":"CUIDADO"},{"s":10.939599999999999,"e":13.295199999999998,"t":"NO TODO|ES ORIGINAL"},{"s":13.295199999999998,"e":14.3,"t":"PERDER|PLATA"},{"s":14.3,"e":17.07,"t":"SOLO EL|ORIGINAL"},{"s":17.07,"e":18.34956521739131,"t":"AMERICAN FIT"},{"s":18.34956521739131,"e":19.20260869565218,"t":"3 CÁPSULAS"},{"s":19.20260869565218,"e":20.34000000000001,"t":"ROJA · BLANCA|VERDE"},{"s":20.34000000000001,"e":21.7,"t":"FRASCO|ORIGINAL"},{"s":21.7,"e":22.75,"t":"ALUMINIO"},{"s":22.75,"e":22.904000000000003,"t":"NO PLÁSTICO"},{"s":22.904000000000003,"e":24.5,"t":"3 COLORES"},{"s":24.5,"e":26.45,"t":"SELLO CON|RELIEVE"},{"s":26.45,"e":27.55,"t":"DESCONFÍA"},{"s":27.55,"e":28.8,"t":"NO ES EL|ORIGINAL"},{"s":28.8,"e":31.15,"t":"TU RETO"},{"s":31.15,"e":31.95,"t":"EL ORIGINAL"},{"s":31.95,"e":32.9,"t":"SÍ FUNCIONA"},{"s":32.9,"e":40,"t":"COMPRA EN LA|WEB OFICIAL"}],"bounds":[0,4.3,9.5,14.3,21.7,28.8,36.5]};
+const EVENTS=[[0, "swoosh"], [0, "pop"], [0, "swoosh"], [1.11, "swoosh"], [1.16, "pop"], [2.0, "buzz"], [2.2, "ding"], [2.275, "swoosh"], [2.325, "pop"], [3.019, "swoosh"], [3.069, "pop"], [4.25, "swoosh"], [4.3, "pop"], [4.3, "swoosh"], [4.4, "pop"], [4.9, "tick"], [5.18, "tick"], [5.2, "slap"], [5.46, "tick"], [5.74, "tick"], [6.0, "slap"], [6.02, "tick"], [6.3, "tick"], [6.408, "swoosh"], [6.458, "pop"], [6.58, "tick"], [6.8, "slap"], [6.86, "tick"], [7.14, "tick"], [7.42, "tick"], [7.45, "swoosh"], [7.5, "pop"], [7.7, "tick"], [7.98, "tick"], [8.26, "tick"], [8.54, "tick"], [8.82, "tick"], [9.45, "swoosh"], [9.5, "pop"], [9.5, "vib"], [9.75, "msg"], [10.7, "msg"], [10.89, "swoosh"], [10.94, "pop"], [11.0, "thud"], [11.35, "thud"], [11.5, "msg"], [11.7, "pop"], [11.7, "thud"], [12.5, "coin"], [12.63, "coin"], [12.76, "coin"], [12.89, "coin"], [13.02, "coin"], [13.15, "coin"], [13.245, "swoosh"], [13.28, "coin"], [13.295, "pop"], [14.25, "swoosh"], [14.3, "pop"], [14.3, "pop"], [14.3, "swoosh"], [17.02, "swoosh"], [17.07, "pop"], [17.4, "swoosh"], [17.65, "capop"], [17.8, "pop"], [18.3, "swoosh"], [18.35, "pop"], [18.737, "clack"], [18.737, "ding"], [18.857, "clack"], [19.153, "swoosh"], [19.203, "pop"], [19.337, "clack"], [19.337, "ding"], [19.392, "ding"], [19.457, "clack"], [19.937, "clack"], [19.937, "ding"], [20.057, "clack"], [20.29, "swoosh"], [20.292, "ding"], [20.34, "pop"], [21.192, "ding"], [21.65, "swoosh"], [21.7, "pop"], [21.7, "swoosh"], [22.2, "ding"], [22.6, "pop"], [22.7, "buzz"], [22.7, "swoosh"], [22.75, "pop"], [22.75, "pop"], [22.854, "swoosh"], [22.9, "pop"], [22.9, "thud"], [22.904, "pop"], [23.45, "pop"], [23.67, "pop"], [23.89, "pop"], [23.9, "ding"], [24.12, "ding"], [24.34, "ding"], [24.45, "swoosh"], [24.5, "pop"], [24.5, "swoosh"], [24.55, "pop"], [25.0, "click"], [25.0, "ding"], [26.4, "swoosh"], [26.45, "pop"], [26.5, "pop"], [26.5, "swoosh"], [26.8, "buzz"], [26.8, "thud"], [27.5, "swoosh"], [27.55, "pop"], [28.75, "swoosh"], [28.8, "pop"], [28.8, "swoosh"], [29.1, "sparkle"], [29.25, "sparkle"], [29.4, "sparkle"], [29.5, "sparkle"], [29.65, "sparkle"], [29.8, "sparkle"], [29.9, "sparkle"], [30.05, "sparkle"], [30.2, "sparkle"], [31.1, "swoosh"], [31.15, "pop"], [31.9, "swoosh"], [31.95, "pop"], [32.85, "swoosh"], [32.9, "pop"], [33.2, "click"], [33.2, "ding"], [33.45, "ding"]];
+const DUR=35.5526, FPS=30;
+const SCENE_NAMES=["1 · Espejo, ropa que no queda","2 · Pancita, calendario y dietas","3 · WhatsApp falso y copias","4 · Frasco original y 3 cápsulas","5 · Cómo identificar el original","6 · Cierre y compra"];
+const SCENE_COL=["#6f87b0","#7f9a96","#e0525c","#35b377","#9a62e6","#ffb83a"];
+const SFX_ES={pop:'pop',swoosh:'whoosh',ding:'ding',thud:'golpe',buzz:'error',click:'clic',slap:'papel',coin:'moneda',msg:'mensaje',vib:'vibración',clack:'cápsula',capop:'tapa',sparkle:'brillo',tick:'tic'};
+const $=id=>document.getElementById(id);
+const aud=$('aud'), comp=$('comp'), tlin=$('tlin'), tls=$('tlscroll');
+let t=0, playing=false, pps=+$('zoom').value, lastRendered=-1, compReady=false;
+
+const fmt=s=>{s=Math.max(0,s);const m=Math.floor(s/60),r=s-m*60,f=Math.floor((r%1)*FPS);return String(m).padStart(2,'0')+':'+String(Math.floor(r)).padStart(2,'0')+'.'+String(f).padStart(2,'0')};
+const sceneOf=x=>{for(let i=0;i<6;i++)if(x>=DATA.bounds[i]&&x<DATA.bounds[i+1])return i;return 5};
+
+/* ---- vista previa ---- */
+function fit(){const w=$('screen').clientWidth;comp.style.transform='scale('+(w/1080)+')'}
+new ResizeObserver(fit).observe($('screen')); fit();
+comp.addEventListener('load',()=>{try{compReady=typeof comp.contentWindow.render==='function';comp.contentWindow.render(0);}catch(e){compReady=false}$('warn').hidden=compReady;});
+function ensure(){if(compReady)return;try{const w=comp.contentWindow;if(w&&typeof w.render==='function'&&w.document.readyState==='complete'){compReady=true;lastRendered=-1;$('warn').hidden=true}}catch(e){}}
+setTimeout(()=>{ensure();if(!compReady)$('warn').hidden=false},4000);
+function draw(){ ensure(); if(compReady&&Math.abs(t-lastRendered)>1e-4){try{comp.contentWindow.render(Math.min(t,DUR-0.01));lastRendered=t}catch(e){}} }
+
+/* ---- línea de tiempo ---- */
+function buildTL(){
+  pps=+$('zoom').value; const W=Math.ceil(DUR*pps);
+  tlin.style.width=(W+104)+'px';
+  const lane=(label,inner,cls='')=>`<div class="row ${cls}"><div class="lab">${label}</div><div class="lane" style="width:${W}px">${inner}</div></div>`;
+  let ruler='';for(let s=0;s<=Math.floor(DUR);s++){ if(pps<30&&s%2)continue; ruler+=`<div class="tick" style="left:${s*pps}px">${s}s</div>`}
+  const scenes=DATA.bounds.slice(0,6).map((b,i)=>{const e=Math.min(DATA.bounds[i+1],DUR);return `<div class="blk" data-i="${i}" style="left:${b*pps}px;width:${(e-b)*pps-2}px;background:${SCENE_COL[i]}">${SCENE_NAMES[i]}</div>`}).join('');
+  const yt=DATA.yt.map((y,i)=>{const e=Math.min(y.e,DUR);return `<div class="blk" data-y="${i}" style="left:${y.s*pps}px;width:${Math.max(6,(e-y.s)*pps-2)}px;background:var(--yellow)">${y.t.replace('|',' ')}</div>`}).join('');
+  const voice=DATA.segs.map((g,i)=>`<div class="blk" data-v="${i}" style="left:${g.s*pps}px;width:${Math.max(6,(g.e-g.s)*pps-2)}px;background:var(--voice)">${g.t}</div>`).join('');
+  const music=`<div class="blk" style="left:0;width:${14.3*pps-2}px;background:var(--tense)">Tensión · Re menor · latido y reloj</div><div class="blk" style="left:${14.3*pps}px;width:${(28.8-14.3)*pps-2}px;background:var(--hope)">Esperanza · beat y arpegio</div><div class="blk" style="left:${28.8*pps}px;width:${(DUR-28.8)*pps}px;background:var(--hope)">+ campanas · acorde final</div>`;
+  const sfx=EVENTS.map((e,i)=>`<div class="mk t-${e[1]}" data-e="${i}" style="left:${Math.max(0,e[0])*pps}px" title="${SFX_ES[e[1]]||e[1]} · ${fmt(Math.max(0,e[0]))}"></div>`).join('');
+  tlin.innerHTML=lane('Tiempo',ruler,'ruler')+lane('Escenas',scenes)+lane('Texto',yt)+lane('Voz',voice)+lane('Música',music)+lane('Efectos',sfx)+'<div class="ph" id="ph"></div>';
+  tlin.querySelectorAll('.lane').forEach(l=>l.addEventListener('pointerdown',startDrag));
+  place();
+}
+function timeFromEvent(ev){const r=tlin.querySelector('.lane').getBoundingClientRect();return Math.min(DUR-0.001,Math.max(0,(ev.clientX-r.left)/pps))}
+function startDrag(ev){seek(timeFromEvent(ev));const mv=e=>seek(timeFromEvent(e));const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up)};addEventListener('pointermove',mv);addEventListener('pointerup',up)}
+function place(){const ph=$('ph');if(ph)ph.style.left=(104+t*pps)+'px';
+  if($('follow').checked&&playing){const x=104+t*pps;if(x>tls.scrollLeft+tls.clientWidth-60||x<tls.scrollLeft+104)tls.scrollLeft=Math.max(0,x-200)}}
+
+/* ---- estado ---- */
+function seek(x){t=Math.min(DUR-0.001,Math.max(0,x));try{aud.currentTime=t}catch(e){}update()}
+function update(){
+  $('tc').innerHTML=fmt(t)+' <small>/ '+fmt(DUR)+'</small>';
+  draw(); place();
+  const si=sceneOf(t); $('nScene').innerHTML=`<span class="pill" style="background:${SCENE_COL[si]}">${SCENE_NAMES[si]}</span>`;
+  const y=DATA.yt.findIndex(q=>t>=q.s&&t<q.e); $('nYt').textContent=y>=0?DATA.yt[y].t.replace('|',' '):'—';
+  const v=DATA.segs.findIndex(g=>t>=g.s&&t<g.e+0.1); $('nVoice').textContent=v>=0?DATA.segs[v].t:'(pausa)';
+  $('nMus').textContent=t<14.3?'Tensión · Re menor':t<28.8?'Esperanza':'Esperanza + campanas';
+  tlin.querySelectorAll('[data-i]').forEach(b=>b.classList.toggle('dim',+b.dataset.i!==si));
+  tlin.querySelectorAll('[data-y]').forEach(b=>b.classList.toggle('cur',+b.dataset.y===y));
+  tlin.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('cur',+b.dataset.v===v));
+  const act=[];EVENTS.forEach((e,i)=>{const d=t-Math.max(0,e[0]);if(d>=0&&d<0.35)act.push(e)});
+  const names=[...new Set(act.map(e=>SFX_ES[e[1]]||e[1]))];
+  const box=$('nSfx'); if(box.dataset.k!==names.join()){box.dataset.k=names.join();box.innerHTML=names.length?names.map(n=>`<span class="chip">${n}</span>`).join(''):'<span class="sub">ninguno en este instante</span>'}
+  tlin.querySelectorAll('.mk').forEach(m=>{const e=EVENTS[+m.dataset.e];const d=t-Math.max(0,e[0]);m.classList.toggle('hit',d>=0&&d<0.35)});
+}
+function loop(){ if(playing){t=aud.currentTime; if(aud.ended||t>=DUR-0.02){pause();t=DUR-0.001}} update(); requestAnimationFrame(loop)}
+function play(){ if(t>=DUR-0.05){seek(0)} aud.currentTime=t; aud.play().then(()=>{playing=true;$('play').textContent='❚❚ Pausa'}).catch(()=>{playing=false}) }
+function pause(){aud.pause();playing=false;$('play').textContent='▶ Reproducir'}
+$('play').onclick=()=>playing?pause():play();
+$('prev').onclick=()=>{pause();seek(t-1/FPS)};$('next').onclick=()=>{pause();seek(t+1/FPS)};
+$('back').onclick=()=>seek(t-1);$('fwd').onclick=()=>seek(t+1);
+addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT'&&e.target.type!=='checkbox')return;
+  if(e.code==='Space'){e.preventDefault();$('play').click()}
+  else if(e.code==='ArrowLeft'){e.preventDefault();seek(t-(e.shiftKey?1:1/FPS))}
+  else if(e.code==='ArrowRight'){e.preventDefault();seek(t+(e.shiftKey?1:1/FPS))}});
+$('zoom').oninput=()=>{const c=t;buildTL();tls.scrollLeft=Math.max(0,104+c*pps-tls.clientWidth/2)};
+$('claims').onchange=e=>{try{comp.contentWindow.eval('CLAIMS='+(e.target.checked?'true':'false'));lastRendered=-1;update()}catch(x){}};
+$('safeT').onchange=e=>$('safe').classList.toggle('on',e.target.checked);
+buildTL(); update(); requestAnimationFrame(loop);
+// escena de ejemplo al abrir: mostrar un instante representativo
+seek(19.9);
+</script>

@@ -1,0 +1,319 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#000;font-family:'Inter','Inter Display','DejaVu Sans',sans-serif}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+.abs{position:absolute}
+.scene{position:absolute;inset:0;overflow:hidden}
+.bubble{position:absolute;padding:20px 26px;border-radius:26px;font-weight:800;font-size:34px;line-height:1.15;color:#111;box-shadow:0 8px 0 rgba(0,0,0,.18)}
+.sub{position:absolute;left:0;width:1080px;top:1420px;display:flex;justify-content:center}
+.subbox{background:#fff;border-radius:34px;padding:20px 32px;font-weight:900;font-size:62px;color:#111;box-shadow:0 10px 0 rgba(0,0,0,.35);white-space:nowrap}
+.subbox .act{color:#0a9a3a}
+.top{position:absolute;left:40px;top:130px;width:1000px;text-align:center;background:#ffe600;color:#111;font-weight:900;font-size:50px;padding:20px 24px;border-radius:26px;box-shadow:0 8px 0 rgba(0,0,0,.35);line-height:1.1}
+.tag{position:absolute;font-weight:900;color:#fff;border-radius:24px;padding:14px 30px;font-size:52px;box-shadow:0 8px 0 rgba(0,0,0,.3);white-space:nowrap}
+.yt{position:absolute;left:0;width:1080px;text-align:center;font-weight:900;color:#ffe600;line-height:1.0;-webkit-text-stroke:14px #000;paint-order:stroke fill;text-shadow:0 12px 0 rgba(0,0,0,.45)}
+.clay{filter:drop-shadow(0 14px 0 rgba(0,0,0,.28))}
+</style></head><body>
+<div id="stage"></div>
+<script>
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const eo=x=>1-Math.pow(1-clamp(x),3);
+const eio=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const back=x=>{x=clamp(x);const c1=1.9,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const pop=(t,s,d=0.35)=>t<s?0:back((t-s)/d);
+const fade=(t,s,d=0.25)=>clamp((t-s)/d);
+const wob=(t,a=1,f=3)=>Math.sin(t*f*2*Math.PI)*a;
+const lerp=(a,b,p)=>a+(b-a)*p;
+const IMG='frasco.png', SELLO='sello.jpg';
+let CLAIMS=true;   // frases de colores de cápsulas (energía / apetito / detox): ponerlo en false para quitarlas
+const DOMINIO='americannatural.ec';
+
+/* ---------- voz: segmentos medidos del audio real ---------- */
+const SEGS=[
+ {s:0.00,e:0.69,t:"¿Te pasa?"},
+ {s:1.21,e:4.29,t:"Controlar el peso es un reto para mucha gente..."},
+ {s:4.63,e:7.27,t:"Haces dieta, ejercicio, y nada..."},
+ {s:7.56,e:9.16,t:"es frustrante, lo sé."},
+ {s:9.49,e:14.02,t:"Y encima hay un montón de copias baratas que no te ayudan y te hacen perder plata."},
+ {s:14.27,e:16.76,t:"Por eso yo solo confío en el original."},
+ {s:17.07,e:21.43,t:"American Fit viene con sus 3 cápsulas de colores y en su frasco de aluminio."},
+ {s:21.68,e:24.40,t:"Si no es de aluminio, si no tiene sus 3 colores,"},
+ {s:24.54,e:26.30,t:"y si no tiene su sello con relieve,"},
+ {s:26.49,e:27.33,t:"desconfía."},
+ {s:27.58,e:28.80,t:"No es el original."},
+ {s:29.12,e:30.95,t:"Si controlar tu peso es tu reto,"},
+ {s:31.17,e:32.66,t:"empieza con el original."},
+ {s:32.92,e:35.34,t:"Solo en la web oficial de American Natural."}];
+const WORDS=[];
+SEGS.forEach((g,si)=>{const ws=g.t.split(' ');const L=ws.map(w=>w.length+2);const sum=L.reduce((a,b)=>a+b,0);let c=g.s;
+ ws.forEach((w,i)=>{const d=(g.e-g.s)*L[i]/sum;WORDS.push({w,s:c,e:c+d,seg:si});c+=d;});});
+const SEGW=SEGS.map((g,i)=>WORDS.filter(x=>x.seg===i));
+const Wt=(si,k)=>SEGW[si][Math.min(k,SEGW[si].length-1)].s;
+const CHUNKS=[];
+SEGS.forEach((g,si)=>{const ws=SEGW[si];const n=ws.length;const k=Math.ceil(n/4);let a=0;
+ for(let i=0;i<k;i++){const sz=Math.round((n-a)/(k-i));CHUNKS.push(ws.slice(a,a+sz));a+=sz;}});
+function subtitle(t){
+ let ch=null;
+ for(let i=0;i<CHUNKS.length;i++){const c=CHUNKS[i];const s=c[0].s-0.04;const nextS=(CHUNKS[i+1]?CHUNKS[i+1][0].s:99);const e=Math.min(c[c.length-1].e+0.25,nextS);if(t>=s&&t<e){ch=c;break;}}
+ if(!ch)return '';
+ const sc=1+0.06*(1-eo((t-ch[0].s+0.04)/0.15));
+ const h=ch.map(x=>`<span class="${t>=x.s&&t<x.e?'act':''}">${x.w}</span>`).join(' ');
+ return `<div class="sub"><div class="subbox" style="transform:scale(${sc})">${h}</div></div>`;
+}
+
+/* ---------- texto amarillo gigante (como el original) ---------- */
+const YT=[
+ [0,1.15,"¿TE PASA?"],[Wt(1,0)-0.05,Wt(1,3),"CONTROLAR|EL PESO"],[Wt(1,3),Wt(1,6),"ES UN RETO"],[Wt(1,6),4.3,"PARA MUCHA|GENTE"],
+ [4.3,Wt(2,3),"DIETA Y|EJERCICIO"],[Wt(2,3),7.5,"¿Y NADA?"],[7.5,9.5,"ES|FRUSTRANTE"],
+ [9.5,Wt(4,6),"CUIDADO"],[Wt(4,6),Wt(4,15),"NO TODO|ES ORIGINAL"],[Wt(4,15),14.3,"PERDER|PLATA"],
+ [14.3,Wt(6,0),"SOLO EL|ORIGINAL"],[Wt(6,0),Wt(6,4),"AMERICAN FIT"],[Wt(6,4),Wt(6,7),"3 CÁPSULAS"],[Wt(6,7),Wt(6,12),"ROJA · BLANCA|VERDE"],[Wt(6,12),21.7,"FRASCO|ORIGINAL"],
+ [21.7,22.75,"ALUMINIO"],[22.75,Wt(7,5),"NO PLÁSTICO"],[Wt(7,5),24.5,"3 COLORES"],[24.5,26.45,"SELLO CON|RELIEVE"],[26.45,27.55,"DESCONFÍA"],[27.55,28.8,"NO ES EL|ORIGINAL"],
+ [28.8,31.15,"TU RETO"],[31.15,31.95,"EL ORIGINAL"],[31.95,32.9,"SÍ FUNCIONA"],[32.9,40,"COMPRA EN LA|WEB OFICIAL"]];
+function yellow(t){
+ const it=YT.find(x=>t>=x[0]&&t<x[1]); if(!it)return '';
+ const lines=it[2].split('|'); const mx=Math.max(...lines.map(l=>l.length));
+ const fs=mx<=9?132:mx<=12?112:mx<=15?92:80;
+ const p=pop(t,it[0],0.3);
+ const top=t>=32.9?1010:(t>=28.8?1040:1130);
+ return `<div class="yt" style="top:${top}px;font-size:${fs}px;transform:scale(${p}) rotate(${(Math.floor(it[0]*7)%3-1)*2}deg)">${lines.join('<br>')}</div>`;
+}
+
+/* ---------- personaje estilo plastilina (vectorial propio) ---------- */
+function girl(o){
+ const f=o.mood==='f', tight=!!o.tight, t=o.t||0, pose=o.pose||'down';
+ const vb=o.vb||'0 0 600 1000'; const w=o.w||460; const [,,vw,vh]=vb.split(' ').map(Number);
+ const bob=Math.sin(t*2.4)*3;
+ const blink=(Math.floor(t*10)%27===0);
+ const brows=f?`<path d="M216 168 L284 186" stroke="#2a170c" stroke-width="11" stroke-linecap="round"/><path d="M316 186 L384 168" stroke="#2a170c" stroke-width="11" stroke-linecap="round"/>`
+   :`<path d="M222 176 Q252 154 284 172" stroke="#2a170c" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M316 172 Q348 154 378 176" stroke="#2a170c" stroke-width="10" fill="none" stroke-linecap="round"/>`;
+ const eyes=blink?`<path d="M236 208 h40 M324 208 h40" stroke="#222" stroke-width="8" stroke-linecap="round"/>`
+  :`<ellipse cx="256" cy="208" rx="21" ry="${f?19:24}" fill="#fff"/><ellipse cx="344" cy="208" rx="21" ry="${f?19:24}" fill="#fff"/><circle cx="${f?262:258}" cy="${f?212:210}" r="11" fill="#2b1a10"/><circle cx="${f?350:346}" cy="${f?212:210}" r="11" fill="#2b1a10"/><circle cx="${f?266:262}" cy="${f?207:205}" r="4" fill="#fff"/><circle cx="${f?354:350}" cy="${f?207:205}" r="4" fill="#fff"/>${f?`<path d="M232 190 Q256 184 280 192 L280 200 L232 200Z" fill="#f0bd98"/><path d="M320 192 Q344 184 368 190 L368 200 L320 200Z" fill="#f0bd98"/>`:''}`;
+ const mouth=f?`<path d="M262 282 Q300 252 338 282" stroke="#8a2b2b" stroke-width="11" fill="none" stroke-linecap="round"/>`
+   :`<path d="M238 262 Q300 338 362 262 Z" fill="#8a2b2b"/><path d="M248 266 Q300 288 352 266 L348 276 Q300 296 252 276Z" fill="#fff"/>`;
+ const sweat=f&&o.sweat?`<path d="M404 150 q20 36 0 54 q-20 -18 0 -54z" fill="#7fd3ff" transform="translate(0,${(t*70)%46})"/>`:'';
+ const shirtBottom=tight?640:700;
+ const shirt=`<path d="M150 392 Q300 336 450 392 L${tight?492:476} ${shirtBottom-10} Q300 ${shirtBottom+(tight?12:20)} ${tight?108:124} ${shirtBottom-10} Z" fill="url(#sh)"/>
+  <ellipse cx="236" cy="430" rx="52" ry="22" fill="#fff" opacity=".18" transform="rotate(-16 236 430)"/>`;
+ const wr=tight?`<path d="M170 520 Q215 530 205 560 M430 520 Q385 530 395 560 M300 560 q-40 20 -90 14 M300 590 q40 20 90 14" stroke="#c4402c" stroke-width="7" fill="none" stroke-linecap="round" opacity=".75"/>`:'';
+ const belly=tight?`<ellipse cx="300" cy="676" rx="132" ry="58" fill="url(#sk)"/><path d="M300 640 q-4 24 0 44" stroke="#c98c68" stroke-width="5" fill="none" stroke-linecap="round"/>`:'';
+ const jeans=`<path d="M130 676 Q300 636 470 676 L506 1000 L322 1000 L300 810 L278 1000 L94 1000Z" fill="url(#jn)"/><path d="M130 676 Q300 636 470 676 L474 712 Q300 690 126 712Z" fill="#2e56ae"/>${tight?`<circle cx="${(o.pop&&t>o.pop)?360+(t-o.pop)*120:300}" cy="${(o.pop&&t>o.pop)?690-Math.sin((t-o.pop)*8)*40:700}" r="13" fill="#d9d9d9" stroke="#888" stroke-width="4"/>`:`<rect x="262" y="682" width="76" height="20" rx="8" fill="#5a3a1a"/><rect x="290" y="684" width="20" height="16" rx="3" fill="#e5c24a"/>`}`;
+ let arms='';
+ const sleeveL=`<path d="M156 396 Q104 420 96 520 L162 540 Q176 470 214 430Z" fill="url(#sh)"/>`;
+ const sleeveR=`<path d="M444 396 Q496 420 504 520 L438 540 Q424 470 386 430Z" fill="url(#sh)"/>`;
+ if(pose==='belly'){
+  arms=`${sleeveL}${sleeveR}<path d="M118 520 Q140 640 232 686" stroke="url(#sk)" stroke-width="48" fill="none" stroke-linecap="round"/><path d="M482 520 Q460 640 368 686" stroke="url(#sk)" stroke-width="48" fill="none" stroke-linecap="round"/>
+   <g stroke="#e0a67d" stroke-width="14" stroke-linecap="round" fill="none"><path d="M232 680 q30 -10 56 0"/><path d="M368 680 q-30 -10 -56 0"/></g>
+   <ellipse cx="248" cy="690" rx="36" ry="30" fill="url(#sk)"/><ellipse cx="352" cy="690" rx="36" ry="30" fill="url(#sk)"/>`;
+ }else if(pose==='hold'){
+  const hx=548, hy=470;
+  arms=`${sleeveL}<path d="M110 520 Q96 620 98 700" stroke="url(#sk)" stroke-width="46" fill="none" stroke-linecap="round"/><circle cx="98" cy="716" r="30" fill="url(#sk)"/>
+   <path d="M496 420 Q540 440 530 520" stroke="url(#sh)" stroke-width="70" fill="none" stroke-linecap="round"/><path d="M530 520 Q548 500 ${hx} ${hy+30}" stroke="url(#sk)" stroke-width="46" fill="none" stroke-linecap="round"/>
+   <image href="${IMG}" x="${hx-92}" y="${hy-300}" width="184" height="360" preserveAspectRatio="xMidYMid meet"/><circle cx="${hx}" cy="${hy+22}" r="34" fill="url(#sk)"/><path d="M${hx-34} ${hy+14} q34 -26 68 0" stroke="#e0a67d" stroke-width="10" fill="none" stroke-linecap="round"/>`;
+ }else{
+  arms=`${sleeveL}${sleeveR}<path d="M108 520 Q96 620 100 700" stroke="url(#sk)" stroke-width="46" fill="none" stroke-linecap="round"/><path d="M492 520 Q504 620 500 700" stroke="url(#sk)" stroke-width="46" fill="none" stroke-linecap="round"/><circle cx="100" cy="716" r="30" fill="url(#sk)"/><circle cx="500" cy="716" r="30" fill="url(#sk)"/>`;
+ }
+ return `<svg class="clay" width="${w}" height="${w*vh/vw}" viewBox="${vb}" style="overflow:visible"><defs>
+ <linearGradient id="sk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8d3b2"/><stop offset="1" stop-color="#e0a67d"/></linearGradient>
+ <linearGradient id="sh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff8a66"/><stop offset="1" stop-color="#e2503a"/></linearGradient>
+ <linearGradient id="jn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a7ae0"/><stop offset="1" stop-color="#2a4aa0"/></linearGradient>
+ <linearGradient id="hr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a3520"/><stop offset="1" stop-color="#2a170c"/></linearGradient></defs>
+ <g transform="translate(0,${bob})">
+ <path d="M168 200 Q160 34 300 32 Q440 34 432 200 L458 440 Q300 486 142 440Z" fill="url(#hr)"/>
+ <rect x="266" y="296" width="68" height="90" rx="26" fill="#d9a07a"/>
+ ${jeans}${belly}${shirt}${wr}${arms}
+ <ellipse cx="300" cy="206" rx="110" ry="128" fill="url(#sk)"/>
+ <ellipse cx="190" cy="214" rx="17" ry="26" fill="#eab08a"/><ellipse cx="410" cy="214" rx="17" ry="26" fill="#eab08a"/>
+ <path d="M188 176 Q200 70 300 70 Q400 70 412 176 Q364 118 300 126 Q236 118 188 176Z" fill="url(#hr)"/>
+ <ellipse cx="258" cy="116" rx="46" ry="14" fill="#fff" opacity=".18" transform="rotate(-12 258 116)"/>
+ <circle cx="222" cy="254" r="19" fill="#ee9a8a" opacity=".5"/><circle cx="378" cy="254" r="19" fill="#ee9a8a" opacity=".5"/>
+ ${brows}${eyes}<path d="M300 214 q-12 38 6 46" stroke="#c98c68" stroke-width="6" fill="none" stroke-linecap="round"/>${mouth}${sweat}
+ </g></svg>`;
+}
+function plastic(w){
+ return `<svg class="clay" width="${w}" viewBox="0 0 300 520" style="overflow:visible">
+ <rect x="80" y="10" width="140" height="70" rx="14" fill="#e9eef2" stroke="#b7c2cc" stroke-width="6"/>
+ <rect x="62" y="70" width="176" height="30" rx="10" fill="#dde5ec" stroke="#b7c2cc" stroke-width="6"/>
+ <path d="M40 140 Q40 96 100 96 L200 96 Q260 96 260 140 L260 480 Q260 510 230 510 L70 510 Q40 510 40 480Z" fill="#fbfdff" stroke="#b7c2cc" stroke-width="6"/>
+ <rect x="62" y="210" width="176" height="190" rx="12" fill="#fff" stroke="#c9d3dc" stroke-width="4"/>
+ <text x="150" y="285" font-size="40" font-weight="900" text-anchor="middle" fill="#9aa7b3" font-family="Inter,sans-serif">¿ ? ? ?</text>
+ <rect x="86" y="318" width="128" height="14" rx="7" fill="#d5dde4"/><rect x="104" y="346" width="92" height="14" rx="7" fill="#d5dde4"/></svg>`;
+}
+const CAP={r:['#ff3b3b','#b01212'],b:['#ffffff','#cfd6dc'],v:['#2fcf5a','#0e8a34']};
+function capsule(k,w,rot){
+ const [a,b]=CAP[k];
+ return `<svg class="clay" width="${w}" viewBox="0 0 200 80" style="transform:rotate(${rot}deg);overflow:visible"><defs><clipPath id="cp${k}"><rect x="6" y="6" width="188" height="68" rx="34"/></clipPath></defs>
+ <g clip-path="url(#cp${k})"><rect x="0" y="0" width="100" height="80" fill="${a}"/><rect x="100" y="0" width="100" height="80" fill="${b}"/><rect x="0" y="6" width="200" height="22" fill="#fff" opacity=".35"/></g>
+ <rect x="6" y="6" width="188" height="68" rx="34" fill="none" stroke="rgba(0,0,0,.25)" stroke-width="4"/></svg>`;
+}
+function palm(w){
+ return `<svg class="clay" width="${w}" viewBox="0 0 520 440" style="overflow:visible"><defs><linearGradient id="pk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8d3b2"/><stop offset="1" stop-color="#df9f75"/></linearGradient></defs>
+ <g fill="url(#pk)"><rect x="70" y="60" width="74" height="210" rx="37" transform="rotate(-22 107 270)"/><rect x="150" y="20" width="76" height="230" rx="38" transform="rotate(-8 188 250)"/><rect x="236" y="6" width="78" height="240" rx="39"/><rect x="326" y="30" width="72" height="220" rx="36" transform="rotate(10 362 250)"/>
+ <ellipse cx="260" cy="320" rx="215" ry="115"/><ellipse cx="440" cy="330" rx="80" ry="46" transform="rotate(-24 440 330)"/><rect x="-10" y="360" width="140" height="120" rx="50"/></g>
+ <ellipse cx="260" cy="330" rx="150" ry="62" fill="#e8b08a" opacity=".6"/><ellipse cx="190" cy="250" rx="50" ry="14" fill="#fff" opacity=".22" transform="rotate(-8 190 250)"/></svg>`;
+}
+
+/* ---------- escenas ---------- */
+const BOUNDS=[0,4.3,9.5,14.3,21.7,28.8,36.5];
+const BG=[["#46576e","#171e2b"],["#5d6f6c","#1e2a2a"],["#c4252f","#4a0610"],["#1fa05f","#074a3a"],["#7a34d6","#2a0b6b"],["#ffb21e","#d8541a"]];
+function bg(i,lt){
+ const g=BG[i]; const z=1+0.04*lt/4;
+ return `<div class="abs" style="inset:-60px;background:radial-gradient(circle at 50% 38%,${g[0]},${g[1]});transform:scale(${z})"></div>
+ <div class="abs" style="left:0;top:0;width:1080px;height:1920px;opacity:.14;background:repeating-linear-gradient(60deg,rgba(255,255,255,.4) 0 6px,transparent 6px 90px);transform:translateX(${(lt*50)%90}px)"></div>`;
+}
+const cam=(z,ox,oy,inner)=>`<div class="abs" style="inset:0;transform:scale(${z});transform-origin:${ox}px ${oy}px">${inner}</div>`;
+function phoneBubble(t,txt,s,y,side){
+ const p=pop(t,s);if(!p)return'';const left=side==='l';
+ return `<div class="bubble" style="top:${y}px;${left?'left:24px;background:#fff':'right:24px;background:#cdf7c5'};width:370px;transform:scale(${p});transform-origin:${left?'left':'right'} top">${txt}</div>`;
+}
+
+function sc1(t){ // 0–4.3 espejo
+ let h=bg(0,t);
+ const z=1+0.22*eio(t/4.3);
+ let c='';
+ const mp=pop(t,0.0,0.5);
+ c+=`<div class="abs" style="left:520px;top:360px;width:470px;height:760px;border-radius:200px 200px 24px 24px;border:16px solid #c9a24a;background:linear-gradient(135deg,#bfe3f2,#7fb3cc 55%,#d9f2fb);box-shadow:0 16px 0 rgba(0,0,0,.3);overflow:hidden;transform:scale(${mp})">
+   <div class="abs" style="left:430px;top:150px;transform:scale(-0.8,0.8);transform-origin:left top;opacity:.8;filter:saturate(.8) hue-rotate(-8deg)">${girl({mood:'f',tight:true,t:t+0.15,w:520})}</div>
+   <div class="abs" style="left:300px;top:-40px;width:90px;height:900px;background:rgba(255,255,255,.28);transform:rotate(14deg)"></div></div>`;
+ c+=`<div class="abs" style="left:10px;top:330px;transform:translateY(${(1-eo(t/0.5))*80}px)">${girl({mood:'f',tight:true,t,w:540,sweat:t>1.6,pop:2.2})}</div>`;
+ const sg=pop(t,2.0,0.3);
+ c+=`<div class="abs" style="left:330px;top:340px;font-size:100px;font-weight:900;color:#ffe600;text-shadow:0 6px 0 #000;transform:scale(${sg}) rotate(${wob(t,8,2)}deg)">!?</div>`;
+ h+=cam(z,330,520,c);
+ return h;
+}
+function sc2(t){ // 4.3–9.5 pancita, calendario, post-its
+ let h=bg(1,t);
+ const z=1.0+0.18*eio(t/5.2);
+ let c='';
+ c+=`<div class="abs" style="left:300px;top:130px;transform:translateX(${(1-eo(t/0.4))*400}px)">${girl({mood:'f',tight:true,pose:'belly',t,w:760,vb:'0 0 600 1000'})}</div>`;
+ // calendario
+ const cal=pop(t,0.1,0.4);
+ c+=`<div class="abs" style="left:20px;top:360px;width:300px;transform:scale(${cal}) rotate(-4deg);transform-origin:center"><div style="background:#fff;border-radius:18px;box-shadow:0 10px 0 rgba(0,0,0,.3);overflow:hidden"><div style="background:#e11d2e;color:#fff;font-weight:900;font-size:36px;text-align:center;padding:10px">LUNES YA</div>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:10px;font-weight:900;font-size:26px;color:#333">${[...Array(15)].map((_,i)=>{const on=t>0.6+i*0.28;return `<div style="height:48px;border-radius:8px;background:#eef1f4;text-align:center;line-height:48px;color:${on?'#e11d2e':'#888'}">${on?'✘':i+1}</div>`}).join('')}</div></div></div>`;
+ const notes=[['DIETA ✘','#ffe36a',-6,0.9],['GYM ✘','#9fe8ff',5,1.7],['TÉ ✘','#ffb3d1',-3,2.5]];
+ notes.forEach((n,i)=>{const p=pop(t,n[3],0.3);c+=`<div class="abs" style="left:${24+(i%2)*40}px;top:${760+i*150}px;width:250px;padding:24px 14px;background:${n[1]};font-weight:900;font-size:46px;color:#222;text-align:center;box-shadow:0 10px 0 rgba(0,0,0,.28);transform:scale(${p}) rotate(${n[2]}deg)">${n[0]}</div>`;});
+ h+=cam(z,640,800,c);
+ return h;
+}
+function sc3(t){ // 9.5–14.3 whatsapp / copias / perder plata
+ let h=bg(2,t);
+ const z=1+0.12*eio(t/4.8);
+ let c='';
+ const ph=pop(t,0.0,0.4);
+ const shake=t<0.9?wob(t,10,14):0;
+ c+=`<div class="abs" style="left:60px;top:340px;width:520px;height:800px;border-radius:54px;background:#111;border:10px solid #000;box-shadow:0 16px 0 rgba(0,0,0,.35);transform:scale(${ph}) translateX(${shake}px) rotate(${wob(t,1.5,.6)}deg)">
+ <div style="margin:12px;border-radius:42px;background:#e8e0d4;height:764px;position:relative;overflow:hidden"><div style="height:90px;background:#128c4a;color:#fff;font-weight:900;font-size:34px;padding:28px 28px">● Vendedor</div>
+  <div style="position:absolute;left:0;top:110px;width:100%">
+   ${phoneBubble(t,'¡American Fit barato por WhatsApp!',0.25,0,'l')}${phoneBubble(t,'100% original importado',1.2,170,'r')}${phoneBubble(t,'Paga aquí y te llega hoy',2.0,300,'l')}</div></div></div>`;
+ // copias baratas
+ [0,1,2].forEach(i=>{const p=pop(t,1.5+i*0.35,0.35);c+=`<div class="abs" style="left:${640+i*50}px;top:${400+i*120}px;transform:scale(${p}) rotate(${(i-1)*8}deg);transform-origin:center">${plastic(210)}</div>`;});
+ // monedas que se van volando
+ const tp=3.0;
+ for(let i=0;i<7;i++){const s=tp+i*0.13; if(t<s)continue; const p=clamp((t-s)/1.3);
+  c+=`<div class="abs" style="left:${300+p*700}px;top:${1000-Math.sin(p*Math.PI)*380-p*140}px;width:84px;height:84px;border-radius:42px;background:radial-gradient(circle at 35% 30%,#fff3a0,#f0b400);border:6px solid #b78400;color:#7a5200;font-weight:900;font-size:46px;text-align:center;line-height:72px;transform:rotate(${p*540}deg);opacity:${1-p*0.5}">$</div>`;}
+ c+=`<div class="abs" style="left:640px;top:880px;transform:scale(${pop(t,2.2)})">${girl({mood:'f',tight:true,t,w:340,vb:'0 0 600 520'})}</div>`;
+ h+=cam(z,500,700,c);
+ return h;
+}
+function sc4(t){ // 14.3–21.7 solución: frasco original, 3 cápsulas
+ let h=bg(3,t);
+ const T=t+14.3;
+ const open=clamp((T-17.6)/0.6);
+ const phase2=T>=17.4;
+ const zz=T<19.0?1:1+0.38*eio((T-19.0)/2.7);
+ let c='';
+ // frasco: entra grande al centro, luego se va arriba-izquierda
+ const k=eio((T-17.4)/0.5);
+ const bx=lerp(300,40,k), by=lerp(340,330,k), bh=lerp(880,430,k), br=lerp(0,-8,k);
+ const bw=bh*0.511;
+ const bounce=T<17.4?wob(T,5,.8):0;
+ c+=`<div class="abs" style="left:${bx}px;top:${by+bounce}px;width:${bw}px;height:${bh}px;transform:scale(${pop(t,0.0,0.5)}) rotate(${br}deg);transform-origin:center">
+   <img src="${IMG}" style="position:absolute;inset:0;width:100%;height:100%;clip-path:inset(17.5% 0 0 0);filter:drop-shadow(0 18px 0 rgba(0,0,0,.28))">
+   <img src="${IMG}" style="position:absolute;inset:0;width:100%;height:100%;clip-path:inset(0 0 82.5% 0);transform:translate(${-30*eo(open)}px,${-bh*0.30*eo(open)}px) rotate(${-34*eo(open)}deg);transform-origin:20% 15%;filter:drop-shadow(0 12px 0 rgba(0,0,0,.28))"></div>`;
+ if(phase2){
+  const pa=pop(T,17.5,0.5);
+  c+=`<div class="abs" style="left:190px;top:${640}px;transform:scale(${pa}) rotate(${wob(T,2,.6)}deg);transform-origin:center bottom">${palm(700)}</div>`;
+  const caps=[['r',Wt(6,5)-0.15,[330,930,-18]],['b',Wt(6,5)+0.45,[480,985,6]],['v',Wt(6,5)+1.05,[630,925,-10]]];
+  caps.forEach(([kk,ts,pos],i)=>{ if(T<ts)return; const p=clamp((T-ts)/0.55);
+   const sx=bx+bw*0.2+i*10, sy=by+40; const y=lerp(sy,pos[1],eo(p))-Math.abs(Math.sin(p*Math.PI*2.2))*(1-p)*70; const x=lerp(sx,pos[0],eo(p));
+   c+=`<div class="abs" style="left:${x-80}px;top:${y-32}px;transform-origin:center">${capsule(kk,170,pos[2]+(1-p)*200)}</div>`;});
+ }
+ h+=cam(zz,540,980,c);
+ if(CLAIMS&&phase2){
+  const chips=[['#ff3b3b','Roja · te da energía',Wt(6,8)],['#ffffff','Blanca · te ayuda a controlar el apetito',Wt(6,8)+0.9],['#2fcf5a','Verde · fórmula detox',Wt(6,8)+1.8]];
+  const act=chips.filter(x=>T>=x[2]).length-1;
+  if(act>=0){const ch=chips[act];const p=pop(T,ch[2],0.3);
+   h+=`<div class="abs" style="left:0;width:1080px;top:1040px;text-align:center;transform:scale(${p})"><span style="display:inline-block;background:#fff;border-radius:26px;padding:10px 22px;font-weight:900;font-size:32px;color:#111;box-shadow:0 8px 0 rgba(0,0,0,.3)"><span style="display:inline-block;width:28px;height:28px;border-radius:14px;background:${ch[0]};border:4px solid #888;vertical-align:middle;margin-right:10px"></span>${ch[1]}</span></div>`;}
+ }
+ return h;
+}
+function sc5(t){ // 21.7–28.8 cómo identificar el original
+ let h=bg(4,t);
+ const T=t+21.7;
+ let c='';
+ if(T<23.2+0.2){ // aluminio vs plástico
+  const a=eo(t/0.45), b=eo((t-0.35)/0.45);
+  const z=1+0.08*clamp(t/1.5);
+  let s='';
+  s+=`<div class="abs" style="left:${60-400*(1-a)}px;top:360px"><img class="clay" src="${IMG}" style="height:760px"></div>`;
+  [['r',-12],['b',0],['v',12]].forEach(([k,r],i)=>{s+=`<div class="abs" style="left:${40+i*115}px;top:${1020-Math.abs(i-1)*14}px;transform:scale(${pop(t,0.9+i*0.15)})">${capsule(k,140,r*3)}</div>`;});
+  s+=`<div class="abs" style="left:${600+500*(1-b)}px;top:520px;transform:rotate(${wob(t,2,.7)}deg)">${plastic(400)}</div>`;
+  s+=`<div class="tag" style="left:40px;top:330px;background:#0a9a3a;transform:scale(${pop(t,0.5)});font-size:52px">ALUMINIO ✔</div>`;
+  s+=`<div class="tag" style="left:620px;top:420px;background:#e11d2e;transform:scale(${pop(t,1.0)});font-size:52px">PLÁSTICO ✘</div>`;
+  const x=pop(t,1.2,0.3);
+  s+=`<div class="abs" style="left:610px;top:560px;width:420px;opacity:${x?1:0};transform:scale(${x}) rotate(-6deg)"><svg viewBox="0 0 420 420" width="420"><path d="M60 60 L360 360 M360 60 L60 360" stroke="#ff2b3d" stroke-width="48" stroke-linecap="round"/></svg></div>`;
+  c+=cam(z,540,700,s);
+ }else if(T<24.5){ // 3 colores
+  const tt=T-23.4; const z=1+0.1*clamp(tt/1.2);
+  let s='';
+  [['r',-14,120],['b',4,430],['v',-10,740]].forEach(([k,r,x],i)=>{const p=pop(tt,0.05+i*0.22,0.4);
+   s+=`<div class="abs" style="left:${x-60}px;top:${560}px;transform:scale(${p})">${capsule(k,300,r)}</div><div class="abs" style="left:${x+60}px;top:${700}px;font-size:100px;font-weight:900;color:#27e06a;text-shadow:0 6px 0 rgba(0,0,0,.4);transform:scale(${pop(tt,0.5+i*0.22)})">✔</div>`;});
+  s+=`<div class="abs" style="left:380px;top:360px;transform:scale(${pop(tt,0.0)}) rotate(${wob(tt,3,1)}deg)"><img class="clay" src="${IMG}" style="height:220px"></div>`;
+  c+=cam(z,540,700,s);
+ }else if(T<26.5){ // sello con relieve
+  const tt=T-24.5; const sp=pop(tt,0.05,0.5); const z=1.02+0.1*clamp(tt/2);
+  let s=`<div class="abs" style="left:200px;top:380px;width:680px;height:660px;border-radius:44px;overflow:hidden;border:10px solid #fff;box-shadow:0 14px 0 rgba(0,0,0,.35);transform:scale(${sp})"><img src="${SELLO}" style="width:680px;height:780px;object-fit:cover;transform:scale(${z});transform-origin:55% 50%;margin-top:-50px"></div>`;
+  const r=pop(tt,0.5,0.5);
+  s+=`<div class="abs" style="left:290px;top:440px;width:500px;height:500px;border-radius:250px;border:10px solid #ffe600;opacity:${r?0.95:0};transform:scale(${r*(1+0.05*Math.sin(tt*8))})"></div>`;
+  s+=`<div class="tag" style="left:60px;top:340px;background:#111;transform:scale(${pop(tt,0.2)}) rotate(-5deg);font-size:46px">SELLO EN RELIEVE</div>`;
+  c+=s;
+ }else{ // desconfía / no es el original
+  const tt=T-26.5;
+  let s=`<div class="abs" style="left:330px;top:400px;transform:rotate(${wob(tt,3,1)}deg) scale(${pop(tt,0.0,0.4)})">${plastic(420)}</div>`;
+  const x=pop(tt,0.3,0.3);
+  s+=`<div class="abs" style="left:290px;top:380px;width:500px;opacity:${x?1:0};transform:scale(${x}) rotate(-6deg)"><svg viewBox="0 0 420 420" width="500"><path d="M60 60 L360 360 M360 60 L60 360" stroke="#ff2b3d" stroke-width="44" stroke-linecap="round"/></svg></div>`;
+  c+=cam(1+0.08*clamp(tt/2.3),540,700,s);
+ }
+ h+=c;
+ return h;
+}
+function sc6(t){ // 28.8–36.5 cierre feliz
+ let h=bg(5,t);
+ const T=t+28.8;
+ const z=1+0.14*eio(t/7.5);
+ let c='';
+ c+=`<div class="abs" style="left:70px;top:260px;transform:translateY(${(1-eo(t/0.5))*120}px)">${girl({mood:'h',tight:false,pose:'hold',t,w:700,vb:'0 0 600 720'})}</div>`;
+ for(let i=0;i<9;i++){const a=i*Math.PI*2/9+t*1.3,r=420+Math.sin(t*5+i)*24;const s=pop(t,0.3+i*0.05);
+  c+=`<div class="abs" style="left:${560+Math.cos(a)*r}px;top:${620+Math.sin(a)*r*0.8}px;font-size:60px;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.25);transform:scale(${s*(0.7+0.3*Math.sin(t*9+i))})">✦</div>`;}
+ h+=cam(z,540,640,c);
+ const bp=pop(T,33.2,0.4);
+ if(bp){h+=`<div class="abs" style="left:90px;top:1240px;width:900px;transform:scale(${bp*(1+0.03*Math.sin(T*8))});transform-origin:center"><div style="background:#16a34a;color:#fff;font-weight:900;font-size:46px;text-align:center;padding:14px 12px;border-radius:30px;box-shadow:0 10px 0 #0b6b30,0 0 0 8px #fff;line-height:1.1">COMPRAR AHORA · ${DOMINIO}</div><div style="margin-top:10px;text-align:center;font-weight:800;font-size:26px;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.5)">Evita falsificaciones</div></div>`;}
+ return h;
+}
+const SCENES=[sc1,sc2,sc3,sc4,sc5,sc6];
+function render(t){
+ let h='';
+ const idx=BOUNDS.findIndex((b,i)=>t>=b&&t<BOUNDS[i+1]);
+ const i=Math.max(0,idx);
+ const lt=t-BOUNDS[i];
+ if(i>0&&lt<0.28){const pl=t-BOUNDS[i-1];h+=`<div class="scene">${SCENES[i-1](pl)}</div>`;}
+ const enter=i>0?eo(lt/0.28):1;
+ h+=`<div class="scene" style="transform:translateX(${(1-enter)*1080}px)">${SCENES[i](lt)}</div>`;
+ if(i>0&&lt<0.12)h+=`<div class="abs" style="inset:0;background:#fff;opacity:${0.5*(1-lt/0.12)}"></div>`;
+ h+=`<div class="top">¿Te pasa? Controlar el peso es un reto...</div>`;
+ h+=yellow(t);
+ h+=subtitle(t);
+ document.getElementById('stage').innerHTML=h;
+}
+window.render=render;
+</script></body></html>
