@@ -1,5 +1,5 @@
 import numpy as np, wave
-sr=44100; D=20.3; n=int(sr*D); t=np.arange(n)/sr
+sr=44100; D=21.4; n=int(sr*D); t=np.arange(n)/sr
 rng=np.random.default_rng(3)
 bpm=112; beat=60/bpm
 out=np.zeros(n)
@@ -40,7 +40,7 @@ def whoosh(L=0.35):
     from scipy.signal import butter,lfilter
     b,a=butter(2,[300/(sr/2),4500/(sr/2)],'band'); s=lfilter(b,a,rng.standard_normal(N))
     return s*np.sin(np.pi*x)**2*0.5
-for st in [2.95,5.45,8.7,12.3,17.0]: add(whoosh(),st-0.12)
+for st in [2.95,5.5,8.7,12.35,17.95]: add(whoosh(),st-0.12)
 out=np.tanh(out*1.1); out/=np.abs(out).max()
 fade=np.minimum(1,(D-t)/0.6); out*=fade
 pcm=(out*0.9*32767).astype(np.int16)

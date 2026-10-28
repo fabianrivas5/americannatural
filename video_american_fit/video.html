@@ -25,16 +25,17 @@ const wob=(t,a=1,f=3)=>Math.sin(t*f*2*Math.PI)*a;
 
 /* ---------- voz: segmentos medidos del audio real ---------- */
 const SEGS=[
- {s:0.00,e:2.74,t:"¿Te ofrecen American Fit más barato por WhatsApp?"},
- {s:3.15,e:3.70,t:"Cuidado,"},
- {s:3.90,e:5.18,t:"puede ser falsificado."},
- {s:5.54,e:8.46,t:"Compra solo en la web oficial de American Natural."},
- {s:8.86,e:10.94,t:"El frasco original es de aluminio,"},
- {s:11.04,e:12.09,t:"no de plástico."},
- {s:12.43,e:14.50,t:"El sello holográfico tiene relieve;"},
- {s:14.78,e:16.88,t:"si es papel impreso, desconfía."},
- {s:17.20,e:18.55,t:"Exige el original."},
- {s:18.83,e:20.05,t:"Pide contra entrega."}];
+ {s:0.00,e:2.75,t:"¿Te ofrecen American Fit más barato por WhatsApp?"},
+ {s:3.15,e:3.73,t:"Cuidado,"},
+ {s:3.92,e:5.16,t:"puede ser falsificado."},
+ {s:5.58,e:8.54,t:"Compra solo en la web oficial de American Natural."},
+ {s:8.97,e:11.03,t:"El frasco original es de aluminio,"},
+ {s:11.17,e:12.22,t:"no de plástico."},
+ {s:12.61,e:15.25,t:"El sello de la tapa tiene el nombre en relieve;"},
+ {s:15.54,e:16.73,t:"si es papel impreso,"},
+ {s:16.88,e:17.73,t:"desconfía."},
+ {s:18.00,e:19.38,t:"Exige el original."},
+ {s:19.71,e:20.90,t:"Pide contra entrega."}];
 const WORDS=[];
 SEGS.forEach((g,si)=>{const ws=g.t.split(' ');const L=ws.map(w=>w.length+2);const sum=L.reduce((a,b)=>a+b,0);let c=g.s;
  ws.forEach((w,i)=>{const d=(g.e-g.s)*L[i]/sum;WORDS.push({w,s:c,e:c+d,seg:si});c+=d;});});
@@ -92,7 +93,7 @@ function plastic(opt={}){ // frasco blanco genérico (sin marca)
 const IMG='frasco.png';
 
 /* ---------- escenas ---------- */
-const BOUNDS=[0,3.0,5.45,8.7,12.3,17.0,20.4];
+const BOUNDS=[0,3.0,5.55,8.75,12.4,18.0,21.5];
 function bg(i,lt){
  const g=[["#1b3fd1","#0a1a6b"],["#d11b2c","#5a0612"],["#0aa05a","#04502e"],["#6a2bd1","#2a0b6b"],["#e86a00","#6b2a00"],["#0aa05a","#063f4a"]][i];
  const z=1+0.05*lt;
@@ -167,35 +168,25 @@ function sc4(t){
  h+=`<div class="abs" style="left:${40-500*(1-a)}px;top:420px;width:470px;height:870px;display:flex;align-items:center;justify-content:center"><img src="${IMG}" style="height:790px;filter:drop-shadow(0 20px 0 rgba(0,0,0,.28));transform:rotate(${wob(t,1.5,.7)}deg)"></div>`;
  h+=`<div class="abs" style="left:${610+500*(1-b)}px;top:640px;transform:rotate(${wob(t,2,.7)}deg)">${plastic({w:420})}</div>`;
  h+=`<div class="abs" style="left:530px;top:420px;width:20px;height:870px;background:#fff;opacity:.6;border-radius:10px;transform:scaleY(${eo((t-0.4)/0.4)})"></div>`;
- h+=`<div class="tag" style="left:30px;top:340px;background:#0a9a3a;transform:scale(${pop(t,1.55)});font-size:56px">ALUMINIO</div>`;
- h+=`<div class="abs" style="left:380px;top:300px;font-size:150px;font-weight:900;color:#27e06a;text-shadow:0 8px 0 rgba(0,0,0,.4);transform:scale(${pop(t,2.0)})">✔</div>`;
- h+=`<div class="tag" style="left:600px;top:480px;background:#e11d2e;transform:scale(${pop(t,2.5)});font-size:56px">PLÁSTICO</div>`;
- const x=pop(t,3.0,0.3);
+ h+=`<div class="tag" style="left:30px;top:340px;background:#0a9a3a;transform:scale(${pop(t,1.65)});font-size:56px">ALUMINIO</div>`;
+ h+=`<div class="abs" style="left:380px;top:300px;font-size:150px;font-weight:900;color:#27e06a;text-shadow:0 8px 0 rgba(0,0,0,.4);transform:scale(${pop(t,2.1)})">✔</div>`;
+ h+=`<div class="tag" style="left:600px;top:480px;background:#e11d2e;transform:scale(${pop(t,2.85)});font-size:56px">PLÁSTICO</div>`;
+ const x=pop(t,3.3,0.3);
  h+=`<div class="abs" style="left:610px;top:760px;width:420px;transform:scale(${x}) rotate(-6deg);opacity:${x?1:0}"><svg viewBox="0 0 420 420" width="420"><path d="M60 60 L360 360 M360 60 L60 360" stroke="#ff2b3d" stroke-width="48" stroke-linecap="round"/></svg></div>`;
  h+=`<div class="tag" style="left:70px;top:1300px;background:#fff;color:#0a7a3a;transform:scale(${pop(t,2.1)});font-size:46px">ORIGINAL</div>`;
  return h;
 }
-function sealSVG(t,sz){
- const sh=((t*0.9)%1.6)-0.3;
- return `<svg width="${sz}" height="${sz}" viewBox="0 0 400 400" style="overflow:visible"><defs>
- <linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5ac8"/><stop offset=".25" stop-color="#5ae0ff"/><stop offset=".5" stop-color="#fff35a"/><stop offset=".75" stop-color="#7dff8a"/><stop offset="1" stop-color="#b86bff"/></linearGradient>
- <linearGradient id="sw" gradientUnits="userSpaceOnUse" x1="${-200+600*sh}" y1="0" x2="${-80+600*sh}" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
- <clipPath id="cc"><circle cx="200" cy="200" r="180"/></clipPath></defs>
- <circle cx="200" cy="200" r="190" fill="#8a8f98"/><circle cx="200" cy="200" r="180" fill="url(#hg)"/>
- <g clip-path="url(#cc)" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="3">${[40,70,100,130,160].map(r=>`<circle cx="200" cy="200" r="${r}"/>`).join('')}${[...Array(12)].map((_,i)=>`<path d="M200 200 L${200+190*Math.cos(i*Math.PI/6)} ${200+190*Math.sin(i*Math.PI/6)}"/>`).join('')}</g>
- <circle cx="200" cy="200" r="72" fill="#0a7a3a" stroke="#fff" stroke-width="8"/>
- <path d="M168 205 L194 232 L240 170" stroke="#fff" stroke-width="20" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
- <rect x="0" y="0" width="400" height="400" fill="url(#sw)" clip-path="url(#cc)"/>
- <circle cx="200" cy="200" r="180" fill="none" stroke="#fff" stroke-width="6" stroke-opacity=".7"/></svg>`;
-}
 function sc5(t){
  let h=bg(4,t);
- const sp=pop(t,0.1,0.5);
- h+=`<div class="abs" style="left:230px;top:360px;transform:scale(${sp*(1+0.03*Math.sin(t*5))}) rotate(${wob(t,4,0.5)}deg)">${sealSVG(t,620)}</div>`;
- h+=`<div class="tag" style="left:70px;top:350px;background:#111;transform:scale(${pop(t,0.3)}) rotate(-5deg);font-size:48px">SELLO HOLOGRÁFICO</div>`;
- const rows=[[1.6,'✔','BRILLA CON RELIEVE','#0a9a3a'],[2.7,'✘','IMPRESO EN PAPEL','#e11d2e'],[3.3,'✘','SIN RELIEVE = NO ORIGINAL','#e11d2e']];
+ const sp=pop(t,0.05,0.5);
+ const z=1.02+0.09*clamp(t/5.6);
+ h+=`<div class="abs" style="left:200px;top:330px;width:680px;height:700px;border-radius:44px;overflow:hidden;border:10px solid #fff;box-shadow:0 14px 0 rgba(0,0,0,.35);transform:scale(${sp}) rotate(${wob(t,.8,.4)}deg)"><img src="sello.jpg" style="width:680px;height:780px;object-fit:cover;transform:scale(${z});transform-origin:55% 50%;margin-top:-30px"></div>`;
+ const r=pop(t,1.9,0.5);
+ h+=`<div class="abs" style="left:290px;top:430px;width:500px;height:500px;border-radius:250px;border:10px solid #ffe600;opacity:${r?0.95:0};transform:scale(${r*(1+0.05*Math.sin(t*8))})"></div>`;
+ h+=`<div class="tag" style="left:60px;top:300px;background:#111;transform:scale(${pop(t,0.3)}) rotate(-5deg);font-size:48px">SELLO EN RELIEVE</div>`;
+ const rows=[[2.2,'✔','NOMBRE EN RELIEVE','#0a9a3a'],[3.7,'✘','IMPRESO EN PAPEL','#e11d2e'],[4.5,'✘','SIN RELIEVE = NO ORIGINAL','#e11d2e']];
  rows.forEach((r,i)=>{const p=pop(t,r[0],0.32);
-  h+=`<div class="tag" style="left:${70+(i%2)*0}px;top:${1050+i*118}px;background:${r[3]};transform:scale(${p});transform-origin:left center;font-size:50px;padding:12px 30px">${r[1]} ${r[2]}</div>`;});
+  h+=`<div class="tag" style="left:70px;top:${1070+i*108}px;background:${r[3]};transform:scale(${p});transform-origin:left center;font-size:46px;padding:10px 30px">${r[1]} ${r[2]}</div>`;});
  return h;
 }
 function sc6(t){

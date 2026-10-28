@@ -8,7 +8,7 @@ Texto fijo arriba: «Evita falsificaciones !! identifica el original»
 | 3.1–5.2 s | Cuidado, puede ser falsificado. | |
 | 5.5–8.5 s | Compra solo en la web oficial de American Natural. | |
 | 8.9–12.1 s | El frasco original es de aluminio, no de plástico. | |
-| 12.4–16.9 s | El sello holográfico tiene relieve; si es papel impreso, desconfía. | |
+| 12.4–16.9 s | El sello de la tapa tiene el nombre en relieve; si es papel impreso, desconfía. | |
 | 17.2–20.1 s | Exige el original. Pide contra entrega. | |
 
 ## Escenas
@@ -19,4 +19,4 @@ Texto fijo arriba: «Evita falsificaciones !! identifica el original»
 - 12.3–17.0 s: Sello holográfico con relieve vs impreso en papel
 - 17.0–20.2 s: Producto original + CTA web oficial, pago contra entrega
 
-Nota: el sello holográfico es una ilustración genérica; reemplazar por foto real si se tiene.
+Nota: la escena del sello usa la foto real de la tapa (nombre AMERICAN NATURAL en relieve).
