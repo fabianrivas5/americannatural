@@ -1,0 +1,229 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#000;font-family:'Inter','Inter Display','DejaVu Sans',sans-serif}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+.abs{position:absolute}
+.scene{position:absolute;inset:0;overflow:hidden}
+.bubble{position:absolute;padding:20px 26px;border-radius:26px;font-weight:800;font-size:34px;line-height:1.15;color:#111;box-shadow:0 8px 0 rgba(0,0,0,.18)}
+.sub{position:absolute;left:0;width:1080px;top:1400px;display:flex;justify-content:center}
+.subbox{background:#fff;border-radius:34px;padding:22px 34px;font-weight:900;font-size:66px;color:#111;box-shadow:0 10px 0 rgba(0,0,0,.35);white-space:nowrap}
+.subbox .act{color:#0a9a3a}
+.top{position:absolute;left:40px;top:130px;width:1000px;text-align:center;background:#ffe600;color:#111;font-weight:900;font-size:50px;padding:20px 24px;border-radius:26px;box-shadow:0 8px 0 rgba(0,0,0,.35);line-height:1.1}
+.tag{position:absolute;font-weight:900;color:#fff;border-radius:24px;padding:14px 30px;font-size:52px;box-shadow:0 8px 0 rgba(0,0,0,.3);white-space:nowrap}
+</style></head><body>
+<div id="stage"></div>
+<script>
+const W=1080,H=1920;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const eo=x=>1-Math.pow(1-clamp(x),3);
+const back=x=>{x=clamp(x);const c1=1.9,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const pop=(t,s,d=0.35)=>t<s?0:back((t-s)/d);          // 0->1 con rebote
+const fade=(t,s,d=0.25)=>clamp((t-s)/d);
+const wob=(t,a=1,f=3)=>Math.sin(t*f*2*Math.PI)*a;
+
+/* ---------- voz: segmentos medidos del audio real ---------- */
+const SEGS=[
+ {s:0.00,e:2.74,t:"¿Te ofrecen American Fit más barato por WhatsApp?"},
+ {s:3.15,e:3.70,t:"Cuidado,"},
+ {s:3.90,e:5.18,t:"puede ser falsificado."},
+ {s:5.54,e:8.46,t:"Compra solo en la web oficial de American Natural."},
+ {s:8.86,e:10.94,t:"El frasco original es de aluminio,"},
+ {s:11.04,e:12.09,t:"no de plástico."},
+ {s:12.43,e:14.50,t:"El sello holográfico tiene relieve;"},
+ {s:14.78,e:16.88,t:"si es papel impreso, desconfía."},
+ {s:17.20,e:18.55,t:"Exige el original."},
+ {s:18.83,e:20.05,t:"Pide contra entrega."}];
+const WORDS=[];
+SEGS.forEach((g,si)=>{const ws=g.t.split(' ');const L=ws.map(w=>w.length+2);const sum=L.reduce((a,b)=>a+b,0);let c=g.s;
+ ws.forEach((w,i)=>{const d=(g.e-g.s)*L[i]/sum;WORDS.push({w,s:c,e:c+d,seg:si});c+=d;});});
+// chunks de 2-4 palabras dentro de cada segmento
+const CHUNKS=[];
+SEGS.forEach((g,si)=>{const ws=WORDS.filter(x=>x.seg===si);const n=ws.length;
+ let sizes=n<=4?[n]:n===5?[3,2]:n===6?[3,3]:n===7?[4,3]:[4,4];
+ let k=0;sizes.forEach(z=>{CHUNKS.push(ws.slice(k,k+z));k+=z;});});
+function subtitle(t){
+ let ch=null;
+ for(let i=0;i<CHUNKS.length;i++){const c=CHUNKS[i];const s=c[0].s-0.04;const nextS=(CHUNKS[i+1]?CHUNKS[i+1][0].s:99);const e=Math.min(c[c.length-1].e+0.25,nextS);if(t>=s&&t<e){ch=c;break;}}
+ if(!ch)return '';
+ const sc=1+0.06*(1-eo((t-ch[0].s+0.04)/0.15));
+ const h=ch.map(x=>`<span class="${t>=x.s&&t<x.e?'act':''}">${x.w}</span>`).join(' ');
+ return `<div class="sub"><div class="subbox" style="transform:scale(${sc})">${h}</div></div>`;
+}
+
+/* ---------- personaje (vector propio) ---------- */
+function woman(mood,t,opt={}){
+ const worried=mood==='w';
+ const bob=Math.sin(t*3)*4;
+ const brow=worried?`<path d="M118 150 Q140 128 168 142" stroke="#3a2418" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M232 142 Q260 128 282 150" stroke="#3a2418" stroke-width="9" fill="none" stroke-linecap="round"/>`
+  :`<path d="M118 142 Q143 126 168 140" stroke="#3a2418" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M232 140 Q257 126 282 142" stroke="#3a2418" stroke-width="9" fill="none" stroke-linecap="round"/>`;
+ const mouth=worried?`<path d="M165 262 Q200 232 235 262" stroke="#8a2b2b" stroke-width="10" fill="none" stroke-linecap="round"/>`
+  :`<path d="M150 240 Q200 305 250 240 Z" fill="#8a2b2b"/><path d="M160 244 Q200 262 240 244 Z" fill="#fff"/>`;
+ const blink=(Math.floor(t*10)%23===0)?1:0;
+ const eyes=blink?`<path d="M135 190 h32 M233 190 h32" stroke="#222" stroke-width="7" stroke-linecap="round"/>`
+  :`<ellipse cx="151" cy="190" rx="15" ry="${worried?19:17}" fill="#fff"/><ellipse cx="249" cy="190" rx="15" ry="${worried?19:17}" fill="#fff"/><circle cx="${worried?155:151}" cy="192" r="9" fill="#2b1a10"/><circle cx="${worried?253:249}" cy="192" r="9" fill="#2b1a10"/>`;
+ const sweat=worried&&opt.sweat?`<path d="M300 150 q18 34 0 50 q-18 -16 0 -50z" fill="#7fd3ff" transform="translate(0,${(t*60)%40})"/>`:'';
+ const hand=worried&&opt.hand?`<g transform="translate(-4,0)"><ellipse cx="318" cy="250" rx="38" ry="52" fill="#e8b48f" transform="rotate(-20 318 250)"/><rect x="296" y="268" width="44" height="110" rx="22" fill="#e8b48f" transform="rotate(-8 318 320)"/></g>`:'';
+ const wave=!worried&&opt.thumb?`<g><rect x="316" y="330" width="62" height="96" rx="28" fill="#e8b48f"/><rect x="334" y="286" width="26" height="62" rx="13" fill="#e8b48f"/></g>`:'';
+ return `<svg width="${opt.w||400}" height="${(opt.w||400)*1.4}" viewBox="0 0 400 560" style="overflow:visible"><g transform="translate(0,${bob})">
+ <path d="M70 560 Q70 400 200 380 Q330 400 330 560Z" fill="#14a39a"/>
+ <path d="M155 380 L200 450 L245 380Z" fill="#e8b48f"/>
+ <rect x="170" y="300" width="60" height="90" rx="26" fill="#e8b48f"/>
+ <path d="M70 230 Q55 40 200 38 Q345 40 330 230 L330 380 Q300 330 290 250 L110 250 Q100 330 70 380Z" fill="#2b1a10"/>
+ <ellipse cx="200" cy="205" rx="105" ry="128" fill="#f2c4a0"/>
+ <path d="M96 190 Q110 70 205 70 Q300 70 306 190 Q270 120 200 125 Q135 125 96 190Z" fill="#2b1a10"/>
+ <circle cx="125" cy="235" r="16" fill="#ee9a8a" opacity=".55"/><circle cx="275" cy="235" r="16" fill="#ee9a8a" opacity=".55"/>
+ ${brow}${eyes}<path d="M200 200 q-10 36 6 42" stroke="#c98c68" stroke-width="6" fill="none" stroke-linecap="round"/>${mouth}${sweat}${hand}${wave}
+ </g></svg>`;
+}
+
+/* ---------- botellas ---------- */
+function plastic(opt={}){ // frasco blanco genérico (sin marca)
+ return `<svg width="${opt.w||360}" viewBox="0 0 300 520" style="overflow:visible">
+ <rect x="80" y="10" width="140" height="70" rx="14" fill="#e9eef2" stroke="#b7c2cc" stroke-width="6"/>
+ <rect x="62" y="70" width="176" height="30" rx="10" fill="#dde5ec" stroke="#b7c2cc" stroke-width="6"/>
+ <path d="M40 140 Q40 96 100 96 L200 96 Q260 96 260 140 L260 480 Q260 510 230 510 L70 510 Q40 510 40 480Z" fill="#fbfdff" stroke="#b7c2cc" stroke-width="6"/>
+ <rect x="62" y="210" width="176" height="190" rx="12" fill="#ffffff" stroke="#c9d3dc" stroke-width="4"/>
+ <text x="150" y="285" font-size="40" font-weight="900" text-anchor="middle" fill="#9aa7b3" font-family="Inter,sans-serif">¿ ? ? ?</text>
+ <rect x="86" y="318" width="128" height="14" rx="7" fill="#d5dde4"/><rect x="104" y="346" width="92" height="14" rx="7" fill="#d5dde4"/>
+ </svg>`;
+}
+const IMG='frasco.png';
+
+/* ---------- escenas ---------- */
+const BOUNDS=[0,3.0,5.45,8.7,12.3,17.0,20.4];
+function bg(i,lt){
+ const g=[["#1b3fd1","#0a1a6b"],["#d11b2c","#5a0612"],["#0aa05a","#04502e"],["#6a2bd1","#2a0b6b"],["#e86a00","#6b2a00"],["#0aa05a","#063f4a"]][i];
+ const z=1+0.05*lt;
+ return `<div class="abs" style="inset:-60px;background:radial-gradient(circle at 50% 38%,${g[0]},${g[1]});transform:scale(${z})"></div>
+ <div class="abs" style="left:0;top:0;width:1080px;height:1920px;opacity:.20;background:repeating-linear-gradient(60deg,rgba(255,255,255,.35) 0 6px,transparent 6px 90px);transform:translateX(${(lt*60)%90}px)"></div>`;
+}
+function phoneBubble(t,txt,s,y,side){
+ const p=pop(t,s);if(!p)return'';
+ const left=side==='l';
+ return `<div class="bubble" style="top:${y}px;${left?'left:24px;background:#fff':'right:24px;background:#cdf7c5'};width:360px;transform:scale(${p});transform-origin:${left?'left':'right'} top">${txt}</div>`;
+}
+function sc1(t){ // t local desde 0
+ let h=bg(0,t);
+ const shake=t>2.0&&t<2.7?wob(t,6,14):0;
+ h+=`<div class="abs" style="left:70px;top:610px;transform:translateX(${shake}px)">${woman('w',t,{sweat:t>1.9,hand:t>1.0,w:430})}</div>`;
+ const ph=pop(t,0.0,0.4);
+ h+=`<div class="abs" style="left:520px;top:330px;width:460px;height:900px;border-radius:56px;background:#111;border:10px solid #000;box-shadow:0 18px 0 rgba(0,0,0,.35);transform:scale(${ph}) rotate(${wob(t,1.2,.6)}deg);transform-origin:center">
+ <div style="margin:14px;border-radius:44px;background:#e8e0d4;height:872px;position:relative;overflow:hidden">
+  <div style="height:96px;background:#128c4a;color:#fff;font-weight:900;font-size:36px;padding:30px 30px">● Vendedor</div>
+  <div style="position:absolute;left:0;top:116px;width:100%">
+   ${phoneBubble(t,'¡Te tengo el American Fit mucho más barato!',0.35,0,'l')}
+   ${phoneBubble(t,'100% original importado',1.25,200,'r')}
+   ${phoneBubble(t,'Paga aquí y te llega hoy',1.9,330,'l')}
+  </div>
+  <div class="abs" style="left:24px;right:24px;top:640px;height:110px;border-radius:55px;background:#1ec15a;color:#fff;font-weight:900;font-size:40px;text-align:center;padding-top:30px;transform:scale(${1+0.04*Math.sin(t*9)});opacity:${fade(t,2.2)}">PAGAR AHORA</div>
+ </div></div>`;
+ const q=pop(t,0.7,0.4);
+ h+=`<div class="abs" style="left:60px;top:430px;width:300px;text-align:center;font-weight:900;font-size:150px;color:#ffe600;text-shadow:0 8px 0 rgba(0,0,0,.4);transform:scale(${q}) rotate(${-8+wob(t,5,2)}deg)">?!</div>`;
+ return h;
+}
+function sc2(t){
+ let h=bg(1,t);
+ const tri=pop(t,0.05,0.4);
+ h+=`<div class="abs" style="left:290px;top:300px;width:500px;transform:scale(${tri*(1+0.05*Math.sin(t*10))});transform-origin:center"><svg viewBox="0 0 500 440" width="500"><path d="M250 20 L480 410 L20 410Z" fill="#ffe600" stroke="#111" stroke-width="18" stroke-linejoin="round"/><rect x="226" y="140" width="48" height="150" rx="22" fill="#111"/><circle cx="250" cy="350" r="28" fill="#111"/></svg></div>`;
+ const bx=eo((t-0.75)/0.4);
+ h+=`<div class="abs" style="left:${360-300*(1-bx)}px;top:790px;transform:rotate(${wob(t,4,1.5)}deg)">${plastic({w:360})}</div>`;
+ const x=pop(t,1.5,0.3);
+ h+=`<div class="abs" style="left:240px;top:760px;width:600px;transform:scale(${x}) rotate(-8deg);transform-origin:center;opacity:${x?1:0}"><svg viewBox="0 0 600 600" width="600"><path d="M80 80 L520 520 M520 80 L80 520" stroke="#ff2b3d" stroke-width="64" stroke-linecap="round"/></svg></div>`;
+ h+=`<div class="tag" style="left:150px;top:1250px;background:#111;transform:scale(${pop(t,0.6)}) rotate(-3deg);font-size:64px">¿FALSIFICADO?</div>`;
+ return h;
+}
+function sc3(t){
+ let h=bg(2,t);
+ const lp=pop(t,0.0,0.45);
+ h+=`<div class="abs" style="left:90px;top:380px;width:900px;transform:scale(${lp});transform-origin:center bottom">
+  <div style="background:#1b1b1b;border-radius:30px 30px 8px 8px;padding:22px;height:600px;box-shadow:0 14px 0 rgba(0,0,0,.35)">
+   <div style="background:#fff;border-radius:14px;height:556px;overflow:hidden;position:relative">
+    <div style="height:70px;background:#e8eef2;display:flex;align-items:center;padding:0 20px;gap:14px"><div style="width:16px;height:16px;border-radius:8px;background:#ff5f56"></div><div style="width:16px;height:16px;border-radius:8px;background:#ffbd2e"></div><div style="width:16px;height:16px;border-radius:8px;background:#27c93f"></div>
+     <div style="margin-left:20px;flex:1;background:#fff;border-radius:20px;height:42px;padding:6px 18px;font-weight:800;font-size:26px;color:#0a7a3a">${'americannatural'.slice(0,Math.floor(clamp((t-0.5)/0.7)*15))}${t>0.5&&t<1.3?'|':''}</div></div>
+    <div style="padding:28px;display:flex;gap:26px;align-items:center;height:486px">
+     <img src="${IMG}" style="height:400px;transform:rotate(${wob(t,2,0.8)}deg)">
+     <div style="flex:1"><div style="font-weight:900;font-size:44px;color:#0a7a3a;letter-spacing:2px">AMERICAN NATURAL</div><div style="font-weight:900;font-size:60px;color:#111;margin:10px 0 24px">American Fit</div>
+      <div style="background:#16a34a;color:#fff;font-weight:900;font-size:44px;text-align:center;padding:26px 10px;border-radius:20px;box-shadow:0 8px 0 #0b6b30;transform:scale(${1+0.06*Math.max(0,Math.sin((t-1.2)*8))*(t>1.2?1:0)})">COMPRAR AHORA</div></div>
+    </div>
+   </div></div>
+  <div style="height:34px;background:#2a2a2a;border-radius:0 0 40px 40px;width:1000px;margin-left:-50px"></div>
+ </div>`;
+ // cursor click
+ const cp=eo((t-1.3)/0.8);
+ h+=`<svg class="abs" style="left:${300+560*cp}px;top:${520+300*(1-cp)+(cp*0)}px;transform:scale(${t>2.15&&t<2.3?0.8:1})" width="90" height="110" viewBox="0 0 90 110"><path d="M10 6 L10 84 L30 66 L44 100 L58 94 L44 62 L72 62Z" fill="#fff" stroke="#111" stroke-width="6" stroke-linejoin="round"/></svg>`;
+ // distintivo oficial
+ h+=`<div class="tag" style="left:120px;top:1080px;background:#fff;color:#0a7a3a;transform:scale(${pop(t,0.9)});font-size:58px">✔ WEB OFICIAL</div>`;
+ // whatsapp tachado
+ const wp=pop(t,2.0,0.35);
+ h+=`<div class="abs" style="left:760px;top:1050px;transform:scale(${wp});"><div style="width:170px;height:170px;border-radius:85px;background:#25d366;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 0 rgba(0,0,0,.3)"><svg width="110" height="110" viewBox="0 0 100 100"><path d="M50 10a40 40 0 0 0-34 61l-6 20 21-6a40 40 0 1 0 19-75z" fill="none" stroke="#fff" stroke-width="9"/><path d="M36 34c0 16 14 30 30 30l4-9-10-5-5 4c-6-3-10-7-13-13l4-5-5-10z" fill="#fff"/></svg></div>
+  <svg class="abs" style="left:-10px;top:-10px" width="210" height="210" viewBox="0 0 210 210"><path d="M20 20 L190 190 M190 20 L20 190" stroke="#ff2b3d" stroke-width="22" stroke-linecap="round"/></svg></div>`;
+ return h;
+}
+function sc4(t){
+ let h=bg(3,t);
+ const a=eo((t-0.1)/0.45), b=eo((t-0.75)/0.45);
+ h+=`<div class="abs" style="left:${40-500*(1-a)}px;top:420px;width:470px;height:870px;display:flex;align-items:center;justify-content:center"><img src="${IMG}" style="height:790px;filter:drop-shadow(0 20px 0 rgba(0,0,0,.28));transform:rotate(${wob(t,1.5,.7)}deg)"></div>`;
+ h+=`<div class="abs" style="left:${610+500*(1-b)}px;top:640px;transform:rotate(${wob(t,2,.7)}deg)">${plastic({w:420})}</div>`;
+ h+=`<div class="abs" style="left:530px;top:420px;width:20px;height:870px;background:#fff;opacity:.6;border-radius:10px;transform:scaleY(${eo((t-0.4)/0.4)})"></div>`;
+ h+=`<div class="tag" style="left:30px;top:340px;background:#0a9a3a;transform:scale(${pop(t,1.55)});font-size:56px">ALUMINIO</div>`;
+ h+=`<div class="abs" style="left:380px;top:300px;font-size:150px;font-weight:900;color:#27e06a;text-shadow:0 8px 0 rgba(0,0,0,.4);transform:scale(${pop(t,2.0)})">✔</div>`;
+ h+=`<div class="tag" style="left:600px;top:480px;background:#e11d2e;transform:scale(${pop(t,2.5)});font-size:56px">PLÁSTICO</div>`;
+ const x=pop(t,3.0,0.3);
+ h+=`<div class="abs" style="left:610px;top:760px;width:420px;transform:scale(${x}) rotate(-6deg);opacity:${x?1:0}"><svg viewBox="0 0 420 420" width="420"><path d="M60 60 L360 360 M360 60 L60 360" stroke="#ff2b3d" stroke-width="48" stroke-linecap="round"/></svg></div>`;
+ h+=`<div class="tag" style="left:70px;top:1300px;background:#fff;color:#0a7a3a;transform:scale(${pop(t,2.1)});font-size:46px">ORIGINAL</div>`;
+ return h;
+}
+function sealSVG(t,sz){
+ const sh=((t*0.9)%1.6)-0.3;
+ return `<svg width="${sz}" height="${sz}" viewBox="0 0 400 400" style="overflow:visible"><defs>
+ <linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5ac8"/><stop offset=".25" stop-color="#5ae0ff"/><stop offset=".5" stop-color="#fff35a"/><stop offset=".75" stop-color="#7dff8a"/><stop offset="1" stop-color="#b86bff"/></linearGradient>
+ <linearGradient id="sw" gradientUnits="userSpaceOnUse" x1="${-200+600*sh}" y1="0" x2="${-80+600*sh}" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+ <clipPath id="cc"><circle cx="200" cy="200" r="180"/></clipPath></defs>
+ <circle cx="200" cy="200" r="190" fill="#8a8f98"/><circle cx="200" cy="200" r="180" fill="url(#hg)"/>
+ <g clip-path="url(#cc)" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="3">${[40,70,100,130,160].map(r=>`<circle cx="200" cy="200" r="${r}"/>`).join('')}${[...Array(12)].map((_,i)=>`<path d="M200 200 L${200+190*Math.cos(i*Math.PI/6)} ${200+190*Math.sin(i*Math.PI/6)}"/>`).join('')}</g>
+ <circle cx="200" cy="200" r="72" fill="#0a7a3a" stroke="#fff" stroke-width="8"/>
+ <path d="M168 205 L194 232 L240 170" stroke="#fff" stroke-width="20" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+ <rect x="0" y="0" width="400" height="400" fill="url(#sw)" clip-path="url(#cc)"/>
+ <circle cx="200" cy="200" r="180" fill="none" stroke="#fff" stroke-width="6" stroke-opacity=".7"/></svg>`;
+}
+function sc5(t){
+ let h=bg(4,t);
+ const sp=pop(t,0.1,0.5);
+ h+=`<div class="abs" style="left:230px;top:360px;transform:scale(${sp*(1+0.03*Math.sin(t*5))}) rotate(${wob(t,4,0.5)}deg)">${sealSVG(t,620)}</div>`;
+ h+=`<div class="tag" style="left:70px;top:350px;background:#111;transform:scale(${pop(t,0.3)}) rotate(-5deg);font-size:48px">SELLO HOLOGRÁFICO</div>`;
+ const rows=[[1.6,'✔','BRILLA CON RELIEVE','#0a9a3a'],[2.7,'✘','IMPRESO EN PAPEL','#e11d2e'],[3.3,'✘','SIN RELIEVE = NO ORIGINAL','#e11d2e']];
+ rows.forEach((r,i)=>{const p=pop(t,r[0],0.32);
+  h+=`<div class="tag" style="left:${70+(i%2)*0}px;top:${1050+i*118}px;background:${r[3]};transform:scale(${p});transform-origin:left center;font-size:50px;padding:12px 30px">${r[1]} ${r[2]}</div>`;});
+ return h;
+}
+function sc6(t){
+ let h=bg(5,t);
+ const pp=pop(t,0.1,0.55);
+ h+=`<div class="abs" style="left:300px;top:330px;transform:scale(${pp}) rotate(${wob(t,2,.8)}deg);transform-origin:center bottom"><img src="${IMG}" style="height:820px;filter:drop-shadow(0 22px 0 rgba(0,0,0,.28))"></div>`;
+ h+=`<div class="abs" style="left:10px;top:700px;transform:scale(${pop(t,0.5)})">${woman('h',t,{w:330,thumb:true})}</div>`;
+ h+=`<div class="tag" style="left:560px;top:380px;background:#ffe600;color:#111;transform:scale(${pop(t,0.4)}) rotate(5deg);font-size:50px">EXIGE EL ORIGINAL</div>`;
+ const sparks=[...Array(8)].map((_,i)=>{const a=i*Math.PI/4+t*1.5,r=380+Math.sin(t*6+i)*20;const s=pop(t,0.3+i*0.04);return `<div class="abs" style="left:${680+Math.cos(a)*r*0.9}px;top:${760+Math.sin(a)*r*0.9}px;font-size:60px;color:#fff3a0;transform:scale(${s*(0.7+0.3*Math.sin(t*9+i))})">✦</div>`}).join('');
+ h+=sparks;
+ const bp=pop(t,1.6,0.4);
+ h+=`<div class="abs" style="left:60px;top:1190px;width:960px;transform:scale(${bp*(1+0.03*Math.sin(t*8))});transform-origin:center"><div style="background:#16a34a;color:#fff;font-weight:900;font-size:50px;text-align:center;padding:26px 16px;border-radius:30px;box-shadow:0 10px 0 #0b6b30,0 0 0 8px #fff;line-height:1.1">WEB OFICIAL AMERICAN NATURAL<br><span style="font-size:42px">PAGO CONTRA ENTREGA</span></div></div>`;
+ return h;
+}
+const SCENES=[sc1,sc2,sc3,sc4,sc5,sc6];
+function render(t){
+ let h='';
+ const idx=BOUNDS.findIndex((b,i)=>t>=b&&t<BOUNDS[i+1]);
+ const i=Math.max(0,idx);
+ const lt=t-BOUNDS[i];
+ if(i>0&&lt<0.28){const pl=t-BOUNDS[i-1];h+=`<div class="scene">${SCENES[i-1](pl)}</div>`;}
+ const enter=i>0?eo(lt/0.28):1;
+ h+=`<div class="scene" style="transform:translateX(${(1-enter)*1080}px)">${SCENES[i](lt)}</div>`;
+ // flash blanco en el corte
+ if(i>0&&lt<0.12)h+=`<div class="abs" style="inset:0;background:#fff;opacity:${0.5*(1-lt/0.12)}"></div>`;
+ h+=`<div class="top">Evita falsificaciones !! identifica el original</div>`;
+ h+=subtitle(t);
+ document.getElementById('stage').innerHTML=h;
+}
+window.render=render;
+</script></body></html>
