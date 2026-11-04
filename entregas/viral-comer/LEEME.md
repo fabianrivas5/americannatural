@@ -1,6 +1,6 @@
 # Viral Comer (`video-viral-commerce-9x16`): versión mejorada
 
-- `video-viral-commerce-9x16.zip`: la skill lista para cargar en Claude (Ajustes → Capacidades → Skills → Subir). Trae una carpeta con `SKILL.md` en la raíz y 223 archivos, entre ellos los 142 sonidos OGG con sus créditos.
+- `video-viral-commerce-9x16.zip`: la skill lista para cargar en Claude (Ajustes → Capacidades → Skills → Subir). Trae una carpeta con `SKILL.md` en la raíz y 185 archivos (claude.ai acepta hasta 200), entre ellos los 142 sonidos OGG con sus créditos.
 - `RESUMEN_CAMBIOS.md`: qué cambió en cada fase, comparado con el SKILL.md anterior.
 - `prueba_american_fit/`: la prueba completa con un encargo típico. Contiene el guion con la verificación y las dos aperturas, el storyboard, los planos por segundo, los subtítulos, la hoja de sonido con archivos reales, las portadas, las hojas de contacto y la revisión final.
 
