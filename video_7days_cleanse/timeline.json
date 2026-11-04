@@ -1,0 +1,2996 @@
+{
+ "duracion_s": 81.38000000000001,
+ "fps": 30,
+ "palabras": [
+  {
+   "voz": "Si",
+   "inicio_ms": 0,
+   "fin_ms": 160,
+   "pantalla": "Si"
+  },
+  {
+   "voz": "tu",
+   "inicio_ms": 240,
+   "fin_ms": 320,
+   "pantalla": "tu"
+  },
+  {
+   "voz": "caca",
+   "inicio_ms": 360,
+   "fin_ms": 640,
+   "pantalla": "caca"
+  },
+  {
+   "voz": "sale",
+   "inicio_ms": 760,
+   "fin_ms": 880,
+   "pantalla": "sale"
+  },
+  {
+   "voz": "en",
+   "inicio_ms": 920,
+   "fin_ms": 960,
+   "pantalla": "en"
+  },
+  {
+   "voz": "bolitas",
+   "inicio_ms": 1040,
+   "fin_ms": 1440,
+   "pantalla": "bolitas"
+  },
+  {
+   "voz": "duras",
+   "inicio_ms": 1600,
+   "fin_ms": 1920,
+   "pantalla": "duras"
+  },
+  {
+   "voz": "como",
+   "inicio_ms": 2000,
+   "fin_ms": 2160,
+   "pantalla": "como"
+  },
+  {
+   "voz": "piedra,",
+   "inicio_ms": 2240,
+   "fin_ms": 2880,
+   "pantalla": "piedra,"
+  },
+  {
+   "voz": "NO",
+   "inicio_ms": 3040,
+   "fin_ms": 3200,
+   "pantalla": "NO"
+  },
+  {
+   "voz": "es",
+   "inicio_ms": 3280,
+   "fin_ms": 3440,
+   "pantalla": "es"
+  },
+  {
+   "voz": "estreñimiento.",
+   "inicio_ms": 3560,
+   "fin_ms": 4320,
+   "pantalla": "estreñimiento."
+  },
+  {
+   "voz": "Hay",
+   "inicio_ms": 4640,
+   "fin_ms": 4800,
+   "pantalla": "Hay"
+  },
+  {
+   "voz": "un",
+   "inicio_ms": 4840,
+   "fin_ms": 4880,
+   "pantalla": "un"
+  },
+  {
+   "voz": "error",
+   "inicio_ms": 4960,
+   "fin_ms": 5280,
+   "pantalla": "error"
+  },
+  {
+   "voz": "que",
+   "inicio_ms": 5360,
+   "fin_ms": 5440,
+   "pantalla": "que"
+  },
+  {
+   "voz": "el",
+   "inicio_ms": 5480,
+   "fin_ms": 5520,
+   "pantalla": "el"
+  },
+  {
+   "voz": "noventa",
+   "inicio_ms": 5600,
+   "fin_ms": 6640,
+   "pantalla": "90%"
+  },
+  {
+   "voz": "por",
+   "inicio_ms": 6160,
+   "fin_ms": 6320,
+   "pantalla": null
+  },
+  {
+   "voz": "ciento",
+   "inicio_ms": 6400,
+   "fin_ms": 6640,
+   "pantalla": null
+  },
+  {
+   "voz": "comete",
+   "inicio_ms": 6720,
+   "fin_ms": 7040,
+   "pantalla": "comete"
+  },
+  {
+   "voz": "en",
+   "inicio_ms": 7080,
+   "fin_ms": 7120,
+   "pantalla": "en"
+  },
+  {
+   "voz": "las",
+   "inicio_ms": 7200,
+   "fin_ms": 7280,
+   "pantalla": "las"
+  },
+  {
+   "voz": "mañanas",
+   "inicio_ms": 7360,
+   "fin_ms": 7840,
+   "pantalla": "mañanas"
+  },
+  {
+   "voz": "que",
+   "inicio_ms": 7920,
+   "fin_ms": 8000,
+   "pantalla": "que"
+  },
+  {
+   "voz": "convierte",
+   "inicio_ms": 8080,
+   "fin_ms": 8560,
+   "pantalla": "convierte"
+  },
+  {
+   "voz": "todo",
+   "inicio_ms": 8800,
+   "fin_ms": 9120,
+   "pantalla": "todo"
+  },
+  {
+   "voz": "en",
+   "inicio_ms": 9200,
+   "fin_ms": 9280,
+   "pantalla": "en"
+  },
+  {
+   "voz": "un",
+   "inicio_ms": 9360,
+   "fin_ms": 9440,
+   "pantalla": "un"
+  },
+  {
+   "voz": "tapón",
+   "inicio_ms": 9560,
+   "fin_ms": 9760,
+   "pantalla": "tapón"
+  },
+  {
+   "voz": "de",
+   "inicio_ms": 9840,
+   "fin_ms": 9920,
+   "pantalla": "de"
+  },
+  {
+   "voz": "concreto.",
+   "inicio_ms": 10000,
+   "fin_ms": 10560,
+   "pantalla": "concreto."
+  },
+  {
+   "voz": "Quédate",
+   "inicio_ms": 10960,
+   "fin_ms": 11280,
+   "pantalla": "Quédate"
+  },
+  {
+   "voz": "hasta",
+   "inicio_ms": 11320,
+   "fin_ms": 11440,
+   "pantalla": "hasta"
+  },
+  {
+   "voz": "el",
+   "inicio_ms": 11520,
+   "fin_ms": 11600,
+   "pantalla": "el"
+  },
+  {
+   "voz": "final",
+   "inicio_ms": 11760,
+   "fin_ms": 11920,
+   "pantalla": "final"
+  },
+  {
+   "voz": "porque",
+   "inicio_ms": 12000,
+   "fin_ms": 12240,
+   "pantalla": "porque"
+  },
+  {
+   "voz": "te",
+   "inicio_ms": 12320,
+   "fin_ms": 12400,
+   "pantalla": "te"
+  },
+  {
+   "voz": "muestro",
+   "inicio_ms": 12480,
+   "fin_ms": 12800,
+   "pantalla": "muestro"
+  },
+  {
+   "voz": "cuál",
+   "inicio_ms": 12960,
+   "fin_ms": 13120,
+   "pantalla": "cuál"
+  },
+  {
+   "voz": "es.",
+   "inicio_ms": 13200,
+   "fin_ms": 13760,
+   "pantalla": "es."
+  },
+  {
+   "voz": "Después",
+   "inicio_ms": 14000,
+   "fin_ms": 14320,
+   "pantalla": "Después"
+  },
+  {
+   "voz": "de",
+   "inicio_ms": 14360,
+   "fin_ms": 14400,
+   "pantalla": "de"
+  },
+  {
+   "voz": "los",
+   "inicio_ms": 14480,
+   "fin_ms": 14560,
+   "pantalla": "los"
+  },
+  {
+   "voz": "treinta",
+   "inicio_ms": 14640,
+   "fin_ms": 15600,
+   "pantalla": "35,"
+  },
+  {
+   "voz": "y",
+   "inicio_ms": 14960,
+   "fin_ms": 15040,
+   "pantalla": null
+  },
+  {
+   "voz": "cinco,",
+   "inicio_ms": 15120,
+   "fin_ms": 15600,
+   "pantalla": null
+  },
+  {
+   "voz": "tu",
+   "inicio_ms": 15640,
+   "fin_ms": 15680,
+   "pantalla": "tu"
+  },
+  {
+   "voz": "colon",
+   "inicio_ms": 15840,
+   "fin_ms": 16160,
+   "pantalla": "colon"
+  },
+  {
+   "voz": "ya",
+   "inicio_ms": 16320,
+   "fin_ms": 16480,
+   "pantalla": "ya"
+  },
+  {
+   "voz": "no",
+   "inicio_ms": 16520,
+   "fin_ms": 16560,
+   "pantalla": "no"
+  },
+  {
+   "voz": "empuja.",
+   "inicio_ms": 16640,
+   "fin_ms": 17280,
+   "pantalla": "empuja."
+  },
+  {
+   "voz": "Se",
+   "inicio_ms": 17440,
+   "fin_ms": 17520,
+   "pantalla": "Se"
+  },
+  {
+   "voz": "llama",
+   "inicio_ms": 17600,
+   "fin_ms": 17920,
+   "pantalla": "llama"
+  },
+  {
+   "voz": "peristaltismo.",
+   "inicio_ms": 18080,
+   "fin_ms": 19120,
+   "pantalla": "peristaltismo."
+  },
+  {
+   "voz": "Y",
+   "inicio_ms": 19440,
+   "fin_ms": 19520,
+   "pantalla": "Y"
+  },
+  {
+   "voz": "cuando",
+   "inicio_ms": 19600,
+   "fin_ms": 19760,
+   "pantalla": "cuando"
+  },
+  {
+   "voz": "se",
+   "inicio_ms": 19840,
+   "fin_ms": 20000,
+   "pantalla": "se"
+  },
+  {
+   "voz": "frena,",
+   "inicio_ms": 20080,
+   "fin_ms": 20640,
+   "pantalla": "frena,"
+  },
+  {
+   "voz": "todo",
+   "inicio_ms": 20720,
+   "fin_ms": 20960,
+   "pantalla": "todo"
+  },
+  {
+   "voz": "se",
+   "inicio_ms": 21040,
+   "fin_ms": 21120,
+   "pantalla": "se"
+  },
+  {
+   "voz": "queda",
+   "inicio_ms": 21200,
+   "fin_ms": 21360,
+   "pantalla": "queda"
+  },
+  {
+   "voz": "adentro,",
+   "inicio_ms": 21440,
+   "fin_ms": 22080,
+   "pantalla": "adentro,"
+  },
+  {
+   "voz": "se",
+   "inicio_ms": 22160,
+   "fin_ms": 22240,
+   "pantalla": "se"
+  },
+  {
+   "voz": "pudre",
+   "inicio_ms": 22400,
+   "fin_ms": 22800,
+   "pantalla": "pudre"
+  },
+  {
+   "voz": "y",
+   "inicio_ms": 22960,
+   "fin_ms": 23000,
+   "pantalla": "y"
+  },
+  {
+   "voz": "se",
+   "inicio_ms": 23040,
+   "fin_ms": 23120,
+   "pantalla": "se"
+  },
+  {
+   "voz": "endurece.",
+   "inicio_ms": 23200,
+   "fin_ms": 23840,
+   "pantalla": "endurece."
+  },
+  {
+   "voz": "Y",
+   "inicio_ms": 24240,
+   "fin_ms": 24320,
+   "pantalla": "Y"
+  },
+  {
+   "voz": "por",
+   "inicio_ms": 24400,
+   "fin_ms": 24480,
+   "pantalla": "por"
+  },
+  {
+   "voz": "eso",
+   "inicio_ms": 24560,
+   "fin_ms": 24800,
+   "pantalla": "eso"
+  },
+  {
+   "voz": "no",
+   "inicio_ms": 25040,
+   "fin_ms": 25120,
+   "pantalla": "no"
+  },
+  {
+   "voz": "te",
+   "inicio_ms": 25200,
+   "fin_ms": 25280,
+   "pantalla": "te"
+  },
+  {
+   "voz": "sirve",
+   "inicio_ms": 25360,
+   "fin_ms": 25600,
+   "pantalla": "sirve"
+  },
+  {
+   "voz": "tomar",
+   "inicio_ms": 25680,
+   "fin_ms": 25920,
+   "pantalla": "tomar"
+  },
+  {
+   "voz": "más",
+   "inicio_ms": 26080,
+   "fin_ms": 26320,
+   "pantalla": "más"
+  },
+  {
+   "voz": "agua,",
+   "inicio_ms": 26400,
+   "fin_ms": 26880,
+   "pantalla": "agua,"
+  },
+  {
+   "voz": "más",
+   "inicio_ms": 26920,
+   "fin_ms": 27120,
+   "pantalla": "más"
+  },
+  {
+   "voz": "fibra",
+   "inicio_ms": 27200,
+   "fin_ms": 27520,
+   "pantalla": "fibra"
+  },
+  {
+   "voz": "o",
+   "inicio_ms": 27680,
+   "fin_ms": 27720,
+   "pantalla": "o"
+  },
+  {
+   "voz": "magnesio.",
+   "inicio_ms": 27760,
+   "fin_ms": 28480,
+   "pantalla": "magnesio."
+  },
+  {
+   "voz": "La",
+   "inicio_ms": 28880,
+   "fin_ms": 28960,
+   "pantalla": "La"
+  },
+  {
+   "voz": "fibra",
+   "inicio_ms": 29120,
+   "fin_ms": 29520,
+   "pantalla": "fibra"
+  },
+  {
+   "voz": "solo",
+   "inicio_ms": 29680,
+   "fin_ms": 29920,
+   "pantalla": "solo"
+  },
+  {
+   "voz": "le",
+   "inicio_ms": 29960,
+   "fin_ms": 30000,
+   "pantalla": "le"
+  },
+  {
+   "voz": "agrega",
+   "inicio_ms": 30080,
+   "fin_ms": 30400,
+   "pantalla": "agrega"
+  },
+  {
+   "voz": "más",
+   "inicio_ms": 30560,
+   "fin_ms": 30720,
+   "pantalla": "más"
+  },
+  {
+   "voz": "volumen",
+   "inicio_ms": 30800,
+   "fin_ms": 31200,
+   "pantalla": "volumen"
+  },
+  {
+   "voz": "a",
+   "inicio_ms": 31240,
+   "fin_ms": 31280,
+   "pantalla": "a"
+  },
+  {
+   "voz": "la",
+   "inicio_ms": 31320,
+   "fin_ms": 31360,
+   "pantalla": "la"
+  },
+  {
+   "voz": "piedra",
+   "inicio_ms": 31520,
+   "fin_ms": 31760,
+   "pantalla": "piedra"
+  },
+  {
+   "voz": "que",
+   "inicio_ms": 31920,
+   "fin_ms": 32000,
+   "pantalla": "que"
+  },
+  {
+   "voz": "YA",
+   "inicio_ms": 32160,
+   "fin_ms": 32320,
+   "pantalla": "YA"
+  },
+  {
+   "voz": "está",
+   "inicio_ms": 32440,
+   "fin_ms": 32600,
+   "pantalla": "está"
+  },
+  {
+   "voz": "pegada.",
+   "inicio_ms": 32640,
+   "fin_ms": 33320,
+   "pantalla": "pegada."
+  },
+  {
+   "voz": "No",
+   "inicio_ms": 33520,
+   "fin_ms": 33600,
+   "pantalla": "No"
+  },
+  {
+   "voz": "la",
+   "inicio_ms": 33680,
+   "fin_ms": 33760,
+   "pantalla": "la"
+  },
+  {
+   "voz": "mueve.",
+   "inicio_ms": 33840,
+   "fin_ms": 34240,
+   "pantalla": "mueve."
+  },
+  {
+   "voz": "No",
+   "inicio_ms": 34560,
+   "fin_ms": 34640,
+   "pantalla": "No"
+  },
+  {
+   "voz": "ataca",
+   "inicio_ms": 34720,
+   "fin_ms": 35120,
+   "pantalla": "ataca"
+  },
+  {
+   "voz": "la",
+   "inicio_ms": 35200,
+   "fin_ms": 35280,
+   "pantalla": "la"
+  },
+  {
+   "voz": "raíz.",
+   "inicio_ms": 35360,
+   "fin_ms": 36000,
+   "pantalla": "raíz."
+  },
+  {
+   "voz": "Tengo",
+   "inicio_ms": 36160,
+   "fin_ms": 36320,
+   "pantalla": "Tengo"
+  },
+  {
+   "voz": "pacientes",
+   "inicio_ms": 36400,
+   "fin_ms": 36960,
+   "pantalla": "pacientes"
+  },
+  {
+   "voz": "que",
+   "inicio_ms": 37040,
+   "fin_ms": 37200,
+   "pantalla": "que"
+  },
+  {
+   "voz": "pasaban",
+   "inicio_ms": 37280,
+   "fin_ms": 37680,
+   "pantalla": "pasaban"
+  },
+  {
+   "voz": "tres,",
+   "inicio_ms": 37760,
+   "fin_ms": 38240,
+   "pantalla": "3,"
+  },
+  {
+   "voz": "cuatro",
+   "inicio_ms": 38320,
+   "fin_ms": 38640,
+   "pantalla": "4"
+  },
+  {
+   "voz": "días",
+   "inicio_ms": 38720,
+   "fin_ms": 38960,
+   "pantalla": "días"
+  },
+  {
+   "voz": "sin",
+   "inicio_ms": 39040,
+   "fin_ms": 39200,
+   "pantalla": "sin"
+  },
+  {
+   "voz": "ir.",
+   "inicio_ms": 39320,
+   "fin_ms": 39600,
+   "pantalla": "ir."
+  },
+  {
+   "voz": "Inflamadas,",
+   "inicio_ms": 39760,
+   "fin_ms": 40760,
+   "pantalla": "Inflamadas,"
+  },
+  {
+   "voz": "con",
+   "inicio_ms": 40800,
+   "fin_ms": 40960,
+   "pantalla": "con"
+  },
+  {
+   "voz": "dolor.",
+   "inicio_ms": 41000,
+   "fin_ms": 41520,
+   "pantalla": "dolor."
+  },
+  {
+   "voz": "Cuando",
+   "inicio_ms": 41920,
+   "fin_ms": 42080,
+   "pantalla": "Cuando"
+  },
+  {
+   "voz": "reactivamos",
+   "inicio_ms": 42160,
+   "fin_ms": 42720,
+   "pantalla": "reactivamos"
+  },
+  {
+   "voz": "el",
+   "inicio_ms": 42800,
+   "fin_ms": 42880,
+   "pantalla": "el"
+  },
+  {
+   "voz": "movimiento,",
+   "inicio_ms": 42960,
+   "fin_ms": 43680,
+   "pantalla": "movimiento,"
+  },
+  {
+   "voz": "me",
+   "inicio_ms": 43760,
+   "fin_ms": 43840,
+   "pantalla": "me"
+  },
+  {
+   "voz": "dicen:",
+   "inicio_ms": 43960,
+   "fin_ms": 44320,
+   "pantalla": "dicen:"
+  },
+  {
+   "voz": "\"doctora,",
+   "inicio_ms": 44640,
+   "fin_ms": 45440,
+   "pantalla": "\"doctora,"
+  },
+  {
+   "voz": "por",
+   "inicio_ms": 45520,
+   "fin_ms": 45600,
+   "pantalla": "por"
+  },
+  {
+   "voz": "fin",
+   "inicio_ms": 45760,
+   "fin_ms": 46000,
+   "pantalla": "fin"
+  },
+  {
+   "voz": "me",
+   "inicio_ms": 46040,
+   "fin_ms": 46080,
+   "pantalla": "me"
+  },
+  {
+   "voz": "siento",
+   "inicio_ms": 46240,
+   "fin_ms": 46480,
+   "pantalla": "siento"
+  },
+  {
+   "voz": "liviana",
+   "inicio_ms": 46560,
+   "fin_ms": 47040,
+   "pantalla": "liviana"
+  },
+  {
+   "voz": "y",
+   "inicio_ms": 47080,
+   "fin_ms": 47120,
+   "pantalla": "y"
+  },
+  {
+   "voz": "regular\".",
+   "inicio_ms": 47200,
+   "fin_ms": 47760,
+   "pantalla": "regular\"."
+  },
+  {
+   "voz": "Entiende",
+   "inicio_ms": 48160,
+   "fin_ms": 48640,
+   "pantalla": "Entiende"
+  },
+  {
+   "voz": "esto:",
+   "inicio_ms": 48840,
+   "fin_ms": 49360,
+   "pantalla": "esto:"
+  },
+  {
+   "voz": "no",
+   "inicio_ms": 49520,
+   "fin_ms": 49600,
+   "pantalla": "no"
+  },
+  {
+   "voz": "es",
+   "inicio_ms": 49680,
+   "fin_ms": 49760,
+   "pantalla": "es"
+  },
+  {
+   "voz": "que",
+   "inicio_ms": 49840,
+   "fin_ms": 49880,
+   "pantalla": "que"
+  },
+  {
+   "voz": "tu",
+   "inicio_ms": 49920,
+   "fin_ms": 50080,
+   "pantalla": "tu"
+  },
+  {
+   "voz": "cuerpo",
+   "inicio_ms": 50120,
+   "fin_ms": 50400,
+   "pantalla": "cuerpo"
+  },
+  {
+   "voz": "esté",
+   "inicio_ms": 50480,
+   "fin_ms": 50640,
+   "pantalla": "esté"
+  },
+  {
+   "voz": "seco.",
+   "inicio_ms": 50720,
+   "fin_ms": 51280,
+   "pantalla": "seco."
+  },
+  {
+   "voz": "Es",
+   "inicio_ms": 51440,
+   "fin_ms": 51520,
+   "pantalla": "Es"
+  },
+  {
+   "voz": "que",
+   "inicio_ms": 51600,
+   "fin_ms": 51680,
+   "pantalla": "que"
+  },
+  {
+   "voz": "tu",
+   "inicio_ms": 51760,
+   "fin_ms": 51840,
+   "pantalla": "tu"
+  },
+  {
+   "voz": "colon",
+   "inicio_ms": 52000,
+   "fin_ms": 52320,
+   "pantalla": "colon"
+  },
+  {
+   "voz": "perdió",
+   "inicio_ms": 52400,
+   "fin_ms": 52720,
+   "pantalla": "perdió"
+  },
+  {
+   "voz": "fuerza",
+   "inicio_ms": 52880,
+   "fin_ms": 53200,
+   "pantalla": "fuerza"
+  },
+  {
+   "voz": "para",
+   "inicio_ms": 53280,
+   "fin_ms": 53360,
+   "pantalla": "para"
+  },
+  {
+   "voz": "empujar.",
+   "inicio_ms": 53440,
+   "fin_ms": 54200,
+   "pantalla": "empujar."
+  },
+  {
+   "voz": "Si",
+   "inicio_ms": 54400,
+   "fin_ms": 54480,
+   "pantalla": "Si"
+  },
+  {
+   "voz": "no",
+   "inicio_ms": 54560,
+   "fin_ms": 54640,
+   "pantalla": "no"
+  },
+  {
+   "voz": "lo",
+   "inicio_ms": 54680,
+   "fin_ms": 54720,
+   "pantalla": "lo"
+  },
+  {
+   "voz": "reactivas,",
+   "inicio_ms": 54800,
+   "fin_ms": 55600,
+   "pantalla": "reactivas,"
+  },
+  {
+   "voz": "ese",
+   "inicio_ms": 55720,
+   "fin_ms": 55840,
+   "pantalla": "ese"
+  },
+  {
+   "voz": "tapón",
+   "inicio_ms": 55920,
+   "fin_ms": 56240,
+   "pantalla": "tapón"
+  },
+  {
+   "voz": "se",
+   "inicio_ms": 56320,
+   "fin_ms": 56400,
+   "pantalla": "se"
+  },
+  {
+   "voz": "hace",
+   "inicio_ms": 56440,
+   "fin_ms": 56640,
+   "pantalla": "hace"
+  },
+  {
+   "voz": "más",
+   "inicio_ms": 56800,
+   "fin_ms": 56960,
+   "pantalla": "más"
+  },
+  {
+   "voz": "grande.",
+   "inicio_ms": 57040,
+   "fin_ms": 57520,
+   "pantalla": "grande."
+  },
+  {
+   "voz": "¿El",
+   "inicio_ms": 57840,
+   "fin_ms": 58000,
+   "pantalla": "¿El"
+  },
+  {
+   "voz": "error",
+   "inicio_ms": 58120,
+   "fin_ms": 58240,
+   "pantalla": "error"
+  },
+  {
+   "voz": "de",
+   "inicio_ms": 58320,
+   "fin_ms": 58360,
+   "pantalla": "de"
+  },
+  {
+   "voz": "la",
+   "inicio_ms": 58400,
+   "fin_ms": 58480,
+   "pantalla": "la"
+  },
+  {
+   "voz": "mañana?",
+   "inicio_ms": 58560,
+   "fin_ms": 59040,
+   "pantalla": "mañana?"
+  },
+  {
+   "voz": "Tomar",
+   "inicio_ms": 59360,
+   "fin_ms": 59600,
+   "pantalla": "Tomar"
+  },
+  {
+   "voz": "café",
+   "inicio_ms": 59760,
+   "fin_ms": 60160,
+   "pantalla": "café"
+  },
+  {
+   "voz": "y",
+   "inicio_ms": 60240,
+   "fin_ms": 60320,
+   "pantalla": "y"
+  },
+  {
+   "voz": "fibra",
+   "inicio_ms": 60400,
+   "fin_ms": 60720,
+   "pantalla": "fibra"
+  },
+  {
+   "voz": "en",
+   "inicio_ms": 60760,
+   "fin_ms": 60800,
+   "pantalla": "en"
+  },
+  {
+   "voz": "ayunas",
+   "inicio_ms": 60880,
+   "fin_ms": 61360,
+   "pantalla": "ayunas"
+  },
+  {
+   "voz": "con",
+   "inicio_ms": 61440,
+   "fin_ms": 61520,
+   "pantalla": "con"
+  },
+  {
+   "voz": "el",
+   "inicio_ms": 61560,
+   "fin_ms": 61600,
+   "pantalla": "el"
+  },
+  {
+   "voz": "colon",
+   "inicio_ms": 61760,
+   "fin_ms": 62000,
+   "pantalla": "colon"
+  },
+  {
+   "voz": "bloqueado.",
+   "inicio_ms": 62120,
+   "fin_ms": 62640,
+   "pantalla": "bloqueado."
+  },
+  {
+   "voz": "El",
+   "inicio_ms": 63040,
+   "fin_ms": 63200,
+   "pantalla": "El"
+  },
+  {
+   "voz": "truco",
+   "inicio_ms": 63280,
+   "fin_ms": 63520,
+   "pantalla": "truco"
+  },
+  {
+   "voz": "de",
+   "inicio_ms": 63600,
+   "fin_ms": 63680,
+   "pantalla": "de"
+  },
+  {
+   "voz": "siete",
+   "inicio_ms": 63760,
+   "fin_ms": 64000,
+   "pantalla": "7"
+  },
+  {
+   "voz": "segundos",
+   "inicio_ms": 64080,
+   "fin_ms": 64640,
+   "pantalla": "segundos"
+  },
+  {
+   "voz": "es",
+   "inicio_ms": 64720,
+   "fin_ms": 64880,
+   "pantalla": "es"
+  },
+  {
+   "voz": "tomar",
+   "inicio_ms": 64960,
+   "fin_ms": 65200,
+   "pantalla": "tomar"
+  },
+  {
+   "voz": "Seven",
+   "inicio_ms": 65360,
+   "fin_ms": 66240,
+   "pantalla": "7 DAYS CLEANSE"
+  },
+  {
+   "voz": "Days",
+   "inicio_ms": 65680,
+   "fin_ms": 65840,
+   "pantalla": null
+  },
+  {
+   "voz": "Cleanse",
+   "inicio_ms": 65920,
+   "fin_ms": 66240,
+   "pantalla": null
+  },
+  {
+   "voz": "en",
+   "inicio_ms": 66280,
+   "fin_ms": 66320,
+   "pantalla": "en"
+  },
+  {
+   "voz": "la",
+   "inicio_ms": 66360,
+   "fin_ms": 66400,
+   "pantalla": "la"
+  },
+  {
+   "voz": "noche,",
+   "inicio_ms": 66480,
+   "fin_ms": 67120,
+   "pantalla": "noche,"
+  },
+  {
+   "voz": "que",
+   "inicio_ms": 67160,
+   "fin_ms": 67200,
+   "pantalla": "que"
+  },
+  {
+   "voz": "ayuda",
+   "inicio_ms": 67280,
+   "fin_ms": 67520,
+   "pantalla": "ayuda"
+  },
+  {
+   "voz": "a",
+   "inicio_ms": 67547,
+   "fin_ms": 67573,
+   "pantalla": "a"
+  },
+  {
+   "voz": "reactivar",
+   "inicio_ms": 67600,
+   "fin_ms": 68160,
+   "pantalla": "reactivar"
+  },
+  {
+   "voz": "ese",
+   "inicio_ms": 68240,
+   "fin_ms": 68320,
+   "pantalla": "ese"
+  },
+  {
+   "voz": "empuje",
+   "inicio_ms": 68400,
+   "fin_ms": 68800,
+   "pantalla": "empuje"
+  },
+  {
+   "voz": "mientras",
+   "inicio_ms": 68880,
+   "fin_ms": 69200,
+   "pantalla": "mientras"
+  },
+  {
+   "voz": "duermes.",
+   "inicio_ms": 69280,
+   "fin_ms": 69960,
+   "pantalla": "duermes."
+  },
+  {
+   "voz": "Si",
+   "inicio_ms": 70160,
+   "fin_ms": 70240,
+   "pantalla": "Si"
+  },
+  {
+   "voz": "llevas",
+   "inicio_ms": 70320,
+   "fin_ms": 70640,
+   "pantalla": "llevas"
+  },
+  {
+   "voz": "días",
+   "inicio_ms": 70720,
+   "fin_ms": 70960,
+   "pantalla": "días"
+  },
+  {
+   "voz": "inflamada",
+   "inicio_ms": 71040,
+   "fin_ms": 71680,
+   "pantalla": "inflamada"
+  },
+  {
+   "voz": "y",
+   "inicio_ms": 71760,
+   "fin_ms": 71840,
+   "pantalla": "y"
+  },
+  {
+   "voz": "nada",
+   "inicio_ms": 72000,
+   "fin_ms": 72240,
+   "pantalla": "nada"
+  },
+  {
+   "voz": "te",
+   "inicio_ms": 72320,
+   "fin_ms": 72400,
+   "pantalla": "te"
+  },
+  {
+   "voz": "funciona,",
+   "inicio_ms": 72480,
+   "fin_ms": 73280,
+   "pantalla": "funciona,"
+  },
+  {
+   "voz": "comenta",
+   "inicio_ms": 73360,
+   "fin_ms": 73680,
+   "pantalla": "comenta"
+  },
+  {
+   "voz": "la",
+   "inicio_ms": 73760,
+   "fin_ms": 73840,
+   "pantalla": "la"
+  },
+  {
+   "voz": "palabra",
+   "inicio_ms": 73920,
+   "fin_ms": 74240,
+   "pantalla": "palabra"
+  },
+  {
+   "voz": "LIMPIA",
+   "inicio_ms": 74480,
+   "fin_ms": 75120,
+   "pantalla": "LIMPIA"
+  },
+  {
+   "voz": "y",
+   "inicio_ms": 75160,
+   "fin_ms": 75200,
+   "pantalla": "y"
+  },
+  {
+   "voz": "te",
+   "inicio_ms": 75280,
+   "fin_ms": 75360,
+   "pantalla": "te"
+  },
+  {
+   "voz": "mando",
+   "inicio_ms": 75520,
+   "fin_ms": 75680,
+   "pantalla": "mando"
+  },
+  {
+   "voz": "info",
+   "inicio_ms": 75840,
+   "fin_ms": 76000,
+   "pantalla": "info"
+  },
+  {
+   "voz": "del",
+   "inicio_ms": 76080,
+   "fin_ms": 76160,
+   "pantalla": "del"
+  },
+  {
+   "voz": "original",
+   "inicio_ms": 76400,
+   "fin_ms": 76640,
+   "pantalla": "original"
+  },
+  {
+   "voz": "con",
+   "inicio_ms": 76800,
+   "fin_ms": 76880,
+   "pantalla": "con"
+  },
+  {
+   "voz": "pago",
+   "inicio_ms": 77040,
+   "fin_ms": 77280,
+   "pantalla": "pago"
+  },
+  {
+   "voz": "contra",
+   "inicio_ms": 77360,
+   "fin_ms": 77520,
+   "pantalla": "contra"
+  },
+  {
+   "voz": "entrega.",
+   "inicio_ms": 77600,
+   "fin_ms": 78400,
+   "pantalla": "entrega."
+  },
+  {
+   "voz": "Solo",
+   "inicio_ms": 78520,
+   "fin_ms": 78640,
+   "pantalla": "Solo"
+  },
+  {
+   "voz": "quedan",
+   "inicio_ms": 78720,
+   "fin_ms": 79040,
+   "pantalla": "quedan"
+  },
+  {
+   "voz": "veinte",
+   "inicio_ms": 79120,
+   "fin_ms": 79360,
+   "pantalla": "20"
+  },
+  {
+   "voz": "frascos",
+   "inicio_ms": 79520,
+   "fin_ms": 80000,
+   "pantalla": "frascos"
+  },
+  {
+   "voz": "hoy.",
+   "inicio_ms": 80040,
+   "fin_ms": 80480,
+   "pantalla": "hoy."
+  }
+ ],
+ "subtitulos": [
+  {
+   "inicio_ms": 0,
+   "fin_ms": 760,
+   "palabras": [
+    {
+     "texto": "Si",
+     "i": 0,
+     "f": 160,
+     "clave": false
+    },
+    {
+     "texto": "tu",
+     "i": 240,
+     "f": 320,
+     "clave": false
+    },
+    {
+     "texto": "caca",
+     "i": 360,
+     "f": 640,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 760,
+   "fin_ms": 1600,
+   "palabras": [
+    {
+     "texto": "sale",
+     "i": 760,
+     "f": 880,
+     "clave": false
+    },
+    {
+     "texto": "en",
+     "i": 920,
+     "f": 960,
+     "clave": false
+    },
+    {
+     "texto": "bolitas",
+     "i": 1040,
+     "f": 1440,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 1600,
+   "fin_ms": 3040,
+   "palabras": [
+    {
+     "texto": "duras",
+     "i": 1600,
+     "f": 1920,
+     "clave": true
+    },
+    {
+     "texto": "como",
+     "i": 2000,
+     "f": 2160,
+     "clave": false
+    },
+    {
+     "texto": "piedra,",
+     "i": 2240,
+     "f": 2880,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 3040,
+   "fin_ms": 4640,
+   "palabras": [
+    {
+     "texto": "NO",
+     "i": 3040,
+     "f": 3200,
+     "clave": true
+    },
+    {
+     "texto": "es",
+     "i": 3280,
+     "f": 3440,
+     "clave": false
+    },
+    {
+     "texto": "estreñimiento.",
+     "i": 3560,
+     "f": 4320,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 4640,
+   "fin_ms": 5480,
+   "palabras": [
+    {
+     "texto": "Hay",
+     "i": 4640,
+     "f": 4800,
+     "clave": false
+    },
+    {
+     "texto": "un",
+     "i": 4840,
+     "f": 4880,
+     "clave": false
+    },
+    {
+     "texto": "error",
+     "i": 4960,
+     "f": 5280,
+     "clave": true
+    },
+    {
+     "texto": "que",
+     "i": 5360,
+     "f": 5440,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 5480,
+   "fin_ms": 7200,
+   "palabras": [
+    {
+     "texto": "el",
+     "i": 5480,
+     "f": 5520,
+     "clave": false
+    },
+    {
+     "texto": "90%",
+     "i": 5600,
+     "f": 6640,
+     "clave": true
+    },
+    {
+     "texto": "comete",
+     "i": 6720,
+     "f": 7040,
+     "clave": false
+    },
+    {
+     "texto": "en",
+     "i": 7080,
+     "f": 7120,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 7200,
+   "fin_ms": 8800,
+   "palabras": [
+    {
+     "texto": "las",
+     "i": 7200,
+     "f": 7280,
+     "clave": false
+    },
+    {
+     "texto": "mañanas",
+     "i": 7360,
+     "f": 7840,
+     "clave": false
+    },
+    {
+     "texto": "que",
+     "i": 7920,
+     "f": 8000,
+     "clave": false
+    },
+    {
+     "texto": "convierte",
+     "i": 8080,
+     "f": 8560,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 8800,
+   "fin_ms": 9560,
+   "palabras": [
+    {
+     "texto": "todo",
+     "i": 8800,
+     "f": 9120,
+     "clave": false
+    },
+    {
+     "texto": "en",
+     "i": 9200,
+     "f": 9280,
+     "clave": false
+    },
+    {
+     "texto": "un",
+     "i": 9360,
+     "f": 9440,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 9560,
+   "fin_ms": 10960,
+   "palabras": [
+    {
+     "texto": "tapón",
+     "i": 9560,
+     "f": 9760,
+     "clave": true
+    },
+    {
+     "texto": "de",
+     "i": 9840,
+     "f": 9920,
+     "clave": false
+    },
+    {
+     "texto": "concreto.",
+     "i": 10000,
+     "f": 10560,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 10960,
+   "fin_ms": 11760,
+   "palabras": [
+    {
+     "texto": "Quédate",
+     "i": 10960,
+     "f": 11280,
+     "clave": false
+    },
+    {
+     "texto": "hasta",
+     "i": 11320,
+     "f": 11440,
+     "clave": false
+    },
+    {
+     "texto": "el",
+     "i": 11520,
+     "f": 11600,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 11760,
+   "fin_ms": 12480,
+   "palabras": [
+    {
+     "texto": "final",
+     "i": 11760,
+     "f": 11920,
+     "clave": false
+    },
+    {
+     "texto": "porque",
+     "i": 12000,
+     "f": 12240,
+     "clave": false
+    },
+    {
+     "texto": "te",
+     "i": 12320,
+     "f": 12400,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 12480,
+   "fin_ms": 14000,
+   "palabras": [
+    {
+     "texto": "muestro",
+     "i": 12480,
+     "f": 12800,
+     "clave": false
+    },
+    {
+     "texto": "cuál",
+     "i": 12960,
+     "f": 13120,
+     "clave": false
+    },
+    {
+     "texto": "es.",
+     "i": 13200,
+     "f": 13760,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 14000,
+   "fin_ms": 14640,
+   "palabras": [
+    {
+     "texto": "Después",
+     "i": 14000,
+     "f": 14320,
+     "clave": false
+    },
+    {
+     "texto": "de",
+     "i": 14360,
+     "f": 14400,
+     "clave": false
+    },
+    {
+     "texto": "los",
+     "i": 14480,
+     "f": 14560,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 14640,
+   "fin_ms": 16320,
+   "palabras": [
+    {
+     "texto": "35,",
+     "i": 14640,
+     "f": 15600,
+     "clave": true
+    },
+    {
+     "texto": "tu",
+     "i": 15640,
+     "f": 15680,
+     "clave": false
+    },
+    {
+     "texto": "colon",
+     "i": 15840,
+     "f": 16160,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 16320,
+   "fin_ms": 17440,
+   "palabras": [
+    {
+     "texto": "ya",
+     "i": 16320,
+     "f": 16480,
+     "clave": false
+    },
+    {
+     "texto": "no",
+     "i": 16520,
+     "f": 16560,
+     "clave": false
+    },
+    {
+     "texto": "empuja.",
+     "i": 16640,
+     "f": 17280,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 17440,
+   "fin_ms": 19440,
+   "palabras": [
+    {
+     "texto": "Se",
+     "i": 17440,
+     "f": 17520,
+     "clave": false
+    },
+    {
+     "texto": "llama",
+     "i": 17600,
+     "f": 17920,
+     "clave": false
+    },
+    {
+     "texto": "peristaltismo.",
+     "i": 18080,
+     "f": 19120,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 19440,
+   "fin_ms": 20720,
+   "palabras": [
+    {
+     "texto": "Y",
+     "i": 19440,
+     "f": 19520,
+     "clave": false
+    },
+    {
+     "texto": "cuando",
+     "i": 19600,
+     "f": 19760,
+     "clave": false
+    },
+    {
+     "texto": "se",
+     "i": 19840,
+     "f": 20000,
+     "clave": false
+    },
+    {
+     "texto": "frena,",
+     "i": 20080,
+     "f": 20640,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 20720,
+   "fin_ms": 22160,
+   "palabras": [
+    {
+     "texto": "todo",
+     "i": 20720,
+     "f": 20960,
+     "clave": false
+    },
+    {
+     "texto": "se",
+     "i": 21040,
+     "f": 21120,
+     "clave": false
+    },
+    {
+     "texto": "queda",
+     "i": 21200,
+     "f": 21360,
+     "clave": false
+    },
+    {
+     "texto": "adentro,",
+     "i": 21440,
+     "f": 22080,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 22160,
+   "fin_ms": 24240,
+   "palabras": [
+    {
+     "texto": "se",
+     "i": 22160,
+     "f": 22240,
+     "clave": false
+    },
+    {
+     "texto": "pudre",
+     "i": 22400,
+     "f": 22800,
+     "clave": true
+    },
+    {
+     "texto": "y",
+     "i": 22960,
+     "f": 23000,
+     "clave": false
+    },
+    {
+     "texto": "se",
+     "i": 23040,
+     "f": 23120,
+     "clave": false
+    },
+    {
+     "texto": "endurece.",
+     "i": 23200,
+     "f": 23840,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 24240,
+   "fin_ms": 25040,
+   "palabras": [
+    {
+     "texto": "Y",
+     "i": 24240,
+     "f": 24320,
+     "clave": false
+    },
+    {
+     "texto": "por",
+     "i": 24400,
+     "f": 24480,
+     "clave": false
+    },
+    {
+     "texto": "eso",
+     "i": 24560,
+     "f": 24800,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 25040,
+   "fin_ms": 25680,
+   "palabras": [
+    {
+     "texto": "no",
+     "i": 25040,
+     "f": 25120,
+     "clave": false
+    },
+    {
+     "texto": "te",
+     "i": 25200,
+     "f": 25280,
+     "clave": false
+    },
+    {
+     "texto": "sirve",
+     "i": 25360,
+     "f": 25600,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 25680,
+   "fin_ms": 26920,
+   "palabras": [
+    {
+     "texto": "tomar",
+     "i": 25680,
+     "f": 25920,
+     "clave": false
+    },
+    {
+     "texto": "más",
+     "i": 26080,
+     "f": 26320,
+     "clave": false
+    },
+    {
+     "texto": "agua,",
+     "i": 26400,
+     "f": 26880,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 26920,
+   "fin_ms": 28880,
+   "palabras": [
+    {
+     "texto": "más",
+     "i": 26920,
+     "f": 27120,
+     "clave": false
+    },
+    {
+     "texto": "fibra",
+     "i": 27200,
+     "f": 27520,
+     "clave": true
+    },
+    {
+     "texto": "o",
+     "i": 27680,
+     "f": 27720,
+     "clave": false
+    },
+    {
+     "texto": "magnesio.",
+     "i": 27760,
+     "f": 28480,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 28880,
+   "fin_ms": 30080,
+   "palabras": [
+    {
+     "texto": "La",
+     "i": 28880,
+     "f": 28960,
+     "clave": false
+    },
+    {
+     "texto": "fibra",
+     "i": 29120,
+     "f": 29520,
+     "clave": true
+    },
+    {
+     "texto": "solo",
+     "i": 29680,
+     "f": 29920,
+     "clave": false
+    },
+    {
+     "texto": "le",
+     "i": 29960,
+     "f": 30000,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 30080,
+   "fin_ms": 31320,
+   "palabras": [
+    {
+     "texto": "agrega",
+     "i": 30080,
+     "f": 30400,
+     "clave": false
+    },
+    {
+     "texto": "más",
+     "i": 30560,
+     "f": 30720,
+     "clave": false
+    },
+    {
+     "texto": "volumen",
+     "i": 30800,
+     "f": 31200,
+     "clave": true
+    },
+    {
+     "texto": "a",
+     "i": 31240,
+     "f": 31280,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 31320,
+   "fin_ms": 32160,
+   "palabras": [
+    {
+     "texto": "la",
+     "i": 31320,
+     "f": 31360,
+     "clave": false
+    },
+    {
+     "texto": "piedra",
+     "i": 31520,
+     "f": 31760,
+     "clave": true
+    },
+    {
+     "texto": "que",
+     "i": 31920,
+     "f": 32000,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 32160,
+   "fin_ms": 33520,
+   "palabras": [
+    {
+     "texto": "YA",
+     "i": 32160,
+     "f": 32320,
+     "clave": true
+    },
+    {
+     "texto": "está",
+     "i": 32440,
+     "f": 32600,
+     "clave": false
+    },
+    {
+     "texto": "pegada.",
+     "i": 32640,
+     "f": 33320,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 33520,
+   "fin_ms": 34560,
+   "palabras": [
+    {
+     "texto": "No",
+     "i": 33520,
+     "f": 33600,
+     "clave": false
+    },
+    {
+     "texto": "la",
+     "i": 33680,
+     "f": 33760,
+     "clave": false
+    },
+    {
+     "texto": "mueve.",
+     "i": 33840,
+     "f": 34240,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 34560,
+   "fin_ms": 36160,
+   "palabras": [
+    {
+     "texto": "No",
+     "i": 34560,
+     "f": 34640,
+     "clave": false
+    },
+    {
+     "texto": "ataca",
+     "i": 34720,
+     "f": 35120,
+     "clave": false
+    },
+    {
+     "texto": "la",
+     "i": 35200,
+     "f": 35280,
+     "clave": false
+    },
+    {
+     "texto": "raíz.",
+     "i": 35360,
+     "f": 36000,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 36160,
+   "fin_ms": 37280,
+   "palabras": [
+    {
+     "texto": "Tengo",
+     "i": 36160,
+     "f": 36320,
+     "clave": false
+    },
+    {
+     "texto": "pacientes",
+     "i": 36400,
+     "f": 36960,
+     "clave": false
+    },
+    {
+     "texto": "que",
+     "i": 37040,
+     "f": 37200,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 37280,
+   "fin_ms": 38720,
+   "palabras": [
+    {
+     "texto": "pasaban",
+     "i": 37280,
+     "f": 37680,
+     "clave": false
+    },
+    {
+     "texto": "3,",
+     "i": 37760,
+     "f": 38240,
+     "clave": true
+    },
+    {
+     "texto": "4",
+     "i": 38320,
+     "f": 38640,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 38720,
+   "fin_ms": 39760,
+   "palabras": [
+    {
+     "texto": "días",
+     "i": 38720,
+     "f": 38960,
+     "clave": true
+    },
+    {
+     "texto": "sin",
+     "i": 39040,
+     "f": 39200,
+     "clave": false
+    },
+    {
+     "texto": "ir.",
+     "i": 39320,
+     "f": 39600,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 39760,
+   "fin_ms": 41920,
+   "palabras": [
+    {
+     "texto": "Inflamadas,",
+     "i": 39760,
+     "f": 40760,
+     "clave": true
+    },
+    {
+     "texto": "con",
+     "i": 40800,
+     "f": 40960,
+     "clave": false
+    },
+    {
+     "texto": "dolor.",
+     "i": 41000,
+     "f": 41520,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 41920,
+   "fin_ms": 43760,
+   "palabras": [
+    {
+     "texto": "Cuando",
+     "i": 41920,
+     "f": 42080,
+     "clave": false
+    },
+    {
+     "texto": "reactivamos",
+     "i": 42160,
+     "f": 42720,
+     "clave": false
+    },
+    {
+     "texto": "el",
+     "i": 42800,
+     "f": 42880,
+     "clave": false
+    },
+    {
+     "texto": "movimiento,",
+     "i": 42960,
+     "f": 43680,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 43760,
+   "fin_ms": 45520,
+   "palabras": [
+    {
+     "texto": "me",
+     "i": 43760,
+     "f": 43840,
+     "clave": false
+    },
+    {
+     "texto": "dicen:",
+     "i": 43960,
+     "f": 44320,
+     "clave": false
+    },
+    {
+     "texto": "\"doctora,",
+     "i": 44640,
+     "f": 45440,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 45520,
+   "fin_ms": 46560,
+   "palabras": [
+    {
+     "texto": "por",
+     "i": 45520,
+     "f": 45600,
+     "clave": false
+    },
+    {
+     "texto": "fin",
+     "i": 45760,
+     "f": 46000,
+     "clave": false
+    },
+    {
+     "texto": "me",
+     "i": 46040,
+     "f": 46080,
+     "clave": false
+    },
+    {
+     "texto": "siento",
+     "i": 46240,
+     "f": 46480,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 46560,
+   "fin_ms": 48160,
+   "palabras": [
+    {
+     "texto": "liviana",
+     "i": 46560,
+     "f": 47040,
+     "clave": true
+    },
+    {
+     "texto": "y",
+     "i": 47080,
+     "f": 47120,
+     "clave": false
+    },
+    {
+     "texto": "regular\".",
+     "i": 47200,
+     "f": 47760,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 48160,
+   "fin_ms": 49520,
+   "palabras": [
+    {
+     "texto": "Entiende",
+     "i": 48160,
+     "f": 48640,
+     "clave": false
+    },
+    {
+     "texto": "esto:",
+     "i": 48840,
+     "f": 49360,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 49520,
+   "fin_ms": 50120,
+   "palabras": [
+    {
+     "texto": "no",
+     "i": 49520,
+     "f": 49600,
+     "clave": false
+    },
+    {
+     "texto": "es",
+     "i": 49680,
+     "f": 49760,
+     "clave": false
+    },
+    {
+     "texto": "que",
+     "i": 49840,
+     "f": 49880,
+     "clave": false
+    },
+    {
+     "texto": "tu",
+     "i": 49920,
+     "f": 50080,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 50120,
+   "fin_ms": 51440,
+   "palabras": [
+    {
+     "texto": "cuerpo",
+     "i": 50120,
+     "f": 50400,
+     "clave": false
+    },
+    {
+     "texto": "esté",
+     "i": 50480,
+     "f": 50640,
+     "clave": false
+    },
+    {
+     "texto": "seco.",
+     "i": 50720,
+     "f": 51280,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 51440,
+   "fin_ms": 52400,
+   "palabras": [
+    {
+     "texto": "Es",
+     "i": 51440,
+     "f": 51520,
+     "clave": false
+    },
+    {
+     "texto": "que",
+     "i": 51600,
+     "f": 51680,
+     "clave": false
+    },
+    {
+     "texto": "tu",
+     "i": 51760,
+     "f": 51840,
+     "clave": false
+    },
+    {
+     "texto": "colon",
+     "i": 52000,
+     "f": 52320,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 52400,
+   "fin_ms": 54400,
+   "palabras": [
+    {
+     "texto": "perdió",
+     "i": 52400,
+     "f": 52720,
+     "clave": false
+    },
+    {
+     "texto": "fuerza",
+     "i": 52880,
+     "f": 53200,
+     "clave": true
+    },
+    {
+     "texto": "para",
+     "i": 53280,
+     "f": 53360,
+     "clave": false
+    },
+    {
+     "texto": "empujar.",
+     "i": 53440,
+     "f": 54200,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 54400,
+   "fin_ms": 55720,
+   "palabras": [
+    {
+     "texto": "Si",
+     "i": 54400,
+     "f": 54480,
+     "clave": false
+    },
+    {
+     "texto": "no",
+     "i": 54560,
+     "f": 54640,
+     "clave": false
+    },
+    {
+     "texto": "lo",
+     "i": 54680,
+     "f": 54720,
+     "clave": false
+    },
+    {
+     "texto": "reactivas,",
+     "i": 54800,
+     "f": 55600,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 55720,
+   "fin_ms": 56440,
+   "palabras": [
+    {
+     "texto": "ese",
+     "i": 55720,
+     "f": 55840,
+     "clave": false
+    },
+    {
+     "texto": "tapón",
+     "i": 55920,
+     "f": 56240,
+     "clave": true
+    },
+    {
+     "texto": "se",
+     "i": 56320,
+     "f": 56400,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 56440,
+   "fin_ms": 57840,
+   "palabras": [
+    {
+     "texto": "hace",
+     "i": 56440,
+     "f": 56640,
+     "clave": false
+    },
+    {
+     "texto": "más",
+     "i": 56800,
+     "f": 56960,
+     "clave": false
+    },
+    {
+     "texto": "grande.",
+     "i": 57040,
+     "f": 57520,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 57840,
+   "fin_ms": 59360,
+   "palabras": [
+    {
+     "texto": "¿El",
+     "i": 57840,
+     "f": 58000,
+     "clave": false
+    },
+    {
+     "texto": "error",
+     "i": 58120,
+     "f": 58240,
+     "clave": true
+    },
+    {
+     "texto": "de",
+     "i": 58320,
+     "f": 58360,
+     "clave": false
+    },
+    {
+     "texto": "la",
+     "i": 58400,
+     "f": 58480,
+     "clave": false
+    },
+    {
+     "texto": "mañana?",
+     "i": 58560,
+     "f": 59040,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 59360,
+   "fin_ms": 60760,
+   "palabras": [
+    {
+     "texto": "Tomar",
+     "i": 59360,
+     "f": 59600,
+     "clave": false
+    },
+    {
+     "texto": "café",
+     "i": 59760,
+     "f": 60160,
+     "clave": true
+    },
+    {
+     "texto": "y",
+     "i": 60240,
+     "f": 60320,
+     "clave": false
+    },
+    {
+     "texto": "fibra",
+     "i": 60400,
+     "f": 60720,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 60760,
+   "fin_ms": 61560,
+   "palabras": [
+    {
+     "texto": "en",
+     "i": 60760,
+     "f": 60800,
+     "clave": false
+    },
+    {
+     "texto": "ayunas",
+     "i": 60880,
+     "f": 61360,
+     "clave": true
+    },
+    {
+     "texto": "con",
+     "i": 61440,
+     "f": 61520,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 61560,
+   "fin_ms": 63040,
+   "palabras": [
+    {
+     "texto": "el",
+     "i": 61560,
+     "f": 61600,
+     "clave": false
+    },
+    {
+     "texto": "colon",
+     "i": 61760,
+     "f": 62000,
+     "clave": true
+    },
+    {
+     "texto": "bloqueado.",
+     "i": 62120,
+     "f": 62640,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 63040,
+   "fin_ms": 64080,
+   "palabras": [
+    {
+     "texto": "El",
+     "i": 63040,
+     "f": 63200,
+     "clave": false
+    },
+    {
+     "texto": "truco",
+     "i": 63280,
+     "f": 63520,
+     "clave": false
+    },
+    {
+     "texto": "de",
+     "i": 63600,
+     "f": 63680,
+     "clave": false
+    },
+    {
+     "texto": "7",
+     "i": 63760,
+     "f": 64000,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 64080,
+   "fin_ms": 66280,
+   "palabras": [
+    {
+     "texto": "segundos",
+     "i": 64080,
+     "f": 64640,
+     "clave": false
+    },
+    {
+     "texto": "es",
+     "i": 64720,
+     "f": 64880,
+     "clave": false
+    },
+    {
+     "texto": "tomar",
+     "i": 64960,
+     "f": 65200,
+     "clave": false
+    },
+    {
+     "texto": "7 DAYS CLEANSE",
+     "i": 65360,
+     "f": 66240,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 66280,
+   "fin_ms": 67160,
+   "palabras": [
+    {
+     "texto": "en",
+     "i": 66280,
+     "f": 66320,
+     "clave": false
+    },
+    {
+     "texto": "la",
+     "i": 66360,
+     "f": 66400,
+     "clave": false
+    },
+    {
+     "texto": "noche,",
+     "i": 66480,
+     "f": 67120,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 67160,
+   "fin_ms": 68240,
+   "palabras": [
+    {
+     "texto": "que",
+     "i": 67160,
+     "f": 67200,
+     "clave": false
+    },
+    {
+     "texto": "ayuda",
+     "i": 67280,
+     "f": 67520,
+     "clave": false
+    },
+    {
+     "texto": "a",
+     "i": 67547,
+     "f": 67573,
+     "clave": false
+    },
+    {
+     "texto": "reactivar",
+     "i": 67600,
+     "f": 68160,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 68240,
+   "fin_ms": 70160,
+   "palabras": [
+    {
+     "texto": "ese",
+     "i": 68240,
+     "f": 68320,
+     "clave": false
+    },
+    {
+     "texto": "empuje",
+     "i": 68400,
+     "f": 68800,
+     "clave": true
+    },
+    {
+     "texto": "mientras",
+     "i": 68880,
+     "f": 69200,
+     "clave": false
+    },
+    {
+     "texto": "duermes.",
+     "i": 69280,
+     "f": 69960,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 70160,
+   "fin_ms": 71760,
+   "palabras": [
+    {
+     "texto": "Si",
+     "i": 70160,
+     "f": 70240,
+     "clave": false
+    },
+    {
+     "texto": "llevas",
+     "i": 70320,
+     "f": 70640,
+     "clave": false
+    },
+    {
+     "texto": "días",
+     "i": 70720,
+     "f": 70960,
+     "clave": true
+    },
+    {
+     "texto": "inflamada",
+     "i": 71040,
+     "f": 71680,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 71760,
+   "fin_ms": 73360,
+   "palabras": [
+    {
+     "texto": "y",
+     "i": 71760,
+     "f": 71840,
+     "clave": false
+    },
+    {
+     "texto": "nada",
+     "i": 72000,
+     "f": 72240,
+     "clave": false
+    },
+    {
+     "texto": "te",
+     "i": 72320,
+     "f": 72400,
+     "clave": false
+    },
+    {
+     "texto": "funciona,",
+     "i": 72480,
+     "f": 73280,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 73360,
+   "fin_ms": 75160,
+   "palabras": [
+    {
+     "texto": "comenta",
+     "i": 73360,
+     "f": 73680,
+     "clave": false
+    },
+    {
+     "texto": "la",
+     "i": 73760,
+     "f": 73840,
+     "clave": false
+    },
+    {
+     "texto": "palabra",
+     "i": 73920,
+     "f": 74240,
+     "clave": false
+    },
+    {
+     "texto": "LIMPIA",
+     "i": 74480,
+     "f": 75120,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 75160,
+   "fin_ms": 76080,
+   "palabras": [
+    {
+     "texto": "y",
+     "i": 75160,
+     "f": 75200,
+     "clave": false
+    },
+    {
+     "texto": "te",
+     "i": 75280,
+     "f": 75360,
+     "clave": false
+    },
+    {
+     "texto": "mando",
+     "i": 75520,
+     "f": 75680,
+     "clave": false
+    },
+    {
+     "texto": "info",
+     "i": 75840,
+     "f": 76000,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 76080,
+   "fin_ms": 77040,
+   "palabras": [
+    {
+     "texto": "del",
+     "i": 76080,
+     "f": 76160,
+     "clave": false
+    },
+    {
+     "texto": "original",
+     "i": 76400,
+     "f": 76640,
+     "clave": true
+    },
+    {
+     "texto": "con",
+     "i": 76800,
+     "f": 76880,
+     "clave": false
+    }
+   ]
+  },
+  {
+   "inicio_ms": 77040,
+   "fin_ms": 78520,
+   "palabras": [
+    {
+     "texto": "pago",
+     "i": 77040,
+     "f": 77280,
+     "clave": false
+    },
+    {
+     "texto": "contra",
+     "i": 77360,
+     "f": 77520,
+     "clave": true
+    },
+    {
+     "texto": "entrega.",
+     "i": 77600,
+     "f": 78400,
+     "clave": true
+    }
+   ]
+  },
+  {
+   "inicio_ms": 78520,
+   "fin_ms": 81380,
+   "palabras": [
+    {
+     "texto": "Solo",
+     "i": 78520,
+     "f": 78640,
+     "clave": false
+    },
+    {
+     "texto": "quedan",
+     "i": 78720,
+     "f": 79040,
+     "clave": false
+    },
+    {
+     "texto": "20",
+     "i": 79120,
+     "f": 79360,
+     "clave": true
+    },
+    {
+     "texto": "frascos",
+     "i": 79520,
+     "f": 80000,
+     "clave": true
+    },
+    {
+     "texto": "hoy.",
+     "i": 80040,
+     "f": 80480,
+     "clave": false
+    }
+   ]
+  }
+ ],
+ "escenas": [
+  {
+   "id": "hook",
+   "inicio": 0,
+   "fin": 4.64
+  },
+  {
+   "id": "bucle",
+   "inicio": 4.64,
+   "fin": 14.0
+  },
+  {
+   "id": "contexto",
+   "inicio": 14.0,
+   "fin": 24.24
+  },
+  {
+   "id": "valor",
+   "inicio": 24.24,
+   "fin": 36.16
+  },
+  {
+   "id": "prueba",
+   "inicio": 36.16,
+   "fin": 48.16
+  },
+  {
+   "id": "refuerzo",
+   "inicio": 48.16,
+   "fin": 57.84
+  },
+  {
+   "id": "cierre",
+   "inicio": 57.84,
+   "fin": 70.16
+  },
+  {
+   "id": "cta",
+   "inicio": 70.16,
+   "fin": 81.38000000000001
+  }
+ ]
+}

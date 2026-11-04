@@ -1,0 +1,4 @@
+*.mp4
+segs/
+preview/
+render.log
