@@ -1,0 +1,727 @@
+{
+  "_ayuda": "Prueba de la skill: American Fit, ángulo barriga inflada / intestino lento. Datos de producto tomados de la skill copywriting-american-natural (sin foto de etiqueta todavía): ver guion.md, tabla de verificación.",
+  "producto": "American Fit",
+  "resolucion": [
+    1080,
+    1920
+  ],
+  "estilo": "B",
+  "voz": {
+    "proveedor": "elevenlabs",
+    "id": "Grm7wn944wkvnkstb6Ep",
+    "nombre": "Gael - Engaging Spanish Ads & News Pro",
+    "modelo": "eleven_multilingual_v2",
+    "_alternativa": "edge-tts es-EC-LuisNeural +0%"
+  },
+  "shared": {
+    "paleta": {
+      "fondo": "#0B1A33",
+      "fondo2": "#163463",
+      "acento": "#FFD400",
+      "texto": "#FFFFFF",
+      "alerta": "#FF5A4E",
+      "ok": "#3DDC84",
+      "piel": "#F2B48C",
+      "intestino": "#F28C8C",
+      "fibra": "#8BD17C"
+    },
+    "luz": "clave arriba-izquierda, sombra de contacto plana",
+    "grano": 0.06,
+    "frasco": {
+      "imagen": "producto/frasco_recortado.png",
+      "alto_px": 900,
+      "_estado": "PENDIENTE: Gabo sube la foto; en el borrador va un marcador rotulado"
+    },
+    "personaje": "silueta frontal simple (cabeza circular, torso redondeado), mismo trazo y color en A1/B1 y C9",
+    "subtitulos": {
+      "estilo": "A",
+      "fuente": "DM Sans 800",
+      "cifras": "Big Shoulders Display 900"
+    }
+  },
+  "aperturas": {
+    "A": {
+      "tipo": "pregunta que rompe una creencia",
+      "portada": {
+        "t": 1.9,
+        "texto": "¿Comes poco y amaneces inflada?"
+      },
+      "escenas": [
+        {
+          "id": "A1",
+          "funcion": "gancho",
+          "voz": "¿Comes poco y aun así tu barriga amanece inflada?",
+          "palabra_clave": "inflada",
+          "accion_visible": "plato casi vacío; la barriga de la silueta se infla",
+          "encuadre": "plano medio frontal, zoom 1.00→1.08",
+          "transicion_entrada": "corte",
+          "subtitulo_resaltar": [
+            "poco",
+            "inflada"
+          ],
+          "evidencia": "—",
+          "visual": {
+            "tipo": "persona",
+            "plato": true
+          },
+          "eventos": [
+            {
+              "en": {
+                "inicio_escena": true
+              },
+              "que": "silueta y plato pequeño ya en cuadro (fotograma 0)"
+            },
+            {
+              "en": {
+                "palabra": "poco"
+              },
+              "que": "el plato se encoge"
+            },
+            {
+              "en": {
+                "palabra": "barriga"
+              },
+              "que": "flecha amarilla señala la barriga"
+            },
+            {
+              "en": {
+                "palabra": "inflada"
+              },
+              "que": "la barriga se infla con rebote"
+            }
+          ],
+          "sonidos": [
+            {
+              "archivo": "sube-1.ogg",
+              "en": {
+                "palabra": "inflada"
+              },
+              "gesto": "la barriga se infla",
+              "nivel_db": -12,
+              "motivo": "barrido corto ascendente («Swoosh 1» de D4XX procesado) = algo que se hincha; golpe claro (nitidez 2,3) en la palabra que nombra el dolor"
+            }
+          ]
+        }
+      ]
+    },
+    "B": {
+      "tipo": "mira esto (se resuelve en pantalla)",
+      "portada": {
+        "t": 2.4,
+        "texto": "Mira esto"
+      },
+      "escenas": [
+        {
+          "id": "B1",
+          "funcion": "gancho",
+          "voz": "Si llevas días sin ir al baño, mira esto.",
+          "palabra_clave": "esto",
+          "accion_visible": "calendario pasa tres hojas; zoom que entra al abdomen",
+          "encuadre": "plano medio → zoom fuerte al abdomen",
+          "transicion_entrada": "corte",
+          "subtitulo_resaltar": [
+            "días",
+            "esto"
+          ],
+          "evidencia": "—",
+          "visual": {
+            "tipo": "persona",
+            "calendario": true
+          },
+          "eventos": [
+            {
+              "en": {
+                "inicio_escena": true
+              },
+              "que": "silueta + calendario en cuadro (fotograma 0)"
+            },
+            {
+              "en": {
+                "palabra": "días"
+              },
+              "que": "el calendario pasa hojas"
+            },
+            {
+              "en": {
+                "palabra": "baño"
+              },
+              "que": "icono de baño tachado"
+            },
+            {
+              "en": {
+                "palabra": "mira"
+              },
+              "que": "flecha señala el abdomen"
+            },
+            {
+              "en": {
+                "palabra": "esto"
+              },
+              "que": "zoom entra al abdomen"
+            }
+          ],
+          "sonidos": [
+            {
+              "archivo": "tic-2.ogg",
+              "en": {
+                "palabra": "días"
+              },
+              "gesto": "pasa la primera hoja del calendario",
+              "nivel_db": -14,
+              "motivo": "tic de reloj = días que pasan, discreto bajo la voz"
+            },
+            {
+              "archivo": "whoosh-largo-1.ogg",
+              "en": {
+                "palabra": "esto"
+              },
+              "gesto": "zoom que entra al abdomen",
+              "nivel_db": -10,
+              "motivo": "barrido largo acompaña el zoom y anticipa el cambio a corte transversal"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "cuerpo": [
+    {
+      "id": "C1",
+      "funcion": "mecanismo",
+      "voz": "Cuando tu intestino va lento, lo que comes se queda atrapado.",
+      "palabra_clave": "atrapado",
+      "accion_visible": "corte transversal del intestino; bolitas de comida avanzan y se frenan",
+      "encuadre": "diagrama centrado, paneo lento hacia la derecha",
+      "transicion_entrada": "continuidad",
+      "subtitulo_resaltar": [
+        "lento",
+        "atrapado"
+      ],
+      "evidencia": "V1",
+      "visual": {
+        "tipo": "intestino",
+        "fase": "lento"
+      },
+      "eventos": [
+        {
+          "en": {
+            "inicio_escena": true
+          },
+          "que": "tubo del intestino se dibuja"
+        },
+        {
+          "en": {
+            "palabra": "lento"
+          },
+          "que": "las bolitas reducen velocidad + etiqueta LENTO"
+        },
+        {
+          "en": {
+            "palabra": "comes"
+          },
+          "que": "entran más bolitas"
+        },
+        {
+          "en": {
+            "palabra": "atrapado"
+          },
+          "que": "las bolitas chocan y se detienen"
+        }
+      ],
+      "sonidos": [
+        {
+          "archivo": "golpe-suave-1.ogg",
+          "en": {
+            "palabra": "atrapado"
+          },
+          "gesto": "las bolitas chocan y se detienen",
+          "nivel_db": -12,
+          "motivo": "golpe blando = tapón, sin dramatizar"
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "funcion": "mecanismo",
+      "voz": "Se acumulan gases, te sientes pesado y el pantalón ya no cierra.",
+      "palabra_clave": "cierra",
+      "accion_visible": "burbujas de gas suben; pesa aparece; botón del pantalón no cierra",
+      "encuadre": "diagrama → plano de cintura",
+      "transicion_entrada": "continuidad",
+      "subtitulo_resaltar": [
+        "gases",
+        "pesado",
+        "cierra"
+      ],
+      "evidencia": "V1",
+      "visual": {
+        "tipo": "intestino",
+        "fase": "gases"
+      },
+      "eventos": [
+        {
+          "en": {
+            "palabra": "gases"
+          },
+          "que": "burbujas suben"
+        },
+        {
+          "en": {
+            "palabra": "pesado"
+          },
+          "que": "aparece una pesa sobre el abdomen"
+        },
+        {
+          "en": {
+            "palabra": "pantalón"
+          },
+          "que": "corte a cintura"
+        },
+        {
+          "en": {
+            "palabra": "cierra"
+          },
+          "que": "el botón no llega al ojal y rebota"
+        }
+      ],
+      "sonidos": [
+        {
+          "archivo": "burbujas-1.ogg",
+          "en": {
+            "palabra": "gases"
+          },
+          "hasta": {
+            "palabra": "pesado"
+          },
+          "fade_out": 0.15,
+          "gesto": "burbujas de gas suben",
+          "nivel_db": -14,
+          "motivo": "textura de burbujas mientras se ven: sin golpe definido, entra con la palabra (sync 0) y se corta con fundido antes de 'pesado'",
+          "sync": 0.0
+        },
+        {
+          "archivo": "enganche-1.ogg",
+          "en": {
+            "palabra": "cierra"
+          },
+          "gesto": "el botón intenta enganchar y rebota",
+          "nivel_db": -12,
+          "motivo": "enganche metálico seco = el botón que no cierra (la cremallera era una textura sin golpe: no sincronizaba)"
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "funcion": "puente",
+      "voz": "¿Entonces qué le falta a tu intestino?",
+      "palabra_clave": "falta",
+      "accion_visible": "signo de pregunta grande sobre el tubo",
+      "encuadre": "diagrama centrado, zoom out lento",
+      "transicion_entrada": "continuidad",
+      "subtitulo_resaltar": [
+        "falta"
+      ],
+      "evidencia": "—",
+      "visual": {
+        "tipo": "intestino",
+        "fase": "pregunta"
+      },
+      "eventos": [
+        {
+          "en": {
+            "inicio_escena": true
+          },
+          "que": "zoom out"
+        },
+        {
+          "en": {
+            "palabra": "falta"
+          },
+          "que": "signo de pregunta cae con rebote"
+        }
+      ],
+      "sonido_decision": "solo voz: la pregunta puente necesita aire; el silencio relativo marca el giro antes de la respuesta"
+    },
+    {
+      "id": "C4",
+      "funcion": "mecanismo",
+      "voz": "Necesita dos cosas: fibra para tu flora y un empujón.",
+      "palabra_clave": "empujón",
+      "accion_visible": "pantalla dividida: hoja de fibra / flecha que empuja",
+      "encuadre": "dos paneles, entrada escalonada",
+      "transicion_entrada": "corte",
+      "subtitulo_resaltar": [
+        "fibra",
+        "empujón"
+      ],
+      "evidencia": "V4",
+      "visual": {
+        "tipo": "dos_cosas"
+      },
+      "eventos": [
+        {
+          "en": {
+            "palabra": "dos"
+          },
+          "que": "aparecen los paneles 1 y 2"
+        },
+        {
+          "en": {
+            "palabra": "fibra"
+          },
+          "que": "icono de fibra salta en panel 1"
+        },
+        {
+          "en": {
+            "palabra": "flora"
+          },
+          "que": "puntitos verdes alrededor"
+        },
+        {
+          "en": {
+            "palabra": "empujón"
+          },
+          "que": "flecha empuja la bolita en panel 2"
+        }
+      ],
+      "sonidos": [
+        {
+          "archivo": "whoosh-1.ogg",
+          "en": {
+            "t_escena": 0
+          },
+          "gesto": "corte a pantalla dividida",
+          "nivel_db": -12,
+          "motivo": "barrido corto que anticipa el corte de diagrama a paneles"
+        },
+        {
+          "archivo": "pop-1.ogg",
+          "en": {
+            "palabra": "fibra"
+          },
+          "gesto": "icono de fibra aparece",
+          "nivel_db": -12,
+          "motivo": "pop = aparición de un icono"
+        },
+        {
+          "archivo": "deslizar-2.ogg",
+          "en": {
+            "palabra": "empujón"
+          },
+          "gesto": "la flecha empuja la bolita",
+          "nivel_db": -12,
+          "motivo": "deslizamiento metálico con golpe claro acompaña el empujón"
+        }
+      ]
+    },
+    {
+      "id": "C5",
+      "funcion": "producto",
+      "voz": "Por eso existe American Fit, de American Natural.",
+      "palabra_clave": "American Fit",
+      "accion_visible": "el frasco real entra desde abajo con rebote leve",
+      "encuadre": "frasco centrado, fondo desenfocado",
+      "transicion_entrada": "corte",
+      "subtitulo_resaltar": [
+        "Fit"
+      ],
+      "evidencia": "V3",
+      "visual": {
+        "tipo": "frasco"
+      },
+      "eventos": [
+        {
+          "en": {
+            "inicio_escena": true
+          },
+          "que": "fondo se desenfoca"
+        },
+        {
+          "en": {
+            "palabra": "American Fit",
+            "desfase": -0.15
+          },
+          "que": "frasco cae y aterriza con rebote (contacto 0,12 s después)"
+        },
+        {
+          "en": {
+            "palabra": "Natural"
+          },
+          "que": "brillo en el borde del frasco"
+        }
+      ],
+      "sonidos": [
+        {
+          "archivo": "swish-1.ogg",
+          "en": {
+            "t_escena": 0
+          },
+          "gesto": "corte al producto",
+          "nivel_db": -10,
+          "motivo": "barrido seco (nitidez alta) marca el corte de problema a solución"
+        },
+        {
+          "archivo": "golpe-seco-1.ogg",
+          "en": {
+            "palabra": "American Fit",
+            "desfase": -0.03
+          },
+          "gesto": "el frasco toca el suelo justo al decir «American Fit»",
+          "nivel_db": -10,
+          "motivo": "peso real del frasco al tocar el suelo"
+        }
+      ],
+      "subtitulo_posicion": "arriba"
+    },
+    {
+      "id": "C6",
+      "funcion": "prueba",
+      "voz": "Trae sen, fibra prebiótica, magnesio, vitamina C y té matcha.",
+      "palabra_clave": "sen",
+      "accion_visible": "cinco etiquetas salen del frasco una por una",
+      "encuadre": "frasco a la izquierda, lista a la derecha",
+      "transicion_entrada": "continuidad",
+      "subtitulo_resaltar": [
+        "sen",
+        "fibra",
+        "magnesio"
+      ],
+      "evidencia": "V2",
+      "visual": {
+        "tipo": "ingredientes",
+        "items": [
+          "Sen",
+          "Fibra prebiótica",
+          "Magnesio",
+          "Vitamina C",
+          "Té matcha"
+        ]
+      },
+      "eventos": [
+        {
+          "en": {
+            "palabra": "sen"
+          },
+          "que": "etiqueta 1"
+        },
+        {
+          "en": {
+            "palabra": "fibra"
+          },
+          "que": "etiqueta 2"
+        },
+        {
+          "en": {
+            "palabra": "magnesio"
+          },
+          "que": "etiqueta 3"
+        },
+        {
+          "en": {
+            "palabra": "vitamina"
+          },
+          "que": "etiqueta 4"
+        },
+        {
+          "en": {
+            "palabra": "matcha"
+          },
+          "que": "etiqueta 5"
+        }
+      ],
+      "sonidos": [
+        {
+          "archivo": "clic-1.ogg",
+          "en": {
+            "palabra": "sen"
+          },
+          "gesto": "aparece la etiqueta 1",
+          "nivel_db": -14,
+          "motivo": "clic = marcador en pantalla"
+        },
+        {
+          "archivo": "clic-2.ogg",
+          "en": {
+            "palabra": "magnesio"
+          },
+          "gesto": "aparece la etiqueta 3",
+          "nivel_db": -14,
+          "motivo": "variante del clic para no repetir idéntico"
+        },
+        {
+          "archivo": "clic-1.ogg",
+          "en": {
+            "palabra": "matcha"
+          },
+          "gesto": "aparece la etiqueta 5",
+          "nivel_db": -14,
+          "motivo": "cierra la lista con el mismo lenguaje"
+        }
+      ]
+    },
+    {
+      "id": "C7",
+      "funcion": "prueba",
+      "voz": "Sesenta cápsulas, en frasco de aluminio con su marca.",
+      "palabra_clave": "aluminio",
+      "accion_visible": "contador 0→60; macro del frasco con la marca",
+      "encuadre": "macro del frasco, luz de borde",
+      "transicion_entrada": "continuidad",
+      "subtitulo_resaltar": [
+        "Sesenta",
+        "aluminio"
+      ],
+      "evidencia": "V3",
+      "subtitulo_posicion": "arriba",
+      "visual": {
+        "tipo": "frasco_macro"
+      },
+      "eventos": [
+        {
+          "en": {
+            "palabra": "Sesenta"
+          },
+          "que": "contador 0→60"
+        },
+        {
+          "en": {
+            "palabra": "cápsulas"
+          },
+          "que": "cápsulas caen en fila"
+        },
+        {
+          "en": {
+            "palabra": "aluminio"
+          },
+          "que": "macro + reflejo metálico"
+        },
+        {
+          "en": {
+            "palabra": "marca"
+          },
+          "que": "círculo amarillo sobre la marca"
+        }
+      ],
+      "sonidos": [
+        {
+          "archivo": "metal-2.ogg",
+          "en": {
+            "palabra": "aluminio"
+          },
+          "gesto": "reflejo metálico recorre el frasco",
+          "nivel_db": -12,
+          "motivo": "toque metálico real = aluminio, identifica el original"
+        }
+      ]
+    },
+    {
+      "id": "C8",
+      "funcion": "cta",
+      "voz": "Pídelo hoy y pagas cuando lo recibes en tu casa.",
+      "palabra_clave": "pagas",
+      "accion_visible": "caja llega a una puerta; texto 'Pagas al recibir'",
+      "encuadre": "plano de puerta, caja entra",
+      "transicion_entrada": "corte",
+      "subtitulo_resaltar": [
+        "pagas",
+        "recibes"
+      ],
+      "evidencia": "V5",
+      "visual": {
+        "tipo": "entrega"
+      },
+      "eventos": [
+        {
+          "en": {
+            "inicio_escena": true
+          },
+          "que": "puerta en cuadro"
+        },
+        {
+          "en": {
+            "palabra": "hoy"
+          },
+          "que": "botón PÍDELO HOY late"
+        },
+        {
+          "en": {
+            "palabra": "pagas"
+          },
+          "que": "rótulo PAGAS AL RECIBIR"
+        },
+        {
+          "en": {
+            "palabra": "recibes"
+          },
+          "que": "mano recibe la caja"
+        },
+        {
+          "en": {
+            "palabra": "casa"
+          },
+          "que": "la caja llega a la puerta"
+        }
+      ],
+      "sonidos": [
+        {
+          "archivo": "puerta-2.ogg",
+          "en": {
+            "palabra": "casa",
+            "punto": "fin"
+          },
+          "gesto": "la puerta se abre y aparece la caja",
+          "nivel_db": -14,
+          "motivo": "puerta real (Kenney «rpg audio», golpe claro) después de la frase de pago, sin taparla: entrega en casa"
+        }
+      ]
+    },
+    {
+      "id": "C9",
+      "funcion": "cta",
+      "voz": "Escríbenos por WhatsApp y separa el tuyo.",
+      "palabra_clave": "WhatsApp",
+      "accion_visible": "la misma silueta del gancho con el celular; burbuja de chat",
+      "encuadre": "plano medio frontal (rima con el gancho)",
+      "transicion_entrada": "corte",
+      "subtitulo_resaltar": [
+        "WhatsApp"
+      ],
+      "evidencia": "—",
+      "visual": {
+        "tipo": "persona",
+        "celular": true
+      },
+      "eventos": [
+        {
+          "en": {
+            "inicio_escena": true
+          },
+          "que": "silueta del gancho"
+        },
+        {
+          "en": {
+            "palabra": "WhatsApp"
+          },
+          "que": "burbuja de chat aparece"
+        },
+        {
+          "en": {
+            "palabra": "tuyo"
+          },
+          "que": "frasco pequeño junto al celular"
+        }
+      ],
+      "sonidos": [
+        {
+          "archivo": "pop-2.ogg",
+          "en": {
+            "palabra": "WhatsApp"
+          },
+          "gesto": "aparece la burbuja de chat",
+          "nivel_db": -14,
+          "motivo": "pop corto y nítido de mensaje, antes de la acción final"
+        }
+      ]
+    }
+  ]
+}
